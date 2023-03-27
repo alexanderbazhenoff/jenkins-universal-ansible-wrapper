@@ -8,7 +8,6 @@ node('master') {
         dir('') {
             sh 'pwd'
         }
-
         CF.outMsg(1, 'test library connection')
     }
 }
