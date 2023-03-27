@@ -5,7 +5,7 @@
 node('master') {
     wrap([$class: 'TimestamperBuildWrapper']) {
         CF = new org.alx.commonFunctions() as Object
-        dir('a') {
+        dir('') {
             sh 'pwd'
         }
 
