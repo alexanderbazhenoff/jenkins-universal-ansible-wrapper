@@ -38,8 +38,7 @@ def AnsibleInstallationName = 'home_local_bin_ansible' as String
 String loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath,
                             String workspaceSubfolder = 'settings') {
     CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
-    Map pipelineSettings = readYaml(test: readFile(file: String.format('%s/%s', workspaceSubfolder,
-            settingsRelativePath)))
+    Map pipelineSettings = readYaml(file: String.format('%s/%s', workspaceSubfolder, settingsRelativePath))
     return pipelineSettings
 }
 
