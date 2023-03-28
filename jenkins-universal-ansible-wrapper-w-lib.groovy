@@ -29,11 +29,14 @@ def AnsibleInstallationName = 'home_local_bin_ansible' as String
  * @param SettingsGitUrl - git repo URL to clone from.
  * @param SettingsGitBranch - git branch.
  * @param settingsRelativePath - relative path inside the 'ansible-wrapper-settings' project.
+ * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
  * @return
  */
-String loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath) {
-    CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, 'settings')
-    Map pipelineSettings = parseJson(new JsonBuilder(readFile(file: settingsRelativePath).toPrettyString()))
+String loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath,
+                            String workspaceSubfolder = 'settings') {
+    CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
+    Map pipelineSettings = parseJson(new JsonBuilder(readFile(file: String.format('%s/%s', workspaceSubfolder,
+            settingsRelativePath)).toPrettyString()))
     return pipelineSettings
 }
 
