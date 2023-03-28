@@ -28,17 +28,17 @@ def AnsibleInstallationName = 'home_local_bin_ansible' as String
  *
  * @param SettingsGitUrl - git repo URL to clone from.
  * @param SettingsGitBranch - git branch.
- * @param settingsRelativeFullPath - relative path inside the 'ansible-wrapper-settings' project.
+ * @param settingsRelativePath - relative path inside the 'ansible-wrapper-settings' project.
  * @return
  */
-String loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativeFullPath) {
-    Map pipelineSettings = [:]
+String loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath) {
     CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, 'settings')
+    Map pipelineSettings = parseJson(new JsonBuilder(readFile file: settingsRelativePath).toPrettyString())
     return pipelineSettings
 }
 
 /**
- * Apply ReplaceAll items on string.
+ * Apply ReplaceAll regex items to string.
  *
  * @param text - text to process.
  * @param regexItemsList - list of regex items to apply .replaceAll method.
@@ -48,7 +48,7 @@ String loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, Str
  */
 static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     for (int i = 0; i < regexItemsList.size(); i++) {
-        text = text.replaceAll(regexItemsList[i], replaceItemsList[i]?.trim() ? replaceItemsList[i] : '')
+        text = text.replaceAll(regexItemsList[i], replaceItemsList.contains(i) ? replaceItemsList[i] : '')
     }
     return text
 }
@@ -58,9 +58,11 @@ node('master') {
     wrap([$class: 'TimestamperBuildWrapper']) {
         CF = new org.alx.commonFunctions() as Object
 
-        String pipelineSettings = loadPipelineSettings(SettingsGitUrl, SettingsGitBranch, String.format('%s/%s',
-                SettingsRelativePathPrefix, applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace)))
+        String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
+                applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
+        String pipelineSettings = loadPipelineSettings(SettingsGitUrl, SettingsGitBranch, settingsRelativePath)
 
-        CF.outMsg(1, 'test library connection')
+        CF.outMsg(params.containsKey(DEBUG_MODE) && params.DEBUG_MODE ? params.DEBUG_MODE : 1,
+                String.format("Loaded '%s' settings:\n%s", settingsRelativePath, CF.readableMap(pipelineSettings)))
     }
 }
