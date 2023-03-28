@@ -7,8 +7,9 @@ import groovy.json.JsonBuilder
 @Library('jenkins-shared-library-alx@devel') _
 
 
-// Repo URL and a branch of 'ansible-wrapper-settings' to load current pipeline settings from.
-def SettingsGitUrl = 'https://github.com/alexanderbazhenoff/ansible-collection-linux.git' as String
+// Repo URL and a branch of 'ansible-wrapper-settings' to load current pipeline settings from, e.g:
+// 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'
+def SettingsGitUrl = 'https://github.com/alexanderbazhenoff/ansible-wrapper-settings.git' as String
 def SettingsGitBranch = 'main' as String
 
 // Prefix for pipeline settings relative path inside the 'ansible-wrapper-settings' project, that will be added
