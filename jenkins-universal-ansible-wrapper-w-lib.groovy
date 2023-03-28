@@ -67,7 +67,7 @@ node('master') {
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
         String pipelineSettings = loadPipelineSettings(SettingsGitUrl, SettingsGitBranch, settingsRelativePath)
 
-        CF.outMsg(!env.get(DEBUG_MODE) ? env.DEBUG_MODE : 1,
+        CF.outMsg(params.containsKey('DEBUG_MODE') && params.DEBUG_MODE ? 0 : 1,
                 String.format("Loaded '%s' settings:\n%s", settingsRelativePath, CF.readableMap(pipelineSettings)))
     }
 }
