@@ -33,7 +33,7 @@ def AnsibleInstallationName = 'home_local_bin_ansible' as String
  */
 String loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath) {
     CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, 'settings')
-    Map pipelineSettings = parseJson(new JsonBuilder(readFile file: settingsRelativePath).toPrettyString())
+    Map pipelineSettings = parseJson(new JsonBuilder(readFile(file: settingsRelativePath).toPrettyString()))
     return pipelineSettings
 }
 
