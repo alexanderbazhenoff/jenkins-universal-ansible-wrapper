@@ -60,8 +60,8 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
 
 
 node('master') {
+    CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
-        CF = new org.alx.commonFunctions() as Object
 
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
