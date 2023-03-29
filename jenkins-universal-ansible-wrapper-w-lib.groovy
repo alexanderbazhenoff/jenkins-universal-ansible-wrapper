@@ -74,6 +74,7 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
 /**
  * Verify all required jenkins pipeline parameters presents.
  *
+ * @param pipelineParams - jenkins built-in 'params' UnmodifiableMap variable with current build pipeline parameters.
  * @param requiredParams - an array list of map items to check, e.g: [map_item1, map_item2 ... map_itemN]. While single
  *                         map item format is:
  *                         [
@@ -93,8 +94,7 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
  *                         Check readme file for details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
  * @return - true when jenkins pipeline parameters update required.
  */
-def checkPipelineParams(Object pipelineParams, ArrayList requiredParams) {
-    println pipelineParams.getClass()
+static checkPipelineParams(Object pipelineParams, ArrayList requiredParams) {
     Boolean updateParamsRequired = false
     requiredParams.each { if (!pipelineParams.containsKey(it.name)) updateParamsRequired = true }
     return updateParamsRequired
@@ -119,7 +119,8 @@ node('master') {
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath)
         if (checkPipelineParams(params, pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
                 SystemPipelineParameters))
-            println 'Update parameters required'
+            updatePipelineParams(pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
+                    SystemPipelineParameters)
 
     }
 }
