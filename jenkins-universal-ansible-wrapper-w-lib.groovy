@@ -61,6 +61,7 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
 }
 
 static checkPipelineParams(ArrayList params) {
+    println String.format('Checking params: %s', params)
     Boolean updateParamsRequiredState = false
     params.each {
         println String.format('Looking for: %s', it.name)
