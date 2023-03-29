@@ -95,7 +95,7 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
  */
 static checkPipelineParams(ArrayList requiredParams) {
     Boolean updateParamsRequired = false
-    requiredParams.each { if (!requiredParams.containsKey(it.name)) updateParamsRequired = true }
+    requiredParams.each { if (!params.containsKey(it.name)) updateParamsRequired = true }
     return updateParamsRequired
 }
 
