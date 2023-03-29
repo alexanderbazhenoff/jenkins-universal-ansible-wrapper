@@ -86,11 +86,12 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
  *                          trim: false|true
  *                         ]
  *                         Please note:
- *                         - 'choices' item element is only for 'type: choice'.
- *                         - 'default' item element is for all types except 'type: choice'. In this case default value
- *                           will be the first element from choices list.
- *                         - 'trim' item element is for every string type, e.g: string|text|password. By default
- *                           'trim: false', so you don't need to set them on every item.
+ *                         - 'choices' key is only for 'type: choice'.
+ *                         - 'default' key is for all types except 'type: choice'. This key is incompatible with
+ *                         'type: choice'. For other types this key is optional: it's will be false for boolean, and
+ *                         '' (empty line) for string, password and text parameters.
+ *                         - 'trim' key is available for 'type: string'. This key is optional, by default it's false.
+ *                         - 'description' key is optional, by default it's '' (empty line).
  *                         Check readme file for details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
  * @return - true when jenkins pipeline parameters update required.
  */
@@ -100,15 +101,31 @@ static checkPipelineParams(Object pipelineParams, ArrayList requiredParams) {
     return updateParamsRequired
 }
 
+ArrayList pipelineSettingsItemToPipelineParam(Map item) {
+    ArrayList param = []
+    String defaultString = item.containsKey('default') ? item.default : ''
+    String description = item.containsKey('description') ? item.description : ''
+    if (item.type == 'choice' || (item.containsKey('choices') && item.choices instanceof ArrayList))
+        param += [choice(name: item.name, choices: item.choices, description: description)]
+    if (item.type == 'boolean' || (item.containsKey('default') && item.default instanceof Boolean))
+        param += [booleanParam(name: item.name, description: description,
+                defaultValue: item.containsKey('default') ? item.default : false)]
+    if (item.type == 'password')
+        param += [password(name: item.name, defaultValue: defaultString, description: description)]
+    if (item.type == 'text')
+        param += [text(name: item.name, defaultValue: defaultString, description: description)]
+    if (item.type == 'text')
+        param += [string(name: item.name, defaultValue: defaultString, description: description,
+                trim: item.containsKey('trim') ? item.trim : false)]
+    return param
+}
+
 def updatePipelineParams(ArrayList requiredParams) {
     ArrayList newPipelineParams = []
-    requiredParams.each {
-        it.defaultValue = it.default
-        println it
-        println it.getClass()
-//        newPipelineParams += it.type(it.remove('default').remove('type'))
-    }
-    println newPipelineParams
+    requiredParams.each { newPipelineParams += pipelineSettingsItemToPipelineParam(it as Map) }
+    properties([parameters(newPipelineParams)])
+    CF.outMsg(1, "Pipeline parameters was successfully injected. Select 'Build with parameters' and run again.")
+    CF.interruptPipelineOk(3)
 }
 
 
