@@ -10,9 +10,10 @@ import org.yaml.snakeyaml.*
 
 
 // Repo URL and a branch of 'ansible-wrapper-settings' to load current pipeline settings from, e.g:
-// 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'
+// 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'. Will be ignored when SETTINGS_GIT_BRANCH pipeline
+// parameter present and not blank.
 def SettingsGitUrl = 'https://github.com/alexanderbazhenoff/ansible-wrapper-settings.git' as String
-def SettingsGitBranch = 'main' as String
+def DefaultSettingsGitBranch = 'main' as String
 
 // Prefix for pipeline settings relative path inside the 'ansible-wrapper-settings' project, that will be added
 // automatically on yaml load.
@@ -25,12 +26,22 @@ def PipelineNameRegexReplace = ['^admin_'] as ArrayList
 // Set your ansible installation name from jenkins settings.
 def AnsibleInstallationName = 'home_local_bin_ansible' as String
 
+// System pipeline parameters, which are mandatory and not present in 'ansible-wrapper-settings'.
+def SystemPipelineParameters = [
+        [name       : 'SETTINGS_GIT_BRANCH',
+         type       : 'string', default: '',
+         description: 'Git branch of ansible-wrapper-settings project (to override defaults on development).'],
+        [name   : 'DEBUG_MODE',
+         type   : 'boolean',
+         default: false]
+] as ArrayList
+
 
 /**
  * Clone 'ansible-wrapper-settings' from git repository, load yaml pipeline settings and return them as a map.
  *
- * @param SettingsGitUrl - git repo URL to clone from.
- * @param SettingsGitBranch - git branch.
+ * @param settingsGitUrl - git repo URL to clone from.
+ * @param settingsGitBranch - git branch.
  * @param settingsRelativePath - relative path inside the 'ansible-wrapper-settings' project.
  * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
  * @param printYaml - if true output 'ansible-wrapper-settings' content on a load.
@@ -79,12 +90,22 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
  *                           will be the first element from choices list.
  *                         - 'trim' item element is for every string type, e.g: string|text|password. By default
  *                           'trim: false', so you don't need to set them on every item.
+ *                         Check readme file for details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
  * @return - true when jenkins pipeline parameters update required.
  */
 static checkPipelineParams(ArrayList requiredParams) {
     Boolean updateParamsRequired = false
     requiredParams.each { if (!params.containsKey(it.name)) updateParamsRequired = true }
     return updateParamsRequired
+}
+
+def updatePipelineParams(ArrayList requiredParams) {
+    ArrayList newPipelineParams = []
+    requiredParams.each {
+        it.defaultValue = it.default
+        newPipelineParams += it.type(it.remove('default').remove('type'))
+    }
+    println newPipelineParams
 }
 
 
@@ -94,8 +115,9 @@ node('master') {
 
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
-        Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, SettingsGitBranch, settingsRelativePath)
-        if (checkPipelineParams(pipelineSettings.parameters.required + pipelineSettings.parameters.optional))
+        Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath)
+        if (checkPipelineParams(pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
+                SystemPipelineParameters))
             println 'Update parameters required'
 
     }
