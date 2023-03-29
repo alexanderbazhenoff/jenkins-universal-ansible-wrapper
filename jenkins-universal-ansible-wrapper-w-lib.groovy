@@ -105,6 +105,7 @@ def updatePipelineParams(ArrayList requiredParams) {
     requiredParams.each {
         it.defaultValue = it.default
         println it
+        println it.getClass()
 //        newPipelineParams += it.type(it.remove('default').remove('type'))
     }
     println newPipelineParams
