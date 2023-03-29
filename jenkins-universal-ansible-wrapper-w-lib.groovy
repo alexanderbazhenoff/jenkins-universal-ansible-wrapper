@@ -93,9 +93,9 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
  *                         Check readme file for details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
  * @return - true when jenkins pipeline parameters update required.
  */
-static checkPipelineParams(ArrayList requiredParams) {
+static checkPipelineParams(def pipelineParams, ArrayList requiredParams) {
     Boolean updateParamsRequired = false
-    requiredParams.each { if (!params.containsKey(it.name)) updateParamsRequired = true }
+    requiredParams.each { if (!pipelineParams.containsKey(it.name)) updateParamsRequired = true }
     return updateParamsRequired
 }
 
@@ -116,7 +116,7 @@ node('master') {
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath)
-        if (checkPipelineParams(pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
+        if (checkPipelineParams(params, pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
                 SystemPipelineParameters))
             println 'Update parameters required'
 
