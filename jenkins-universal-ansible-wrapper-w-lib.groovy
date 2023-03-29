@@ -54,10 +54,20 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  * @return - resulting text.
  */
 static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
-    for (int i = 0; i < regexItemsList.size(); i++) {
-        text = text.replaceAll(regexItemsList[i], replaceItemsList.contains(i) ? replaceItemsList[i] : '')
+    regexItemsList.eachWithIndex{ value, Integer index ->
+        text = text.replaceAll(value, replaceItemsList.contains(index) ? replaceItemsList[index] : '')
     }
     return text
+}
+
+static checkPipelineParams(ArrayList params) {
+    Boolean updateParamsRequiredState = false
+    params.each {
+        println it.name
+        if (!params.containsKey(it.name))
+            updateParamsRequiredState = true
+    }
+    return updateParamsRequiredState
 }
 
 
@@ -68,7 +78,8 @@ node('master') {
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, SettingsGitBranch, settingsRelativePath)
-
+        if (checkPipelineParams(pipelineSettings.parameters.required + pipelineSettings.parameters.optional))
+            println 'Update parameters required'
 
     }
 }
