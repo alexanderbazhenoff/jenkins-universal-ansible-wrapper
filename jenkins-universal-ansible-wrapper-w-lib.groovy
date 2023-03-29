@@ -33,12 +33,15 @@ def AnsibleInstallationName = 'home_local_bin_ansible' as String
  * @param SettingsGitBranch - git branch.
  * @param settingsRelativePath - relative path inside the 'ansible-wrapper-settings' project.
  * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
- * @return
+ * @param printYaml - if true output 'ansible-wrapper-settings' content on a load.
+ * @return - map with pipeline settings.
  */
 Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath,
-                            String workspaceSubfolder = 'settings') {
+                            String workspaceSubfolder = 'settings', Boolean printYaml = true) {
     CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
-    return readYaml(file: String.format('%s/%s', workspaceSubfolder, settingsRelativePath))
+    String pathToLoad = String.format('%s/%s', workspaceSubfolder, settingsRelativePath)
+    if (printYaml) CF.outMsg(1, String.format('Loading pipeline settings:\n%s', readFile(pathToLoad)))
+    return readYaml(file: pathToLoad)
 }
 
 /**
@@ -66,7 +69,6 @@ node('master') {
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, SettingsGitBranch, settingsRelativePath)
 
-        CF.outMsg(params.containsKey('DEBUG_MODE') && params.DEBUG_MODE ? 0 : 1,
-                String.format("Loaded '%s' settings:\n%s", settingsRelativePath, CF.readableMap(pipelineSettings)))
+
     }
 }
