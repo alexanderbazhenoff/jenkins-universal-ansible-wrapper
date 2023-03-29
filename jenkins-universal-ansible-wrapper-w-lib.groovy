@@ -60,14 +60,30 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
     return text
 }
 
-Boolean checkPipelineParams(ArrayList requiredParams) {
-    println String.format('Checking params: %s', params)
+/**
+ * Verify all required jenkins pipeline parameters presents.
+ *
+ * @param requiredParams - an array list of map items to check, e.g: [map_item1, map_item2 ... map_itemN]. While single
+ *                         map item format is:
+ *                         [
+ *                          name: 'PARAMETER_NAME',
+ *                          type: 'string|text|choice|boolean|password'
+ *                          default: 'default_value',
+ *                          choices: ['one', 'two', 'three'],
+ *                          description: 'Your jenkins parameter pipeline description.',
+ *                          trim: false|true
+ *                         ]
+ *                         Please note:
+ *                         - 'choices' item element is only for 'type: choice'.
+ *                         - 'default' item element is for all types except 'type: choice'. In this case default value
+ *                           will be the first element from choices list.
+ *                         - 'trim' item element is for every string type, e.g: string|text|password. By default
+ *                           'trim: false', so you don't need to set them on every item.
+ * @return - true when jenkins pipeline parameters update required.
+ */
+static checkPipelineParams(ArrayList requiredParams) {
     Boolean updateParamsRequired = false
-    requiredParams.each {
-        println String.format('Looking for: %s', it.name)
-        if (!params.containsKey(it.name))
-            updateParamsRequired = true
-    }
+    requiredParams.each { if (!params.containsKey(it.name)) updateParamsRequired = true }
     return updateParamsRequired
 }
 
