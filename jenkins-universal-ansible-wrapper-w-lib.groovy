@@ -65,8 +65,8 @@ Boolean checkPipelineParams(ArrayList params) {
     Boolean updateParamsRequiredState = false
     params.each {
         println String.format('Looking for: %s', it.name)
-//        if (!params.containsKey(it.name))
-//            updateParamsRequiredState = true
+        if (!params.containsKey(it.name))
+            updateParamsRequiredState = true
     }
     return updateParamsRequiredState
 }
