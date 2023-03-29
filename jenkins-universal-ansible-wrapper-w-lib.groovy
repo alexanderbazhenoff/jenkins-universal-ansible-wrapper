@@ -93,7 +93,7 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
  *                         Check readme file for details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
  * @return - true when jenkins pipeline parameters update required.
  */
-def checkPipelineParams(java.util.Collections$UnmodifiableMap pipelineParams, ArrayList requiredParams) {
+def checkPipelineParams(UnmodifiableMap pipelineParams, ArrayList requiredParams) {
     println pipelineParams.getClass()
     Boolean updateParamsRequired = false
     requiredParams.each { if (!pipelineParams.containsKey(it.name)) updateParamsRequired = true }
