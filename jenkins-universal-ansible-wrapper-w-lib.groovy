@@ -144,13 +144,14 @@ Boolean pipelineSettingsItemCheck(Map item) {
                     // TODO: these conditions are hard to read
                     String reason = item.default instanceof Boolean ? " by 'default' key, which is Boolean" :
                             item.choices instanceof ArrayList ? "by 'choices' key, which is an ArrayList" : ''
+                    if (reason.trim())
+                        def __ = pipelineSettingsItemError(2, item as String, String.format("%s: %s",
+                                "default key value not defined, but parameter type was detected", reason))
                     if (item.containsKey('default') && item.containsKey('choices') &&
                             item.choices instanceof ArrayList) {
                         return pipelineSettingsItemError(3, item as String,
                                 "'default' key is not required for type choice")
                     } else {
-                        def __ = pipelineSettingsItemError(2, item as String, String.format("%s: %s",
-                                "default key value not defined, but parameter type was detected", reason))
                         return true
                     }
         } else {
