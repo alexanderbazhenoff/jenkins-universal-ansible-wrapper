@@ -150,6 +150,10 @@ def updatePipelineParams(ArrayList requiredParams) {
     CF.interruptPipelineOk(3)
 }
 
+def (checkPipelineParams(ArrayList requiredParams) {
+
+}
+
 /**
  * Processing wrapper pipeline parameters: check all presents (if not, check syntax and inject).
  *
@@ -165,7 +169,11 @@ def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipe
     ArrayList requiredPipelineParams = pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
             builtinPipelineParameters
     if (verifyPipelineParams(requiredPipelineParams, currentPipelineParams))
-        updatePipelineParams(requiredPipelineParams)
+        if (checkPipelineParams(requiredPipelineParams)) {
+            updatePipelineParams(requiredPipelineParams)
+        } else {
+            error 'Injecting pipeline parameters failed. Fix yaml syntax and run again.'
+        }
 }
 
 
