@@ -72,32 +72,34 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
 }
 
 /**
- * Verify all required jenkins pipeline parameters presents.
+ * Verify all required jenkins pipeline parameters are presents.
  *
  * @param pipelineParams - jenkins built-in 'params' UnmodifiableMap variable with current build pipeline parameters.
- * @param requiredParams - an array list of map items to check, e.g: [map_item1, map_item2 ... map_itemN]. While single
- *                         map item format is:
- *                         [
- *                          name: 'PARAMETER_NAME',
- *                          type: 'string|text|choice|boolean|password'
- *                          default: 'default_value',
- *                          choices: ['one', 'two', 'three'],
- *                          description: 'Your jenkins parameter pipeline description.',
- *                          trim: false|true
- *                         ]
- *                         Please note:
- *                         - 'choices' key is only for 'type: choice'.
- *                         - 'default' key is for all types except 'type: choice'. This key is incompatible with
- *                         'type: choice'. For other types this key is optional: it's will be false for boolean, and
- *                         '' (empty line) for string, password and text parameters.
- *                         - 'trim' key is available for 'type: string'. This key is optional, by default it's false.
- *                         - 'description' key is optional, by default it's '' (empty line).
- *                         Check readme file for details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
+ * @param currentPipelineParams - an array list of map items to check, e.g: [map_item1, map_item2 ... map_itemN].
+ *                                While single
+ *                                map item format is:
+ *                                [
+ *                                 name: 'PARAMETER_NAME',
+ *                                 type: 'string|text|choice|boolean|password'
+ *                                 default: 'default_value',
+ *                                 choices: ['one', 'two', 'three'],
+ *                                 description: 'Your jenkins parameter pipeline description.',
+ *                                 trim: false|true
+ *                                ]
+ *                               Please note:
+ *                               - 'choices' key is only for 'type: choice'.
+ *                               - 'default' key is for all types except 'type: choice'. This key is incompatible with
+ *                               'type: choice'. For other types this key is optional: it's will be false for boolean,
+ *                               and '' (empty line) for string, password and text parameters.
+ *                               - 'trim' key is available for 'type: string'. This key is optional, by default it's
+ *                               false.
+ *                               - 'description' key is optional, by default it's '' (empty line).
+ *                               For more details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
  * @return - true when jenkins pipeline parameters update required.
  */
-static checkPipelineParams(Object pipelineParams, ArrayList requiredParams) {
+static verifyPipelineParams(ArrayList requiredParams, Object currentPipelineParams) {
     Boolean updateParamsRequired = false
-    requiredParams.each { if (!pipelineParams.containsKey(it.name)) updateParamsRequired = true }
+    requiredParams.each { if (!currentPipelineParams.containsKey(it.name)) updateParamsRequired = true }
     return updateParamsRequired
 }
 
@@ -128,6 +130,13 @@ def updatePipelineParams(ArrayList requiredParams) {
     CF.interruptPipelineOk(3)
 }
 
+def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipelineParams,
+                                        ArrayList systemPipelineParameters) {
+    ArrayList requiredPipelineParams = pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
+            systemPipelineParameters
+    if (verifyPipelineParams(requiredPipelineParams, currentPipelineParams))
+        updatePipelineParams(requiredPipelineParams)
+}
 
 node('master') {
     CF = new org.alx.commonFunctions() as Object
@@ -136,10 +145,7 @@ node('master') {
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath)
-        if (checkPipelineParams(params, pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
-                SystemPipelineParameters))
-            updatePipelineParams(pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
-                    SystemPipelineParameters)
+        wrapperPipelineParametersProcessing(pipelineSettings, params, SystemPipelineParameters)
 
     }
 }
