@@ -114,7 +114,7 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
         param += [password(name: item.name, defaultValue: defaultString, description: description)]
     if (item.type == 'text')
         param += [text(name: item.name, defaultValue: defaultString, description: description)]
-    if (item.type == 'text')
+    if (item.type == 'string')
         param += [string(name: item.name, defaultValue: defaultString, description: description,
                 trim: item.containsKey('trim') ? item.trim : false)]
     return param
