@@ -26,8 +26,8 @@ def PipelineNameRegexReplace = ['^admin_'] as ArrayList
 // Set your ansible installation name from jenkins settings.
 def AnsibleInstallationName = 'home_local_bin_ansible' as String
 
-// System pipeline parameters, which are mandatory and not present in 'ansible-wrapper-settings'.
-def SystemPipelineParameters = [
+// Built-in pipeline parameters, which are mandatory and not present in 'ansible-wrapper-settings'.
+def BuiltinPipelineParameters = [
         [name       : 'SETTINGS_GIT_BRANCH',
          type       : 'string', default: '',
          description: 'Git branch of ansible-wrapper-settings project (to override defaults on development).'],
@@ -78,6 +78,7 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
  * @param currentPipelineParams - an array list of map items to check, e.g: [map_item1, map_item2 ... map_itemN].
  *                                While single
  *                                map item format is:
+ *
  *                                [
  *                                 name: 'PARAMETER_NAME',
  *                                 type: 'string|text|choice|boolean|password'
@@ -86,15 +87,17 @@ static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList rep
  *                                 description: 'Your jenkins parameter pipeline description.',
  *                                 trim: false|true
  *                                ]
+ *
  *                               Please note:
+ *
  *                               - 'choices' key is only for 'type: choice'.
  *                               - 'default' key is for all types except 'type: choice'. This key is incompatible with
- *                               'type: choice'. For other types this key is optional: it's will be false for boolean,
- *                               and '' (empty line) for string, password and text parameters.
+ *                                 'type: choice'. For other types this key is optional: it's will be false for boolean,
+ *                                 and '' (empty line) for string, password and text parameters.
  *                               - 'trim' key is available for 'type: string'. This key is optional, by default it's
- *                               false.
+ *                                 false.
  *                               - 'description' key is optional, by default it's '' (empty line).
- *                               For more details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
+ *                                 For more details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
  * @return - true when jenkins pipeline parameters update required.
  */
 static verifyPipelineParams(ArrayList requiredParams, Object currentPipelineParams) {
@@ -103,6 +106,12 @@ static verifyPipelineParams(ArrayList requiredParams, Object currentPipelinePara
     return updateParamsRequired
 }
 
+/**
+ * Convert pipeline settings map item and add to jenkins pipeline parameters.
+ *
+ * @param item - pipeline settings map item to convert.
+ * @return - jenkins pipeline parameters.
+ */
 ArrayList pipelineSettingsItemToPipelineParam(Map item) {
     ArrayList param = []
     String defaultString = item.containsKey('default') ? item.default : ''
@@ -122,21 +131,43 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
     return param
 }
 
+/**
+ * Inject parameters to current jenkins pipeline.
+ *
+ * @param requiredParams - array list of jenkins pipeline parameters to inject, e.g:
+ *                         [
+ *                          [choice(name: 'PARAM1', choices: ['one', 'two'], description: 'description1')],
+ *                          [string(name: 'PARAM2', defaultValue: 'default', description: 'description2')]
+ *                         ]
+ *                         etc... Check pipelineSettingsItemToPipelineParam() function for details.
+ */
 def updatePipelineParams(ArrayList requiredParams) {
     ArrayList newPipelineParams = []
+    currentBuild.displayName = String.format('pipeline_parameters_update--#%s', env.BUILD_NUMBER)
     requiredParams.each { newPipelineParams += pipelineSettingsItemToPipelineParam(it as Map) }
     properties([parameters(newPipelineParams)])
     CF.outMsg(1, "Pipeline parameters was successfully injected. Select 'Build with parameters' and run again.")
     CF.interruptPipelineOk(3)
 }
 
+/**
+ * Processing wrapper pipeline parameters: check all presents (if not, check syntax and inject).
+ *
+ * @param pipelineSettings - 'ansible-wrapper-settings' converted to map. See
+ *                           https://github.com/alexanderbazhenoff/ansible-wrapper-settings for details.
+ * @param currentPipelineParams - pipeline parameters of current build (actually requires a pass of 'params' which is
+ *                                class java.util.Collections$UnmodifiableMap)
+ * @param builtinPipelineParameters - built-in pipeline parameters in the same format as pipelineSettings, e.g:
+ *                                    'SETTINGS_GIT_BRANCH', 'DEBUG_MODE', etc...
+ */
 def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipelineParams,
-                                        ArrayList systemPipelineParameters) {
+                                        ArrayList builtinPipelineParameters) {
     ArrayList requiredPipelineParams = pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
-            systemPipelineParameters
+            builtinPipelineParameters
     if (verifyPipelineParams(requiredPipelineParams, currentPipelineParams))
         updatePipelineParams(requiredPipelineParams)
 }
+
 
 node('master') {
     CF = new org.alx.commonFunctions() as Object
@@ -145,7 +176,7 @@ node('master') {
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath)
-        wrapperPipelineParametersProcessing(pipelineSettings, params, SystemPipelineParameters)
+        wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
 
     }
 }
