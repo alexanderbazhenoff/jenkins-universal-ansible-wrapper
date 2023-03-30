@@ -151,7 +151,7 @@ def updatePipelineParams(ArrayList requiredParams) {
 }
 
 def (checkPipelineParams(ArrayList requiredParams) {
-
+    return true
 }
 
 /**
