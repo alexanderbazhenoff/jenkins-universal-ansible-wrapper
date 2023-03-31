@@ -306,7 +306,7 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 
 
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, JenkinsNodeNamePipelineParameter,
-        JenkinsNodeTagPipelineParameterName) as LinkedHashMap<String, Object>
+        JenkinsNodeTagPipelineParameterName)
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
