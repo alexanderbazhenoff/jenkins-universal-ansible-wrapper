@@ -66,7 +66,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  */
 static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     regexItemsList.eachWithIndex{ value, Integer index ->
-        text = text.replaceAll(value replaceItemsList.contains(index) ? replaceItemsList[index] : '')
+        text = text.replaceAll(value, replaceItemsList.contains(index) ? replaceItemsList[index] : '')
     }
     return text
 }
