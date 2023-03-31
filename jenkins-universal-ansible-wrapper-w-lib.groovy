@@ -142,11 +142,11 @@ ArrayList pipelineSettingsItemCheck(Map item) {
     Boolean checkOk = true
     // Check 'name' key is present
     if (!item.containsKey('name'))
-        checkOk = pipelineSettingsItemError(3, item as String, "'name' key not defined")
+        checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
     if (!item.containsKey('type')) {
         // Try to detect 'type' when not defined
-        if ((item.containsKey('default') && item.default instanceof Boolean) || (item.containsKey('action') &&
-                item.action) || (item.containsKey('choices') && item.choices instanceof ArrayList)) {
+        if ((item.containsKey('default') && item.default instanceof Boolean) ||
+                (item.containsKey('choices') && item.choices instanceof ArrayList)) {
             autodetectData = item.default instanceof Boolean ? ['default', 'boolean'] : autodetectData
             autodetectData = item.choices instanceof ArrayList ? ['choices', 'choice'] : autodetectData
             autodetectData = item.containsKey('action') && item.action ? ['action', 'choice'] : autodetectData
@@ -155,18 +155,17 @@ ArrayList pipelineSettingsItemCheck(Map item) {
                 Boolean __ = pipelineSettingsItemError(2, item.name as String, String.format("%s by '%s' key: %s",
                         "'type' key not defined, but was detected and set", autodetectData[0], autodetectData[1]))
                 item.type = autodetectData[1]
-                // Check keys and redundancy and types mismatch
+                // Check 'default' and 'choices' keys incompatibility
                 if (item.containsKey('default') && item.containsKey('choices') && item.choices instanceof ArrayList)
                     checkOk = pipelineSettingsItemError(3, item.name as String,
                             "'default' key is not required for type choice")
-
             } else {
+                // When autodetect of type is not possible print an error
                 checkOk = pipelineSettingsItemError(3, item.name as String, "'type' is required, but undefined")
             }
         }
-
     } else {
-        // TODO: types mismatch processing
+        // Check 'type' value with other keys data type mismatch
     }
     return [item, checkOk]
 }
