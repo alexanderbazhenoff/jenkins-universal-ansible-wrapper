@@ -20,16 +20,16 @@ def DefaultSettingsGitBranch = 'main' as String
 def SettingsRelativePathPrefix = 'settings' as String
 
 // Jenkins pipeline name regex, a a string that will be cut from pipeline name to become a filename of yaml pipeline
-// settings to be loaded. E.g: ['^prefix_', '_postfix$']
+// settings to be loaded. E.g: ['^prefix_', '_postfix$'].
 def PipelineNameRegexReplace = ['^admin_'] as ArrayList
 
 // Set your ansible installation name from jenkins settings.
 def AnsibleInstallationName = 'home_local_bin_ansible' as String
 
-// Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on
+// Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on.
 def JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
 
-// Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on
+// Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on.
 def JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
 
 // Built-in pipeline parameters, which are mandatory and not present in 'ansible-wrapper-settings'.
@@ -295,11 +295,17 @@ def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipe
 }
 
 /**
+ * Get jenkins node to execute on by node name or node tag defined in pipeline parameter(s).
  *
- * @param env
- * @param nodeParamName
- * @param nodeTagParamName
- * @return
+ * @param env - environment variables (class org.jenkinsci.plugins.workflow.cps.EnvActionImp).
+ * @param nodeParamName - Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on. This
+ *                        pipeline parameters will be used to check for jenkins node name on pipeline start. If this
+ *                        parameter undefined or blank nodeTagParamName will be used to check.
+ * @param nodeTagParamName - Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute
+ *                           on. This parameter will be used to check for jenkins node selection by tag on pipeline
+ *                           start. If this parameter defined nodeParamName will be ignored.
+ * @return - null when nodeParamName or nodeTagParamName parameters found. In this case pipeline starts on any jenkins
+ *           node. Otherwise, return 'node_name' or [label: 'node_tag'].
  */
 static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
     def nodeToExecute = null
@@ -315,7 +321,6 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, JenkinsNodeNamePipelineParameter,
         JenkinsNodeTagPipelineParameterName)
 node(jenkinsNodeToExecute) {
-    println env.getClass()
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
 
