@@ -282,8 +282,20 @@ def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipe
     }
 }
 
+def getNodeToExecute(Object env) {
+    def nodeToExecute = null
+    if (env.getEnvironment().containsKey('JENKINS_NODE_TAG') && env.getEnvironment().get('JENKINS_NODE_TAG')?.trim()) {
+        nodeToExecute = [label: env.getEnvironment().get('JENKINS_NODE_TAG')]
+    } else {
+        if (env.getEnvironment().containsKey('JENKINS_NODE') && env.getEnvironment().get('JENKINS_NODE')?.trim())
+            nodeToExecute = env.getEnvironment().get('JENKINS_NODE')
+    }
+    return nodeToExecute
+}
 
-node('master') {
+
+def nodeToExecute = getNodeToExecute(env)
+node(nodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
 
