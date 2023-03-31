@@ -66,7 +66,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  */
 static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     regexItemsList.eachWithIndex{ value, Integer index ->
-        text = text.replaceAll(value, replaceItemsList.contains(index) ? replaceItemsList[index] : '')
+        text = text.replaceAll(value replaceItemsList.contains(index) ? replaceItemsList[index] : '')
     }
     return text
 }
@@ -131,13 +131,28 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
     return param
 }
 
+/**
+ * Format and print error of pipeline settings item check.
+ *
+ * @param eventNum - event number to output: 3 is an ERROR, 2 is a WARNING.
+ * @param itemName - pipeline settings item name to output.
+ * @param errorMsg - details of error to output.
+ * @return - 'false' as a failed pipeline check item state.
+ */
 Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg) {
     CF.outMsg(eventNum, String.format("Syntax %s in pipeline parameter '%s': %s.", eventNum == 3 ? 'ERROR' : 'WARNING',
             itemName, errorMsg))
     return false
 }
 
-ArrayList pipelineSettingsItemCheck(Map item) {
+/**
+ * Check pipeline parameters in pipeline settings item for key structure, types and values.
+ *
+ * @param item - pipeline settings item to check.
+ * @return - list of: corrected map item (when fix is possible),
+ *                    pipeline parameters item check status (true when ok).
+ */
+ArrayList pipelineParametersSettingsItemCheck(Map item) {
     Boolean checkOk = true
 
     // Check 'name' key is present
@@ -222,11 +237,19 @@ def updatePipelineParams(ArrayList requiredParams) {
     CF.interruptPipelineOk(3)
 }
 
+/**
+ * Check pipeline parameters in a part of pipeline settings ArrayList with map items for key structure, types and
+ * values.
+ *
+ * @param requiredParams - required parameters to check.
+ * @return - list of: corrected parameters ArrayList (when fix is possible),
+ *                    the whole pipeline parameters check status (true when ok).
+ */
 def checkPipelineParams(ArrayList requiredParams) {
     Boolean allPass = true
     ArrayList correctedParams = []
     requiredParams.each {
-        def (Map correctedItem, Boolean itemCheckPass) = pipelineSettingsItemCheck(it as Map)
+        def (Map correctedItem, Boolean itemCheckPass) = pipelineParametersSettingsItemCheck(it as Map)
         allPass = itemCheckPass ? allPass : false
         correctedParams += correctedItem
     }
