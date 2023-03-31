@@ -294,7 +294,7 @@ def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipe
     }
 }
 
-def getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
+static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
     def nodeToExecute = null
     if (env.getEnvironment().containsKey(nodeTagParamName) && env.getEnvironment().get(nodeTagParamName)?.trim()) {
         nodeToExecute = [label: env.getEnvironment().get(nodeTagParamName)]
