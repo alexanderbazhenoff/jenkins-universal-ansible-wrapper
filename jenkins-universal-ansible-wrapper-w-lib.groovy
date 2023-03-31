@@ -170,7 +170,7 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
         String msg = ''
         msg = (item.type == 'boolean' && item.containsKey('default') && !(item.default instanceof Boolean)) ?
                 String.format("'type' set as boolean while 'default' key is not. It's %s",
-                        item.default.getClass().toString().tokenize('.').last()) : msg
+                        item.default.getClass().toString().tokenize('.').last().toLowerCase()) : msg
         msg = (item.type == 'choice' && !item.containsKey('choices')) ?
                 "'type' set as choice while no 'choices' list defined" : msg
         checkOk = msg.trim() ? pipelineSettingsItemError(3, item.name as String, msg) : checkOk
@@ -206,7 +206,7 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
         checkOk = pipelineSettingsItemError(3, item.name as String, "'action' is for 'string' or 'choices' types")
 
     // Check 'action' set for 'type: choices' with a list of choices
-    if (actionKeyEnabled && actionKeyIsForChoices && !item.choices instanceof ArrayList)
+    if (actionKeyEnabled && actionKeyIsForChoices && !(item.choices instanceof ArrayList))
         checkOk = pipelineSettingsItemError(3, item.name as String,
                 "'action' is 'True' while 'choices' key value is not a list of choices")
 
