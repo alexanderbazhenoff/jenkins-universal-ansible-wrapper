@@ -294,12 +294,19 @@ def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipe
     }
 }
 
+/**
+ *
+ * @param env
+ * @param nodeParamName
+ * @param nodeTagParamName
+ * @return
+ */
 static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
     def nodeToExecute = null
     if (env.getEnvironment().containsKey(nodeTagParamName) && env.getEnvironment().get(nodeTagParamName)?.trim()) {
         nodeToExecute = [label: env.getEnvironment().get(nodeTagParamName)]
     } else if (env.getEnvironment().containsKey(nodeParamName) && env.getEnvironment().get(nodeParamName)?.trim()) {
-            nodeToExecute = env.getEnvironment().get(nodeParamName)
+        nodeToExecute = env.getEnvironment().get(nodeParamName)
     }
     return nodeToExecute
 }
@@ -308,6 +315,7 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, JenkinsNodeNamePipelineParameter,
         JenkinsNodeTagPipelineParameterName)
 node(jenkinsNodeToExecute) {
+    env.getClass()
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
 
