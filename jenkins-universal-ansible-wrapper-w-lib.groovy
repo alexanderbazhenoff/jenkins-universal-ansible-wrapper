@@ -114,10 +114,10 @@ static verifyPipelineParams(ArrayList requiredParams, Object currentPipelinePara
  */
 ArrayList pipelineSettingsItemToPipelineParam(Map item) {
     ArrayList param = []
-    String defaultString = item.containsKey('default') ? item.default : ''
+    String defaultString = item.containsKey('default') ? item.default.toString() : ''
     String description = item.containsKey('description') ? item.description : ''
     if (item.type == 'choice' || (item.containsKey('choices') && item.choices instanceof ArrayList))
-        param += [choice(name: item.name, choices: item.choices, description: description)]
+        param += [choice(name: item.name, choices: item.choices.each { it.toString() }, description: description)]
     if (item.type == 'boolean' || (item.containsKey('default') && item.default instanceof Boolean))
         param += [booleanParam(name: item.name, description: description,
                 defaultValue: item.containsKey('default') ? item.default : false)]
@@ -138,35 +138,67 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
 }
 
 ArrayList pipelineSettingsItemCheck(Map item) {
-    ArrayList autodetectData = []
     Boolean checkOk = true
+
     // Check 'name' key is present
-    if (!item.containsKey('name'))
+    if (!item.containsKey('name')){
         checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
-    if (!item.containsKey('type')) {
-        // Try to detect 'type' when not defined
-        if ((item.containsKey('default') && item.default instanceof Boolean) ||
-                (item.containsKey('choices') && item.choices instanceof ArrayList)) {
-            autodetectData = item.default instanceof Boolean ? ['default', 'boolean'] : autodetectData
-            autodetectData = item.choices instanceof ArrayList ? ['choices', 'choice'] : autodetectData
-            autodetectData = item.containsKey('action') && item.action ? ['action', 'choice'] : autodetectData
-            if (autodetectData) {
-                // Output reason and set 'type' key when autodetect is possible
-                Boolean __ = pipelineSettingsItemError(2, item.name as String, String.format("%s by '%s' key: %s",
-                        "'type' key not defined, but was detected and set", autodetectData[0], autodetectData[1]))
-                item.type = autodetectData[1]
-                // Check 'default' and 'choices' keys incompatibility
-                if (item.containsKey('default') && item.containsKey('choices') && item.choices instanceof ArrayList)
-                    checkOk = pipelineSettingsItemError(3, item.name as String,
-                            "'default' key is not required for type choice")
-            } else {
-                // When autodetect of type is not possible print an error
-                checkOk = pipelineSettingsItemError(3, item.name as String, "'type' is required, but undefined")
-            }
-        }
-    } else {
-        // Check 'type' value with other keys data type mismatch
+        item.name = "''"
     }
+    if (item.containsKey('type')) {
+
+        // Convert 'default' value to string (e.g. it's ok when default value in yaml file as number or float)
+        if (item.type == 'string' && item.containsKey('default'))
+            item.default = item.default.toString()
+
+        // Check 'type' value with other keys data type mismatch
+        String msg = ''
+        msg = (item.type == 'boolean' && item.containsKey('default') && !item.deault instanceof Boolean) ?
+                "'type' set as boolean while 'default' key is not boolean" : msg
+        msg = (item.type == 'choice' && !item.containsKey('choices')) ?
+                "'type' set as choice while no 'choices' list defined" : msg
+        checkOk = msg.trim() ? pipelineSettingsItemError(3, item.name as String, msg) : checkOk
+    } else {
+
+        // Try to detect 'type' when not defined
+        ArrayList autodetectData = []
+        autodetectData = item.containsKey('default') && item.default instanceof Boolean ?
+                ['default', 'boolean'] : autodetectData
+        autodetectData = item.containsKey('choices') && item.choices instanceof ArrayList ?
+                ['choices', 'choice'] : autodetectData
+        autodetectData = item.containsKey('action') && item.action ? ['action', 'choice'] : autodetectData
+
+        // Output reason and set 'type' key when autodetect is possible, otherwise print an error message
+        if (autodetectData) {
+            Boolean __ = pipelineSettingsItemError(2, item.name as String, String.format("%s by '%s' key: %s",
+                    "'type' key not defined, but was detected and set", autodetectData[0], autodetectData[1]))
+            item.type = autodetectData[1]
+        } else {
+            String msg = item.containsKey('default') && (item.default instanceof String || item.default instanceof
+                    Integer || item.default instanceof Float || item.default instanceof BigInteger) ?
+                    ". Probably 'type' is password or string, but for security reasons autodetect is not possible" : ''
+            checkOk = pipelineSettingsItemError(3, item.name as String, String.format('%s%s',
+                    "'type' is required, but undefined", msg))
+        }
+    }
+
+    // Check 'action' was set for choice or string parameter types
+    Boolean actionKeyEnabled = item.containsKey('action') && item.action
+    Boolean actionKeyIsForChoices = item.containsKey('choices') && item.choices instanceof ArrayList
+    Boolean actionKeyIsForString = item.containsKey('type') && item.type == 'string'
+    if (actionKeyEnabled && !actionKeyIsForChoices && !actionKeyIsForString)
+        checkOk = pipelineSettingsItemError(3, item.name as String, "'action' is for 'string' or 'choices' types")
+
+    // Check 'action' set for 'type: choices' with a list of choices
+    if (actionKeyEnabled && actionKeyIsForChoices && !item.choices instanceof ArrayList)
+        checkOk = pipelineSettingsItemError(3, item.name as String,
+                "'action' is 'True' while 'choices' key value is not a list of choices")
+
+    // Check 'default' and 'choices' keys incompatibility
+    if (item.containsKey('default') && item.containsKey('choices') && item.choices instanceof ArrayList)
+        checkOk = pipelineSettingsItemError(3, item.name as String,
+                "'default' key is not required for type choice")
+
     return [item, checkOk]
 }
 
