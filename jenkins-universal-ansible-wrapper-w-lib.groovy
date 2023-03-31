@@ -131,36 +131,44 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
     return param
 }
 
-Boolean pipelineSettingsItemError(Integer eventNum, String item, String errorMsg) {
+Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg) {
     CF.outMsg(eventNum, String.format("Syntax %s in pipeline parameter '%s': %s.", eventNum == 3 ? 'ERROR' : 'WARNING',
-            item, errorMsg))
+            itemName, errorMsg))
     return false
 }
 
-Boolean pipelineSettingsItemCheck(Map item) {
+ArrayList pipelineSettingsItemCheck(Map item) {
+    ArrayList autodetectData = []
+    Boolean checkOk = true
+    // Check 'name' key is present
+    if (!item.containsKey('name'))
+        checkOk = pipelineSettingsItemError(3, item as String, "'name' key not defined")
     if (!item.containsKey('type')) {
-        if ((item.containsKey('default') && item.default instanceof Boolean) ||
-                (item.containsKey('choices') && item.choices instanceof ArrayList)) {
-                    // TODO: these conditions are hard to read
-                    String reason = item.default instanceof Boolean ? " by 'default' key, which is Boolean" :
-                            item.choices instanceof ArrayList ? "by 'choices' key, which is an ArrayList" : ''
-                    if (reason.trim())
-                        def __ = pipelineSettingsItemError(2, item as String, String.format("%s: %s",
-                                "default key value not defined, but parameter type was detected", reason))
-                    if (item.containsKey('default') && item.containsKey('choices') &&
-                            item.choices instanceof ArrayList) {
-                        return pipelineSettingsItemError(3, item as String,
-                                "'default' key is not required for type choice")
-                    } else {
-                        return true
-                    }
-        } else {
-            return pipelineSettingsItemError(3, item as String, "'type' key is required, but wasn't defined")
+        // Try to detect 'type' when not defined
+        if ((item.containsKey('default') && item.default instanceof Boolean) || (item.containsKey('action') &&
+                item.action) || (item.containsKey('choices') && item.choices instanceof ArrayList)) {
+            autodetectData = item.default instanceof Boolean ? ['default', 'boolean'] : autodetectData
+            autodetectData = item.choices instanceof ArrayList ? ['choices', 'choice'] : autodetectData
+            autodetectData = item.containsKey('action') && item.action ? ['action', 'choice'] : autodetectData
+            if (autodetectData) {
+                // Output reason and set 'type' key when autodetect is possible
+                Boolean __ = pipelineSettingsItemError(2, item.name as String, String.format("%s by '%s' key: %s",
+                        "'type' key not defined, but was detected and set", autodetectData[0], autodetectData[1]))
+                item.type = autodetectData[1]
+                // Check keys and redundancy and types mismatch
+                if (item.containsKey('default') && item.containsKey('choices') && item.choices instanceof ArrayList)
+                    checkOk = pipelineSettingsItemError(3, item.name as String,
+                            "'default' key is not required for type choice")
+
+            } else {
+                checkOk = pipelineSettingsItemError(3, item.name as String, "'type' is required, but undefined")
+            }
         }
+
     } else {
         // TODO: types mismatch processing
     }
-    return true
+    return [item, checkOk]
 }
 
 
@@ -185,8 +193,13 @@ def updatePipelineParams(ArrayList requiredParams) {
 
 def checkPipelineParams(ArrayList requiredParams) {
     Boolean allPass = true
-    requiredParams.each { allPass = pipelineSettingsItemCheck(it) ? pipelineSettingsItemCheck(it) : false }
-    return allPass
+    ArrayList correctedParams = []
+    requiredParams.each {
+        def (Map correctedItem, Boolean itemCheckPass) = pipelineSettingsItemCheck(it as Map)
+        allPass = itemCheckPass ? allPass : false
+        correctedParams += correctedItem
+    }
+    return [correctedParams, allPass]
 }
 
 /**
@@ -203,12 +216,15 @@ def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipe
                                         ArrayList builtinPipelineParameters) {
     ArrayList requiredPipelineParams = pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
             builtinPipelineParameters
-    if (verifyPipelineParams(requiredPipelineParams, currentPipelineParams))
-        if (checkPipelineParams(requiredPipelineParams)) {
+    Boolean checkPipelineParametersPass = true
+    if (verifyPipelineParams(requiredPipelineParams, currentPipelineParams)) {
+        (requiredPipelineParams, checkPipelineParametersPass) = checkPipelineParams(requiredPipelineParams)
+        if (checkPipelineParametersPass) {
             updatePipelineParams(requiredPipelineParams)
         } else {
             error 'Injecting pipeline parameters failed. Fix pipeline setting file then run again.'
         }
+    }
 }
 
 
