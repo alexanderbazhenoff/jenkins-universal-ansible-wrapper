@@ -168,7 +168,7 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
 
         // Check 'type' value with other keys data type mismatch
         String msg = ''
-        msg = (item.type == 'boolean' && item.containsKey('default') && !item.default instanceof Boolean) ?
+        msg = (item.type == 'boolean' && item.containsKey('default') && !(item.default instanceof Boolean)) ?
                 String.format("'type' set as boolean while 'default' key is not. It's %s",
                         item.default.getClass().toString().tokenize('.').last()) : msg
         msg = (item.type == 'choice' && !item.containsKey('choices')) ?
