@@ -26,14 +26,26 @@ def PipelineNameRegexReplace = ['^admin_'] as ArrayList
 // Set your ansible installation name from jenkins settings.
 def AnsibleInstallationName = 'home_local_bin_ansible' as String
 
+// Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on
+def JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
+
+// Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on
+def JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
+
 // Built-in pipeline parameters, which are mandatory and not present in 'ansible-wrapper-settings'.
 def BuiltinPipelineParameters = [
         [name       : 'SETTINGS_GIT_BRANCH',
-         type       : 'string', default: '',
+         type       : 'string',
          description: 'Git branch of ansible-wrapper-settings project (to override defaults on development).'],
-        [name   : 'DEBUG_MODE',
-         type   : 'boolean',
-         default: false]
+        [name       : JenkinsNodeNamePipelineParameter,
+         type       : 'string',
+         description: 'Jenkins node name to run.'],
+        [name       : JenkinsNodeTagPipelineParameterName,
+         type       : 'string',
+         default    : 'ansible210',
+         description: 'Jenkins node tag to run.'],
+        [name: 'DEBUG_MODE',
+         type: 'boolean']
 ] as ArrayList
 
 
@@ -282,20 +294,20 @@ def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipe
     }
 }
 
-def getNodeToExecute(Object env) {
+def getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
     def nodeToExecute = null
-    if (env.getEnvironment().containsKey('JENKINS_NODE_TAG') && env.getEnvironment().get('JENKINS_NODE_TAG')?.trim()) {
-        nodeToExecute = [label: env.getEnvironment().get('JENKINS_NODE_TAG')]
-    } else {
-        if (env.getEnvironment().containsKey('JENKINS_NODE') && env.getEnvironment().get('JENKINS_NODE')?.trim())
-            nodeToExecute = env.getEnvironment().get('JENKINS_NODE')
+    if (env.getEnvironment().containsKey(nodeTagParamName) && env.getEnvironment().get(nodeTagParamName)?.trim()) {
+        nodeToExecute = [label: env.getEnvironment().get(nodeTagParamName)]
+    } else if (env.getEnvironment().containsKey(nodeParamName) && env.getEnvironment().get(nodeParamName)?.trim()) {
+            nodeToExecute = env.getEnvironment().get(nodeParamName)
     }
     return nodeToExecute
 }
 
 
-def nodeToExecute = getNodeToExecute(env)
-node(nodeToExecute) {
+def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, JenkinsNodeNamePipelineParameter,
+        JenkinsNodeTagPipelineParameterName)
+node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
 
