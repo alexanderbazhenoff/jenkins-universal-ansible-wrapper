@@ -295,7 +295,7 @@ def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipe
 }
 
 /**
- * Get jenkins node to execute on by node name or node tag defined in pipeline parameter(s).
+ * Get jenkins node by node name or node tag defined in pipeline parameter(s).
  *
  * @param env - environment variables (class org.jenkinsci.plugins.workflow.cps.EnvActionImp).
  * @param nodeParamName - Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on. This
