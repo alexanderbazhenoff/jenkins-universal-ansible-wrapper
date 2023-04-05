@@ -19,9 +19,12 @@ def DefaultSettingsGitBranch = 'main' as String
 // automatically on yaml load.
 def SettingsRelativePathPrefix = 'settings' as String
 
-// Jenkins pipeline name regex, a a string that will be cut from pipeline name to become a filename of yaml pipeline
-// settings to be loaded. E.g: ['^prefix_', '_postfix$'].
-def PipelineNameRegexReplace = ['^admin_'] as ArrayList
+// Jenkins pipeline name regex, a string that will be cut from pipeline name to become a filename of yaml pipeline
+// settings to be loaded. Example: Your jenkins pipeline name is 'prefix_pipeline-name_postfix'. To load pipeline
+// settings 'pipeline-name.yml' you can use regex list: ['^prefix_','_postfix$']. FYI: All pipeline name prefixes are
+// useful to split your jenkins between your company departments (e.g: 'admin', 'devops, 'qa', 'develop', etc...), while
+// postfixes are usefull to mark pipeline as a changed version of original.
+def PipelineNameRegexReplace = ['^(admin_|devops|qa)_'] as ArrayList
 
 // Set your ansible installation name from jenkins settings.
 def AnsibleInstallationName = 'home_local_bin_ansible' as String
@@ -44,6 +47,10 @@ def BuiltinPipelineParameters = [
          type       : 'string',
          default    : 'ansible210',
          description: 'Jenkins node tag to run.'],
+        [name       : 'DRY_RUN',
+         type       : 'boolean',
+         description: String.format('%s (%s).', 'Dry run mode to use for pipeline settings troubleshooting',
+                 'do not effects of pipeline parameters injection')],
         [name: 'DEBUG_MODE',
          type: 'boolean']
 ] as ArrayList
