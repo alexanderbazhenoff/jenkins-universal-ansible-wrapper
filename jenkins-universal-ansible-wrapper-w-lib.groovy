@@ -24,7 +24,7 @@ def SettingsRelativePathPrefix = 'settings' as String
 // settings 'pipeline-name.yml' you can use regex list: ['^prefix_','_postfix$']. FYI: All pipeline name prefixes are
 // useful to split your jenkins between your company departments (e.g: 'admin', 'devops, 'qa', 'develop', etc...), while
 // postfixes are usefull to mark pipeline as a changed version of original.
-def PipelineNameRegexReplace = ['^(admin_|devops|qa)_'] as ArrayList
+def PipelineNameRegexReplace = ['^(admin|devops|qa)_'] as ArrayList
 
 // Set your ansible installation name from jenkins settings.
 def AnsibleInstallationName = 'home_local_bin_ansible' as String
