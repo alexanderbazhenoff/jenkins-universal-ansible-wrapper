@@ -181,11 +181,11 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
     }
     if (item.containsKey('type')) {
 
-        // Convert 'default' value to string (e.g. it's ok when default value in yaml file as number or float)
+        // Convert 'default' value to string (e.g. it's ok when default value in yaml file as number or float).
         if (item.type == 'string' && item.containsKey('default'))
             item.default = item.default.toString()
 
-        // Check 'type' value with other keys data type mismatch
+        // Check 'type' value with other keys data type mismatch.
         String msg = ''
         msg = (item.type == 'boolean' && item.containsKey('default') && !(item.default instanceof Boolean)) ?
                 String.format("'type' set as boolean while 'default' key is not. It's %s",
@@ -195,7 +195,7 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
         checkOk = msg.trim() ? pipelineSettingsItemError(3, item.name as String, msg) : checkOk
     } else {
 
-        // Try to detect 'type' when not defined
+        // Try to detect 'type' when not defined.
         ArrayList autodetectData = []
         autodetectData = item.containsKey('default') && item.default instanceof Boolean ?
                 ['default', 'boolean'] : autodetectData
@@ -203,7 +203,7 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
                 ['choices', 'choice'] : autodetectData
         autodetectData = item.containsKey('action') && item.action ? ['action', 'choice'] : autodetectData
 
-        // Output reason and set 'type' key when autodetect is possible, otherwise print an error message
+        // Output reason and set 'type' key when autodetect is possible, otherwise print an error message.
         if (autodetectData) {
             Boolean __ = pipelineSettingsItemError(2, item.name as String, String.format("%s by '%s' key: %s",
                     "'type' key not defined, but was detected and set", autodetectData[0], autodetectData[1]))
@@ -217,19 +217,19 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
         }
     }
 
-    // Check 'action' was set for choice or string parameter types
+    // Check 'action' was set for choice or string parameter types.
     Boolean actionKeyEnabled = item.containsKey('action') && item.action
     Boolean actionKeyIsForChoices = item.containsKey('choices') && item.choices instanceof ArrayList
     Boolean actionKeyIsForString = item.containsKey('type') && item.type == 'string'
     if (actionKeyEnabled && !actionKeyIsForChoices && !actionKeyIsForString)
         checkOk = pipelineSettingsItemError(3, item.name as String, "'action' is for 'string' or 'choices' types")
 
-    // Check 'action' set for 'type: choices' with a list of choices
+    // Check 'action' set for 'type: choices' with a list of choices.
     if (actionKeyEnabled && actionKeyIsForChoices && !(item.choices instanceof ArrayList))
         checkOk = pipelineSettingsItemError(3, item.name as String,
                 "'action' is 'True' while 'choices' key value is not a list of choices")
 
-    // Check 'default' and 'choices' keys incompatibility
+    // Check 'default' and 'choices' keys incompatibility.
     if (item.containsKey('default') && item.containsKey('choices') && item.choices instanceof ArrayList)
         checkOk = pipelineSettingsItemError(3, item.name as String,
                 "'default' key is not required for type choice")
@@ -258,17 +258,17 @@ def updatePipelineParams(ArrayList requiredParams) {
 }
 
 /**
- * Check pipeline parameters in a part of pipeline settings ArrayList with map items for key structure, types and
+ * Check pipeline parameters format as an ArrayList of pipeline settings key: map items for key structure, types and
  * values.
  *
- * @param requiredParams - required parameters to check.
+ * @param parameters - all pipeline parameters to check.
  * @return - list of: corrected parameters ArrayList (when fix is possible),
  *                    the whole pipeline parameters check status (true when ok).
  */
-def checkPipelineParams(ArrayList requiredParams) {
+def checkPipelineParamsFormat(ArrayList parameters) {
     Boolean allPass = true
     ArrayList correctedParams = []
-    requiredParams.each {
+    parameters.each {
         def (Map correctedItem, Boolean itemCheckPass) = pipelineParametersSettingsItemCheck(it as Map)
         allPass = itemCheckPass ? allPass : false
         correctedParams += correctedItem
@@ -276,8 +276,21 @@ def checkPipelineParams(ArrayList requiredParams) {
     return [correctedParams, allPass]
 }
 
+Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters) {
+    Boolean allSet = true
+    if (pipelineSettings.containsKey('parameters')) {
+        if (!pipelineSettings.parameters)
+        CF.outMsg(1, 'Checking that all required pipeline parameters was specified in current pipeline run.')
+        requiredPipelineParams.each {
+
+        }
+    }
+        return allSet
+}
+
 /**
- * Processing wrapper pipeline parameters: check all presents (if not, check syntax and inject).
+ * Processing wrapper pipeline parameters: check all parameters from pipeline settings are presents. If not inject
+ * parameters to pipeline.
  *
  * @param pipelineSettings - 'ansible-wrapper-settings' converted to map. See
  *                           https://github.com/alexanderbazhenoff/ansible-wrapper-settings for details.
@@ -285,20 +298,35 @@ def checkPipelineParams(ArrayList requiredParams) {
  *                                class java.util.Collections$UnmodifiableMap)
  * @param builtinPipelineParameters - built-in pipeline parameters in the same format as pipelineSettings, e.g:
  *                                    'SETTINGS_GIT_BRANCH', 'DEBUG_MODE', etc...
+ * @return - list of: true when there is no pipeline parameters in the pipelineSettings,
+ *                    true when pipeline parameters processing pass.
  */
-def wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipelineParams,
-                                        ArrayList builtinPipelineParameters) {
-    ArrayList requiredPipelineParams = pipelineSettings.parameters.required + pipelineSettings.parameters.optional +
-            builtinPipelineParameters
-    Boolean checkPipelineParametersPass = true
-    if (verifyPipelineParams(requiredPipelineParams, currentPipelineParams)) {
-        (requiredPipelineParams, checkPipelineParametersPass) = checkPipelineParams(requiredPipelineParams)
-        if (checkPipelineParametersPass) {
-            updatePipelineParams(requiredPipelineParams)
-        } else {
-            error 'Injecting pipeline parameters failed. Fix pipeline setting file then run again.'
+Boolean wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipelineParams,
+                                        ArrayList builtinPipelineParameters = []) {
+    Boolean noPipelineParams = true
+    Boolean allPass = true
+    if (pipelineSettings.get('parameters')) {
+        Boolean checkPipelineParametersPass
+        ArrayList requiredPipelineParams = (pipelineSettings.parameters.get('required') ?
+                pipelineSettings.parameters.required : []) + (pipelineSettings.parameters.get('optional') ?
+                pipelineSettings.parameters.optional : []) + builtinPipelineParameters
+        if (requiredPipelineParams[0]) {
+            noPipelineParams = false
+            CF.outMsg(1, 'Comparing current pipeline parameters with parameters from pipeline settings.')
+            if (verifyPipelineParams(requiredPipelineParams, currentPipelineParams)) {
+                CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings.')
+                (requiredPipelineParams, checkPipelineParametersPass) =
+                        checkPipelineParamsFormat(requiredPipelineParams)
+                if (checkPipelineParametersPass) {
+                    CF.outMsg(1, 'Updating current pipeline parameters.')
+                    updatePipelineParams(requiredPipelineParams)
+                } else {
+                    allPass = false
+                }
+            }
         }
     }
+    return [noPipelineParams, allPass]
 }
 
 /**
@@ -331,10 +359,27 @@ node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
 
+        // Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings.
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath)
-        wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
+        String pipelineFailedReasonText = ''
+        def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
+                wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
 
+        // Check that all required pipeline parameters was specified for current pipeline run.
+        if (noPipelineParamsInTheConfig) {
+            if (pipelineParametersProcessingPass) {
+                pipelineFailedReasonText += (!checkAllRequiredPipelineParamsAreSet(pipelineSettings, params)) ?
+                    'Define required pipeline parameters then build again.' : ''
+            }
+        } else {
+            CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to update or inject.')
+        }
+
+        // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it
+        pipelineFailedReasonText += (!pipelineParametersProcessingPass) ?
+                '\nError(s) in pipeline yaml settings was found.' : ''
+        if (pipelineFailedReasonText.trim()) error pipelineFailedReasonText
     }
 }
