@@ -276,16 +276,30 @@ def checkPipelineParamsFormat(ArrayList parameters) {
     return [correctedParams, allPass]
 }
 
-Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters) {
+/**
+ * Check that current pipeline run all required pipeline parameters was specified.
+ *
+ * @param pipelineSettings - 'ansible-wrapper-settings' converted to map. See
+ *                           https://github.com/alexanderbazhenoff/ansible-wrapper-settings for details.
+ * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
+ *                             class java.util.Collections$UnmodifiableMap).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @return - true when all required variables are specified.
+ */
+Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters, Object envVariables) {
     Boolean allSet = true
-    if (pipelineSettings.containsKey('parameters')) {
-        if (!pipelineSettings.parameters)
-        CF.outMsg(1, 'Checking that all required pipeline parameters was specified in current pipeline run.')
-        requiredPipelineParams.each {
-
+    if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
+        CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
+        pipelineSettings.parameters.required.each {
+            if (it.get('name') && pipelineParameters.containsKey(it) && !envVariables[it.toString()]?.trim()) {
+                allSet = false
+                CF.outMsg(3, String.format("'%s' pipeline parameter is required, but undefined for current job run. %s",
+                        it, 'Please specify then re-build again.'))
+            }
         }
     }
-        return allSet
+    return allSet
 }
 
 /**
@@ -294,8 +308,8 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
  *
  * @param pipelineSettings - 'ansible-wrapper-settings' converted to map. See
  *                           https://github.com/alexanderbazhenoff/ansible-wrapper-settings for details.
- * @param currentPipelineParams - pipeline parameters of current build (actually requires a pass of 'params' which is
- *                                class java.util.Collections$UnmodifiableMap)
+ * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
+ *                                which is class java.util.Collections$UnmodifiableMap).
  * @param builtinPipelineParameters - built-in pipeline parameters in the same format as pipelineSettings, e.g:
  *                                    'SETTINGS_GIT_BRANCH', 'DEBUG_MODE', etc...
  * @return - list of: true when there is no pipeline parameters in the pipelineSettings,
@@ -367,14 +381,14 @@ node(jenkinsNodeToExecute) {
         def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
                 wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
 
-        // Check that all required pipeline parameters was specified for current pipeline run.
+        // Check that current pipeline run all required pipeline parameters was specified.
         if (noPipelineParamsInTheConfig) {
             if (pipelineParametersProcessingPass) {
-                pipelineFailedReasonText += (!checkAllRequiredPipelineParamsAreSet(pipelineSettings, params)) ?
+                pipelineFailedReasonText += (!checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env)) ?
                     'Define required pipeline parameters then build again.' : ''
             }
         } else {
-            CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to update or inject.')
+            CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to check and inject.')
         }
 
         // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it
