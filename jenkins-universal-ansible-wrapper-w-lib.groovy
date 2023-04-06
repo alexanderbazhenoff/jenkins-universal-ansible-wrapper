@@ -328,7 +328,7 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
                     pipelineParameters, envVariables, false)
             if (it.get('regex')) {
                 String regexPattern = ''
-                if (it.regex instanceof ArrayList && it.regex as ArrayList[0]) {
+                if (it.regex instanceof ArrayList && it.regex[0]) {
                         it.regex.each { item -> regexPattern += item.toString() }
                 } else if (!(it.regex instanceof ArrayList) && it.regex?.trim()) {
                     regexPattern = it.regex.toString()
