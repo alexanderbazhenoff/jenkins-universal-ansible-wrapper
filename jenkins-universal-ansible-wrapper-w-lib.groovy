@@ -277,6 +277,12 @@ def checkPipelineParamsFormat(ArrayList parameters) {
     return [correctedParams, allPass]
 }
 
+static getPipelineParamNameAndDefineState(Map paramItem, Object pipelineParameters, Object envVariables,
+                                          Boolean isUndefined = true) {
+    return [paramItem.get('name') ? paramItem.name : '<>', (paramItem.get('name') && pipelineParameters
+            .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
+}
+
 /**
  * Checking that all required pipeline parameters was specified for current build.
  *
@@ -293,11 +299,12 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
-            String paramName = it.get('name') ? it.name : '<>'
-            if (it.get('name') && pipelineParameters.containsKey(it.name) && !envVariables[it.name as String]?.trim()) {
+            def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndDefineState(it as Map,
+                    pipelineParameters, envVariables)
+            if (paramIsUndefined) {
                 allSet = false
                 CF.outMsg(3, String.format("'%s' pipeline parameter is required, but undefined for current job run. %s",
-                        paramName, 'Please specify then re-build again.'))
+                        printableParamName, 'Please specify then re-build again.'))
             }
         }
     }
@@ -316,7 +323,16 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
     Boolean allCorrect = true
     ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     if (requiredPipelineParams[0]) {
-
+        requiredPipelineParams.each {
+            def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndDefineState(it as Map,
+                    pipelineParameters, envVariables, false)
+            if (paramIsDefined && it.get('regex') && it.regex?.trim() &&
+                    !envVariables[paramItem.name as String].matches(it.get('regex'))) {
+                allCorrect = false
+                CF.outMsg(3, String.format('%s parameter is incorrect due to regex missmatch: %s', printableParamName,
+                        it.get('regex')))
+            }
+        }
     }
     return allCorrect
 }
