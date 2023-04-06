@@ -358,6 +358,8 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
         requiredPipelineParams.each {
             def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndEmptinessState(it as Map,
                     pipelineParameters, envVariables, false)
+
+            // If regex was set, preform string concatenation for regex list items. Otherwise, regex value is string.
             if (it.get('regex')) {
                 String regexPattern = ''
                 if (it.regex instanceof ArrayList && (it.regex as ArrayList)[0]) {
@@ -365,18 +367,16 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
                 } else if (!(it.regex instanceof ArrayList) && it.regex?.trim()) {
                     regexPattern = it.regex.toString()
                 }
-                if (regexPattern.trim()) {
+                if (regexPattern.trim())
                     CF.outMsg(0, String.format('Found regex for pipeline parameter %s: %s', printableParamName,
                             regexPattern))
-
-                    if (paramIsDefined && !envVariables[it.name as String].matches(regexPattern)) {
-                        allCorrect = false
-                        CF.outMsg(3, String.format('%s parameter is incorrect due to regex missmatch.',
-                                printableParamName))
-                    }
+                if (paramIsDefined && regexPattern.trim() && !envVariables[it.name as String].matches(regexPattern)) {
+                    allCorrect = false
+                    CF.outMsg(3, String.format('%s parameter is incorrect due to regex missmatch.',
+                            printableParamName))
                 }
-
             }
+
         }
     }
     return allCorrect
