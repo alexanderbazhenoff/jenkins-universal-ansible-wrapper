@@ -62,12 +62,12 @@ def BuiltinPipelineParameters = [
  * @param settingsGitUrl - git repo URL to clone from.
  * @param settingsGitBranch - git branch.
  * @param settingsRelativePath - relative path inside the 'ansible-wrapper-settings' project.
- * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
  * @param printYaml - if true output 'ansible-wrapper-settings' content on a load.
+ * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
  * @return - map with pipeline settings.
  */
 Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath,
-                            String workspaceSubfolder = 'settings', Boolean printYaml = true) {
+                         Boolean printYaml = true, String workspaceSubfolder = 'settings') {
     CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
     String pathToLoad = String.format('%s/%s', workspaceSubfolder, settingsRelativePath)
     if (printYaml) CF.outMsg(1, String.format('Loading pipeline settings:\n%s', readFile(pathToLoad)))
@@ -376,7 +376,8 @@ node(jenkinsNodeToExecute) {
         // Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings.
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
                 applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
-        Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath)
+        Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath,
+                (params.get('DEBUG_MODE')) as Boolean)
         String pipelineFailedReasonText = ''
         def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
                 wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
@@ -385,15 +386,15 @@ node(jenkinsNodeToExecute) {
         if (noPipelineParamsInTheConfig) {
             if (pipelineParametersProcessingPass) {
                 pipelineFailedReasonText += (!checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env)) ?
-                    'Define required pipeline parameters then build again.' : ''
+                    'Required pipeline parameter(s) was not specified.' : ''
             }
         } else {
             CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to check and inject.')
         }
 
         // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it
-        pipelineFailedReasonText += (!pipelineParametersProcessingPass) ?
-                '\nError(s) in pipeline yaml settings was found.' : ''
-        if (pipelineFailedReasonText.trim()) error pipelineFailedReasonText
+        pipelineFailedReasonText += (!pipelineParametersProcessingPass) ? '\nError(s) in pipeline yaml settings.' : ''
+        if (pipelineFailedReasonText.trim())
+            error String.format('%s\n%s.', pipelineFailedReasonText, 'Please fix then re-build')
     }
 }
