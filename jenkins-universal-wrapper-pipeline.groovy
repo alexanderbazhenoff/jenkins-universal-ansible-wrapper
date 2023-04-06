@@ -169,7 +169,7 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
 }
 
 /**
- * Check pipeline parameters in pipeline settings item for key structure, types and values.
+ * Check pipeline parameters in pipeline settings item for correct keys structure, types and values.
  *
  * @param item - pipeline settings item to check.
  * @return - list of: corrected map item (when fix is possible),
@@ -310,6 +310,7 @@ static getPipelineParamNameAndEmptinessState(Map paramItem, Object pipelineParam
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @return - true when all required variables are specified.
  */
+// TODO: 'on_empty' keys handling
 Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters, Object envVariables) {
     Boolean allSet = true
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
