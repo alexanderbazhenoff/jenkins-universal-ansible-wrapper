@@ -6,17 +6,18 @@
 import org.yaml.snakeyaml.*
 
 
+// TODO: change branch
 @Library('jenkins-shared-library-alx@devel') _
 
 
-// Repo URL and a branch of 'ansible-wrapper-settings' to load current pipeline settings from, e.g:
+// Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings from, e.g:
 // 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'. Will be ignored when SETTINGS_GIT_BRANCH pipeline
 // parameter present and not blank.
-def SettingsGitUrl = 'https://github.com/alexanderbazhenoff/ansible-wrapper-settings.git' as String
+def SettingsGitUrl = 'https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings' as String
 def DefaultSettingsGitBranch = 'main' as String
 
-// Prefix for pipeline settings relative path inside the 'ansible-wrapper-settings' project, that will be added
-// automatically on yaml load.
+// Prefix for pipeline settings relative path inside the 'universal-wrapper-pipeline-settings' project, that will be
+// added automatically on yaml load.
 def SettingsRelativePathPrefix = 'settings' as String
 
 // Jenkins pipeline name regex, a string that will be cut from pipeline name to become a filename of yaml pipeline
@@ -35,7 +36,7 @@ def JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
 // Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on.
 def JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
 
-// Built-in pipeline parameters, which are mandatory and not present in 'ansible-wrapper-settings'.
+// Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
 def BuiltinPipelineParameters = [
         [name       : 'SETTINGS_GIT_BRANCH',
          type       : 'string',
@@ -58,12 +59,13 @@ def BuiltinPipelineParameters = [
 
 
 /**
- * Clone 'ansible-wrapper-settings' from git repository, load yaml pipeline settings and return them as a map.
+ * Clone 'universal-wrapper-pipeline-settings' from git repository, load yaml pipeline settings and return them as a
+ * map.
  *
  * @param settingsGitUrl - git repo URL to clone from.
  * @param settingsGitBranch - git branch.
- * @param settingsRelativePath - relative path inside the 'ansible-wrapper-settings' project.
- * @param printYaml - if true output 'ansible-wrapper-settings' content on a load.
+ * @param settingsRelativePath - relative path inside the 'universal-wrapper-pipeline-settings' project.
+ * @param printYaml - if true output 'universal-wrapper-pipeline-settings' content on a load.
  * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
  * @return - map with pipeline settings.
  */
@@ -117,7 +119,8 @@ static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
  *                               - 'trim' key is available for 'type: string'. This key is optional, by default it's
  *                                 false.
  *                               - 'description' key is optional, by default it's '' (empty line).
- *                                 For more details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
+ *
+ *                                 More info: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings
  * @return - true when jenkins pipeline parameters update required.
  */
 static verifyPipelineParamsArePresents(ArrayList requiredParams, Object currentPipelineParams) {
@@ -266,7 +269,7 @@ def updatePipelineParams(ArrayList requiredParams) {
  * @return - list of: corrected parameters ArrayList (when fix is possible),
  *                    the whole pipeline parameters check status (true when ok).
  */
-def checkPipelineParamsFormat(ArrayList parameters) {
+ArrayList checkPipelineParamsFormat(ArrayList parameters) {
     Boolean allPass = true
     ArrayList correctedParams = []
     parameters.each {
@@ -299,8 +302,8 @@ static getPipelineParamNameAndEmptinessState(Map paramItem, Object pipelineParam
 /**
  * Checking that all required pipeline parameters was specified for current build.
  *
- * @param pipelineSettings - 'ansible-wrapper-settings' converted to map. See
- *                           https://github.com/alexanderbazhenoff/ansible-wrapper-settings for details.
+ * @param pipelineSettings - 'universal-wrapper-pipeline-settings' converted to map. See
+ *                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings for details.
  * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
  *                             class java.util.Collections$UnmodifiableMap).
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
@@ -386,8 +389,8 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
  * Processing wrapper pipeline parameters: check all parameters from pipeline settings are presents. If not inject
  * parameters to pipeline.
  *
- * @param pipelineSettings - 'ansible-wrapper-settings' converted to map. See
- *                           https://github.com/alexanderbazhenoff/ansible-wrapper-settings for details.
+ * @param pipelineSettings - 'universal-wrapper-pipeline-settings' converted to map. See
+ *                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings for details.
  * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
  *                                which is class java.util.Collections$UnmodifiableMap).
  * @param builtinPipelineParameters - built-in pipeline parameters in the same format as pipelineSettings, e.g:
@@ -395,7 +398,7 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
  * @return - list of: true when there is no pipeline parameters in the pipelineSettings,
  *                    true when pipeline parameters processing pass.
  */
-Boolean wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipelineParams,
+ArrayList wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipelineParams,
                                         ArrayList builtinPipelineParameters = []) {
     Boolean noPipelineParams = true
     Boolean allPass = true
@@ -442,6 +445,9 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
     return nodeToExecute
 }
 
+// TODO: other functions is not for library (?)
+
+ArrayList
 
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, JenkinsNodeNamePipelineParameter,
         JenkinsNodeTagPipelineParameterName)
@@ -458,11 +464,9 @@ node(jenkinsNodeToExecute) {
         def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
                 wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
 
-        // Check all required pipeline parameters was specified.
+        // Check all required pipeline parameters was defined properly for current build.
         if (noPipelineParamsInTheConfig) {
-            if (pipelineParametersProcessingPass) {
-                CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to check.')
-            }
+            if (pipelineParametersProcessingPass) CF.outMsg(1, 'No pipeline parameters in the config')
         } else {
             pipelineFailedReasonText += (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env) &&
                     regexCheckAllRequiredPipelineParams(pipelineSettings, params, env, BuiltinPipelineParameters)) ?

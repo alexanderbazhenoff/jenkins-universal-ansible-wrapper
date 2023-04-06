@@ -1,4 +1,4 @@
-# jenkins-universal-ansible-wrapper
+# jenkins universal wrapper pipeline
 Universal ansible wrapper pipeline for Jenkins.
 
 
