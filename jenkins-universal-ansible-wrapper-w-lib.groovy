@@ -335,7 +335,6 @@ Boolean wrapperPipelineParametersProcessing(Map pipelineSettings, Object current
                     CF.outMsg(1, 'Updating current pipeline parameters.')
                     updatePipelineParams(requiredPipelineParams)
                 } else {
-                    println 'kuku'
                     allPass = false
                 }
             }
@@ -385,6 +384,7 @@ node(jenkinsNodeToExecute) {
 
         // Check all required pipeline parameters was specified.
         if (noPipelineParamsInTheConfig) {
+            println 'kuku'
             if (pipelineParametersProcessingPass) {
                 pipelineFailedReasonText += (!checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env)) ?
                     'Required pipeline parameter(s) was not specified.' : ''
