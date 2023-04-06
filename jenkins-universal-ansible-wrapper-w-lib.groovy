@@ -384,12 +384,12 @@ node(jenkinsNodeToExecute) {
 
         // Check all required pipeline parameters was specified.
         if (noPipelineParamsInTheConfig) {
-            println 'kuku'
             if (pipelineParametersProcessingPass) {
                 pipelineFailedReasonText += (!checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env)) ?
                     'Required pipeline parameter(s) was not specified.' : ''
             }
         } else {
+            println noPipelineParamsInTheConfig
             CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to check and inject.')
         }
 
