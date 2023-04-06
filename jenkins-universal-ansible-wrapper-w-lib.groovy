@@ -294,8 +294,8 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
         pipelineSettings.parameters.required.each {
             String paramName = it.get('name') ? it.name : '<>'
             println String.format('%s: name presents in the config (%s), params contains key(%s), var trim (%s).',
-                    paramName, (it.get('name')), pipelineParameters.containsKey(it.name),
-                    envVariables[it.name as String]?.trim())
+                    paramName, (it.get('name')), pipelineParameters.containsKey(it.name).asBoolean(),
+                    envVariables[it.name as String].trim().asBoolean())
             println pipelineParameters.getClass()
             println envVariables.getClass()
             if (it.get('name') && pipelineParameters.containsKey(it.name) && !envVariables[it.name as String]?.trim()) {
