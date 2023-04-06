@@ -277,7 +277,20 @@ def checkPipelineParamsFormat(ArrayList parameters) {
     return [correctedParams, allPass]
 }
 
-static getPipelineParamNameAndDefineState(Map paramItem, Object pipelineParameters, Object envVariables,
+/**
+ * Get pipeline parameter name from pipeline parameter config item and pipeline parameter emptiness state (defined or
+ * empty).
+ *
+ * @param paramItem - pipeline parameter item map (which is a part of parameter settings) to get parameter name.
+ * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
+ *                             class java.util.Collections$UnmodifiableMap).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param isUndefined - set true to detect pipeline parameter for current job is undefined, or false to detect
+ *                      parameter is undefined.
+ * @return - return true when condition specified in 'isUndefined' met.
+ */
+static getPipelineParamNameAndEmptinessState(Map paramItem, Object pipelineParameters, Object envVariables,
                                           Boolean isUndefined = true) {
     return [paramItem.get('name') ? paramItem.name : '<>', (paramItem.get('name') && pipelineParameters
             .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
@@ -299,7 +312,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
-            def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndDefineState(it as Map,
+            def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndEmptinessState(it as Map,
                     pipelineParameters, envVariables)
             if (paramIsUndefined) {
                 allSet = false
@@ -311,6 +324,13 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
     return allSet
 }
 
+/**
+ * Extract parameters arrayList from pipeline settings map (without 'required' and 'optional' map structure).
+ *
+ * @param pipelineSettings - pipeline settings map.
+ * @param builtinPipelineParameters - additional built-in pipeline parameters arrayList.
+ * @return - pipeline parameters arrayList.
+ */
 static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinPipelineParameters) {
     return (pipelineSettings.get('parameters')) ?
             (pipelineSettings.parameters.get('required') ? pipelineSettings.parameters.required : []) +
@@ -318,13 +338,25 @@ static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinP
             builtinPipelineParameters : []
 }
 
+/**
+ * Regex check of current job build pipeline parameters.
+ * (Check match when current build pipeline parameter is not empty and a key 'regex' is defined in pipeline settings).
+ *
+ * @param pipelineSettings - pipeline settings map.
+ * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
+ *                             class java.util.Collections$UnmodifiableMap).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param builtinPipelineParameters - additional built-in pipeline parameters arrayList.
+ * @return - true when all pass.
+ */
 Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelineParameters, Object envVariables,
                                             ArrayList builtinPipelineParameters) {
     Boolean allCorrect = true
     ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     if (requiredPipelineParams[0]) {
         requiredPipelineParams.each {
-            def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndDefineState(it as Map,
+            def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndEmptinessState(it as Map,
                     pipelineParameters, envVariables, false)
             if (it.get('regex')) {
                 String regexPattern = ''
