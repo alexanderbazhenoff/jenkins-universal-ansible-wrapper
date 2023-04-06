@@ -293,8 +293,10 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
             println String.format('<%s>: name presents in the config (%s), params contains key(%s), env trim (%s).',
-                    it.get('name') ? it.name : '', it.get('name'), pipelineParameters.containsKey(it),
+                    it.get('name') ? it.name : '', (it.get('name')), pipelineParameters.containsKey(it),
                     !envVariables[it.toString()]?.trim())
+            println pipelineParameters.getClass()
+            println envVariables.getClass()
             if (it.get('name') && pipelineParameters.containsKey(it) && !envVariables[it.toString()]?.trim()) {
                 allSet = false
                 CF.outMsg(3, String.format("'%s' pipeline parameter is required, but undefined for current job run. %s",
