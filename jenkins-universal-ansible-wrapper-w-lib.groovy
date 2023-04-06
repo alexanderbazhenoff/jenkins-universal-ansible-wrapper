@@ -23,7 +23,7 @@ def SettingsRelativePathPrefix = 'settings' as String
 // settings to be loaded. Example: Your jenkins pipeline name is 'prefix_pipeline-name_postfix'. To load pipeline
 // settings 'pipeline-name.yml' you can use regex list: ['^prefix_','_postfix$']. FYI: All pipeline name prefixes are
 // useful to split your jenkins between your company departments (e.g: 'admin', 'devops, 'qa', 'develop', etc...), while
-// postfixes are usefull to mark pipeline as a changed version of original.
+// postfixes are useful to mark pipeline as a changed version of original.
 def PipelineNameRegexReplace = ['^(admin|devops|qa)_'] as ArrayList
 
 // Set your ansible installation name from jenkins settings.
@@ -39,6 +39,7 @@ def JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
 def BuiltinPipelineParameters = [
         [name       : 'SETTINGS_GIT_BRANCH',
          type       : 'string',
+         regex      : '(\\*)? +(.*?) +(.*?)? ((\\[(.*?)(: (.*?) (\\d+))?\\])? ?(.*$))?',
          description: 'Git branch of ansible-wrapper-settings project (to override defaults on development).'],
         [name       : JenkinsNodeNamePipelineParameter,
          type       : 'string',
@@ -293,11 +294,6 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
             String paramName = it.get('name') ? it.name : '<>'
-            println String.format('%s: name presents in the config (%s), params contains key(%s), var trim (%s).',
-                    paramName, (it.get('name')), pipelineParameters.containsKey(it.name).asBoolean(),
-                    envVariables[it.name as String].trim().asBoolean())
-            println pipelineParameters.getClass()
-            println envVariables.getClass()
             if (it.get('name') && pipelineParameters.containsKey(it.name) && !envVariables[it.name as String]?.trim()) {
                 allSet = false
                 CF.outMsg(3, String.format("'%s' pipeline parameter is required, but undefined for current job run. %s",
@@ -306,6 +302,23 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
         }
     }
     return allSet
+}
+
+static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinPipelineParameters) {
+    return (pipelineSettings.get('parameters')) ?
+            (pipelineSettings.parameters.get('required') ? pipelineSettings.parameters.required : []) +
+            (pipelineSettings.parameters.get('optional') ? pipelineSettings.parameters.optional : []) +
+            builtinPipelineParameters : []
+}
+
+Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelineParameters, Object envVariables,
+                                            ArrayList builtinPipelineParameters) {
+    Boolean allCorrect = true
+    ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
+    if (requiredPipelineParams[0]) {
+
+    }
+    return allCorrect
 }
 
 /**
@@ -325,24 +338,20 @@ Boolean wrapperPipelineParametersProcessing(Map pipelineSettings, Object current
                                         ArrayList builtinPipelineParameters = []) {
     Boolean noPipelineParams = true
     Boolean allPass = true
-    if (pipelineSettings.get('parameters')) {
-        Boolean checkPipelineParametersPass
-        ArrayList requiredPipelineParams = (pipelineSettings.parameters.get('required') ?
-                pipelineSettings.parameters.required : []) + (pipelineSettings.parameters.get('optional') ?
-                pipelineSettings.parameters.optional : []) + builtinPipelineParameters
-        if (requiredPipelineParams[0]) {
-            noPipelineParams = false
-            CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings.')
-            if (verifyPipelineParamsArePresents(requiredPipelineParams, currentPipelineParams)) {
-                CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings.')
-                (requiredPipelineParams, checkPipelineParametersPass) =
-                        checkPipelineParamsFormat(requiredPipelineParams)
-                if (checkPipelineParametersPass) {
-                    CF.outMsg(1, 'Updating current pipeline parameters.')
-                    updatePipelineParams(requiredPipelineParams)
-                } else {
-                    allPass = false
-                }
+    Boolean checkPipelineParametersPass
+    ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
+    if (requiredPipelineParams[0]) {
+        noPipelineParams = false
+        CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings.')
+        if (verifyPipelineParamsArePresents(requiredPipelineParams, currentPipelineParams)) {
+            CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings.')
+            (requiredPipelineParams, checkPipelineParametersPass) =
+                    checkPipelineParamsFormat(requiredPipelineParams)
+            if (checkPipelineParametersPass) {
+                CF.outMsg(1, 'Updating current pipeline parameters.')
+                updatePipelineParams(requiredPipelineParams)
+            } else {
+                allPass = false
             }
         }
     }
@@ -391,11 +400,12 @@ node(jenkinsNodeToExecute) {
         // Check all required pipeline parameters was specified.
         if (noPipelineParamsInTheConfig) {
             if (pipelineParametersProcessingPass) {
-                CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to check and inject.')
+                CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to check.')
             }
         } else {
-            pipelineFailedReasonText += (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env)) ?
-                    '' : 'Required pipeline parameter(s) was not specified.'
+            pipelineFailedReasonText += (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env) &&
+                    regexCheckAllRequiredPipelineParams(pipelineSettings, params, env, BuiltinPipelineParameters)) ?
+                    '' : 'Required pipeline parameter(s) was not specified or incorrect.'
         }
 
         // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it
