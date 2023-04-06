@@ -119,7 +119,7 @@ static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
  *                                 For more details: https://github.com/alexanderbazhenoff/ansible-wrapper-settings
  * @return - true when jenkins pipeline parameters update required.
  */
-static verifyPipelineParams(ArrayList requiredParams, Object currentPipelineParams) {
+static verifyPipelineParamsArePresents(ArrayList requiredParams, Object currentPipelineParams) {
     Boolean updateParamsRequired = false
     requiredParams.each { if (!currentPipelineParams.containsKey(it.name)) updateParamsRequired = true }
     return updateParamsRequired
@@ -326,8 +326,8 @@ Boolean wrapperPipelineParametersProcessing(Map pipelineSettings, Object current
                 pipelineSettings.parameters.optional : []) + builtinPipelineParameters
         if (requiredPipelineParams[0]) {
             noPipelineParams = false
-            CF.outMsg(1, 'Comparing current pipeline parameters with parameters from pipeline settings.')
-            if (verifyPipelineParams(requiredPipelineParams, currentPipelineParams)) {
+            CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings.')
+            if (verifyPipelineParamsArePresents(requiredPipelineParams, currentPipelineParams)) {
                 CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings.')
                 (requiredPipelineParams, checkPipelineParametersPass) =
                         checkPipelineParamsFormat(requiredPipelineParams)
@@ -335,6 +335,7 @@ Boolean wrapperPipelineParametersProcessing(Map pipelineSettings, Object current
                     CF.outMsg(1, 'Updating current pipeline parameters.')
                     updatePipelineParams(requiredPipelineParams)
                 } else {
+                    println 'kuku'
                     allPass = false
                 }
             }
