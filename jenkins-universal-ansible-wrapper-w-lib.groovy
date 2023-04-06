@@ -388,8 +388,8 @@ node(jenkinsNodeToExecute) {
                 CF.outMsg(1, 'There is no pipeline parameters in the config. Nothing to check and inject.')
             }
         } else {
-            pipelineFailedReasonText += (!checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env)) ?
-                    'Required pipeline parameter(s) was not specified.' : ''
+            pipelineFailedReasonText += (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env)) ?
+                    '' : 'Required pipeline parameter(s) was not specified.'
         }
 
         // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it
