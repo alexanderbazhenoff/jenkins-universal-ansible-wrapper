@@ -334,13 +334,13 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
                     regexPattern = it.regex.toString()
                 }
                 if (regexPattern.trim()) {
-                    CF.outMsg(0, String.format('Found regex for pipeline param %s: %s', printableParamName,
+                    CF.outMsg(0, String.format('Found regex for pipeline parameter %s: %s', printableParamName,
                             regexPattern))
 
                     if (paramIsDefined && !envVariables[it.name as String].matches(regexPattern)) {
                         allCorrect = false
-                        CF.outMsg(3, String.format('%s parameter is incorrect due to regex missmatch: %s',
-                                printableParamName, regexPattern))
+                        CF.outMsg(3, String.format('%s parameter is incorrect due to regex missmatch.',
+                                printableParamName))
                     }
                 }
 
