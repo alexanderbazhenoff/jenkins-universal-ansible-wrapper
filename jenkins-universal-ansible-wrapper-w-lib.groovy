@@ -83,7 +83,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  *                           will be replaced with empty line ''.
  * @return - resulting text.
  */
-static applyReplaceAllItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
+static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     regexItemsList.eachWithIndex{ value, Integer index ->
         text = text.replaceAll(value, replaceItemsList.contains(index) ? replaceItemsList[index] : '')
     }
@@ -277,7 +277,7 @@ def checkPipelineParamsFormat(ArrayList parameters) {
 }
 
 /**
- * Check that current pipeline run all required pipeline parameters was specified.
+ * Checking that all required pipeline parameters was specified for current build.
  *
  * @param pipelineSettings - 'ansible-wrapper-settings' converted to map. See
  *                           https://github.com/alexanderbazhenoff/ansible-wrapper-settings for details.
@@ -375,14 +375,14 @@ node(jenkinsNodeToExecute) {
 
         // Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings.
         String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
-                applyReplaceAllItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
+                applyReplaceRegexItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath,
                 (params.get('DEBUG_MODE')) as Boolean)
         String pipelineFailedReasonText = ''
         def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
                 wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
 
-        // Check that current pipeline run all required pipeline parameters was specified.
+        // Check all required pipeline parameters was specified.
         if (noPipelineParamsInTheConfig) {
             if (pipelineParametersProcessingPass) {
                 pipelineFailedReasonText += (!checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env)) ?
