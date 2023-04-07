@@ -281,8 +281,8 @@ ArrayList checkPipelineParamsFormat(ArrayList parameters) {
 }
 
 /**
- * Get pipeline parameter name from pipeline parameter config item and pipeline parameter emptiness state (defined or
- * empty).
+ * Get pipeline parameter name from pipeline parameter config item and check this pipeline parameter emptiness state
+ * (defined or empty).
  *
  * @param paramItem - pipeline parameter item map (which is a part of parameter settings) to get parameter name.
  * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
@@ -291,12 +291,26 @@ ArrayList checkPipelineParamsFormat(ArrayList parameters) {
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param isUndefined - set true to detect pipeline parameter for current job is undefined, or false to detect
  *                      parameter is undefined.
- * @return - return true when condition specified in 'isUndefined' met.
+ * @return - list of: parameter name (or '<>' when name wasn't set),
+ *                    return true when condition specified in 'isUndefined' method variable met.
  */
-static getPipelineParamNameAndEmptinessState(Map paramItem, Object pipelineParameters, Object envVariables,
+// TODO: regex param names
+static getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
                                           Boolean isUndefined = true) {
     return [paramItem.get('name') ? paramItem.name : '<>', (paramItem.get('name') && pipelineParameters
             .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
+}
+
+static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
+    if (!settingsItem.get('on_empty'))
+        return [false, '', true, false]
+    Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').toBoolean() : true
+    Boolean warn = settingsItem.on_empty.get('warn').toBoolean()
+    if (!settingsItem.on_empty.get('assign'))
+        return [false, '', fail, warn]
+    Boolean assignment = settingsItem.on_empty.toString().startsWith('$') ? envVariables[settingsItem.on_empty.assign
+            .toString().replaceAll('\\$', '')] : settingsItem.on_empty.assign.toString()
+    return [true, assignment, fail, warn]
 }
 
 /**
@@ -310,18 +324,30 @@ static getPipelineParamNameAndEmptinessState(Map paramItem, Object pipelineParam
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @return - true when all required variables are specified.
  */
-// TODO: 'on_empty' keys handling
 Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters, Object envVariables) {
     Boolean allSet = true
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
-            def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndEmptinessState(it as Map,
+            def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndDefinedState(it as Map,
                     pipelineParameters, envVariables)
             if (paramIsUndefined) {
-                allSet = false
-                CF.outMsg(3, String.format("'%s' pipeline parameter is required, but undefined for current job run. %s",
-                        printableParamName, 'Please specify then re-build again.'))
+                String assignMessage = ''
+                Boolean assignmentComplete = false
+                def (Boolean paramNeedsToBeAssigned, String paramAssignment, Boolean fail, Boolean warn) =
+                        handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
+                if (paramNeedsToBeAssigned && printableParamName != '<>' && paramAssignment.trim()) {
+                    env[it.name.toString()] = paramAssignment
+                    assignmentComplete = true
+                } else if (printableParamName == '<>' || (paramNeedsToBeAssigned && !paramAssignment.trim())) {
+                    assignMessage = paramNeedsToBeAssigned ? String.format("(and can't be assigned with %s variable) ",
+                            it.on_empty.get('assign').toString()) : ''
+                }
+                allSet = !assignmentComplete && fail ? false : allSet
+                if (fail || warn)
+                    CF.outMsg(fail ? 3 : 2, String.format("'%s' pipeline parameter is required, but undefined %s%s. %s",
+                            printableParamName, assignMessage, 'for current job run',
+                            'Please specify then re-build again.'))
             }
         }
     }
@@ -360,7 +386,7 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
     ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     if (requiredPipelineParams[0]) {
         requiredPipelineParams.each {
-            def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndEmptinessState(it as Map,
+            def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndDefinedState(it as Map,
                     pipelineParameters, envVariables, false)
 
             // If regex was set, preform string concatenation for regex list items. Otherwise, regex value is string.
