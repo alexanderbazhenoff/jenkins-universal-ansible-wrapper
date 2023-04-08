@@ -169,6 +169,16 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
 }
 
 /**
+ * Check environment variable name match POSIX shell standards.
+ *
+ * @param name - variable name to check regex match.
+ * @return - true when match.
+ */
+static checkEnvironmentVariableNameCorrect(String name) {
+    return name.matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
+}
+
+/**
  * Check pipeline parameters in pipeline settings item for correct keys structure, types and values.
  *
  * @param item - pipeline settings item to check.
@@ -178,11 +188,21 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
 ArrayList pipelineParametersSettingsItemCheck(Map item) {
     Boolean checkOk = true
 
-    // Check 'name' key is present
-    if (!item.containsKey('name')){
+    // Check 'name' key is present and valid
+    if (item.containsKey('name')) {
+        if (!checkEnvironmentVariableNameCorrect(item.name.toString()))
+            checkOk = pipelineSettingsItemError(3, item as String, "Invalid parameter name")
+    } else {
         checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
         item.name = "''"
     }
+
+    // Check 'assign' sub-key in 'on_empty' key is correct (if defined).
+    if (item.get('on_empty') && item.on_empty.get('assign') && item.on_empty.assign.startsWith('$') &&
+            !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('\$', '')))
+        checkOk = pipelineSettingsItemError(3, item as String, String.format("%s: '%s'",
+                'Unable to assign due to incorrect variable name', item.on_empty.assign))
+
     if (item.containsKey('type')) {
 
         // Convert 'default' value to string (e.g. it's ok when default value in yaml file as number or float).
@@ -241,7 +261,6 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
     return [item, checkOk]
 }
 
-
 /**
  * Inject parameters to current jenkins pipeline.
  *
@@ -294,13 +313,23 @@ ArrayList checkPipelineParamsFormat(ArrayList parameters) {
  * @return - list of: parameter name (or '<>' when name wasn't set),
  *                    return true when condition specified in 'isUndefined' method variable met.
  */
-// TODO: regex param names
 static getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
-                                          Boolean isUndefined = true) {
+                                           Boolean isUndefined = true) {
     return [paramItem.get('name') ? paramItem.name : '<>', (paramItem.get('name') && pipelineParameters
             .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
 }
 
+/**
+ * Handle pipeline parameter assignment when 'on_empty' key defined in pipeline settings item.
+ *
+ * @param settingsItem - settings item from pipeline settings to handle.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @return - list of: true when pipeline parameter needs an assignment,
+ *                    string or value of assigned environment variable (when value starts with $),
+ *                    true when needs to count an error when pipeline parameter undefined and can't be assigned,
+ *                    true when needs to warn when pipeline parameter undefined and can't be assigned.
+ */
 static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
     if (!settingsItem.get('on_empty'))
         return [false, '', true, false]
@@ -426,7 +455,7 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
  *                    true when pipeline parameters processing pass.
  */
 ArrayList wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipelineParams,
-                                        ArrayList builtinPipelineParameters = []) {
+                                              ArrayList builtinPipelineParameters = []) {
     Boolean noPipelineParams = true
     Boolean allPass = true
     Boolean checkPipelineParametersPass
@@ -474,7 +503,6 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 
 // TODO: other functions is not for library (?)
 
-ArrayList
 
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, JenkinsNodeNamePipelineParameter,
         JenkinsNodeTagPipelineParameterName)
