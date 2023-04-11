@@ -516,7 +516,7 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *                    pipeline stages status map.
  */
 def checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean checkSettings = false,
-                                            Boolean executeSettings = true) {
+                                              Boolean executeSettings = true) {
     allPass = true
     return allPass
 }
@@ -547,7 +547,7 @@ node(jenkinsNodeToExecute) {
         }
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
-        def (__, Boolean pipelineSettingsCheckOk) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings,
+        def (Boolean pipelineSettingsCheckOk, __) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings,
                 env, true, false)
         pipelineFailedReasonText += pipelineSettingsCheckOk ? '' : 'Pipeline settings contains an error(s).'
 
@@ -557,7 +557,7 @@ node(jenkinsNodeToExecute) {
             error String.format('%s\n%s.', pipelineFailedReasonText, 'Please fix then re-build')
 
         // Execute wrapper pipeline settings stages.
-        def (Map pipelineStagesStates, Boolean allDone) = (checkOrExecutePipelineWrapperFromSettings(pipelineSettings,
+        def (Boolean allDone, Map pipelineStagesStates) = (checkOrExecutePipelineWrapperFromSettings(pipelineSettings,
                 env, false))
     }
 }
