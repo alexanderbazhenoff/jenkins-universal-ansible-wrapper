@@ -358,15 +358,11 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
-            // TODO: remove ptintln
-            println String.format('get: %s', it as String)
             def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndDefinedState(it as Map,
                     pipelineParameters, envVariables)
             if (paramIsUndefined) {
                 String assignMessage = ''
                 Boolean assignmentComplete = false
-                // TODO: remove ptintln
-                println String.format('handle: %s', it as String)
                 def (Boolean paramNeedsToBeAssigned, String paramAssignment, Boolean fail, Boolean warn) =
                         handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
                 if (paramNeedsToBeAssigned && printableParamName != '<>' && paramAssignment.trim()) {
@@ -377,9 +373,6 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                             it.on_empty.get('assign').toString()) : ''
                 }
                 allSet = !assignmentComplete && fail ? false : allSet
-                // TODO: remove ptintln
-                println String.format('assignmentComplete: %s', assignmentComplete)
-                println String.format('allSet: %s', allSet)
                 if (warn || (fail && !allSet))
                     CF.outMsg(fail ? 3 : 2, String.format("'%s' pipeline parameter is required, but undefined %s%s. %s",
                             printableParamName, assignMessage, 'for current job run',
@@ -488,7 +481,8 @@ ArrayList wrapperPipelineParametersProcessing(Map pipelineSettings, Object curre
 /**
  * Get jenkins node by node name or node tag defined in pipeline parameter(s).
  *
- * @param env - environment variables (class org.jenkinsci.plugins.workflow.cps.EnvActionImp).
+ * @param env - environment variables for current job build (actually requires a pass of 'env' which is
+ *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param nodeParamName - Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on. This
  *                        pipeline parameters will be used to check for jenkins node name on pipeline start. If this
  *                        parameter undefined or blank nodeTagParamName will be used to check.
@@ -510,6 +504,22 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 
 // TODO: other functions is not for library (?)
 
+/**
+ * Check or execute wrapper pipeline from pipeline settings.
+ *
+ * @param pipelineSettings - pipeline settings map to check and/or execute.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param checkSettings - true to check pipeline settings structure and parameters.
+ * @param executeSettings - true to execute pipeline wrapper stages defined in the config, false for dry run.
+ * @return - true when checking and execution pass.
+ */
+def checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean checkSettings = false,
+                                            Boolean executeSettings = true) {
+    allPass = true
+    return allPass
+}
+
 
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, JenkinsNodeNamePipelineParameter,
         JenkinsNodeTagPipelineParameterName)
@@ -526,13 +536,14 @@ node(jenkinsNodeToExecute) {
         def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
                 wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
 
-        // Check all required pipeline parameters was defined properly for current build.
+        // Check all required pipeline parameters was defined properly for current build. Check all pipeline settings.
         if (noPipelineParamsInTheConfig) {
             if (pipelineParametersProcessingPass) CF.outMsg(1, 'No pipeline parameters in the config')
         } else {
             pipelineFailedReasonText += (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env) &&
-                    regexCheckAllRequiredPipelineParams(pipelineSettings, params, env, BuiltinPipelineParameters)) ?
-                    '' : 'Required pipeline parameter(s) was not specified or incorrect.'
+                    regexCheckAllRequiredPipelineParams(pipelineSettings, params, env, BuiltinPipelineParameters) &&
+                    checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true, false)) ? '' :
+                    'Required pipeline parameter(s) was not specified or incorrect.'
         }
 
         // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it
