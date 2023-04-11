@@ -333,8 +333,8 @@ static getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParamet
 static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
     if (!settingsItem.get('on_empty'))
         return [false, '', true, false]
-    Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').toBoolean() : true
-    Boolean warn = settingsItem.on_empty.get('warn').toBoolean()
+    Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').asBoolean() : true
+    Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
     if (!settingsItem.on_empty.get('assign'))
         return [false, '', fail, warn]
     Boolean assignment = settingsItem.on_empty.toString().startsWith('$') ? envVariables[settingsItem.on_empty.assign
@@ -358,12 +358,14 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
+            // TODO: remove ptintln
             println String.format('get: %s', it as String)
             def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndDefinedState(it as Map,
                     pipelineParameters, envVariables)
             if (paramIsUndefined) {
                 String assignMessage = ''
                 Boolean assignmentComplete = false
+                // TODO: remove ptintln
                 println String.format('handle: %s', it as String)
                 def (Boolean paramNeedsToBeAssigned, String paramAssignment, Boolean fail, Boolean warn) =
                         handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
