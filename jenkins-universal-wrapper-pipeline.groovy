@@ -358,11 +358,13 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
+            println String.format('get: %s', it as String)
             def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndDefinedState(it as Map,
                     pipelineParameters, envVariables)
             if (paramIsUndefined) {
                 String assignMessage = ''
                 Boolean assignmentComplete = false
+                println String.format('handle: %s', it as String)
                 def (Boolean paramNeedsToBeAssigned, String paramAssignment, Boolean fail, Boolean warn) =
                         handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
                 if (paramNeedsToBeAssigned && printableParamName != '<>' && paramAssignment.trim()) {
