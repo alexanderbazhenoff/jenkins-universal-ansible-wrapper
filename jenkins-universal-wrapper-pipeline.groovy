@@ -377,6 +377,8 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                             it.on_empty.get('assign').toString()) : ''
                 }
                 allSet = !assignmentComplete && fail ? false : allSet
+                // TODO: remove ptintln
+                println allSet
                 if (fail || warn)
                     CF.outMsg(fail ? 3 : 2, String.format("'%s' pipeline parameter is required, but undefined %s%s. %s",
                             printableParamName, assignMessage, 'for current job run',
