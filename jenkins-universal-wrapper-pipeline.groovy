@@ -52,7 +52,7 @@ final BuiltinPipelineParameters = [
         [name       : 'DRY_RUN',
          type       : 'boolean',
          description: String.format('%s (%s).', 'Dry run mode to use for pipeline settings troubleshooting',
-                 'do not effects of pipeline parameters injection')],
+                 'will be ignored on pipeline parameters needs to be injected')],
         [name: 'DEBUG_MODE',
          type: 'boolean']
 ] as ArrayList
@@ -512,7 +512,8 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param checkSettings - true to check pipeline settings structure and parameters.
  * @param executeSettings - true to execute pipeline wrapper stages defined in the config, false for dry run.
- * @return - true when checking and execution pass.
+ * @return - list of: true when checking and execution pass,
+ *                    pipeline stages status map.
  */
 def checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean checkSettings = false,
                                             Boolean executeSettings = true) {
@@ -536,19 +537,27 @@ node(jenkinsNodeToExecute) {
         def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
                 wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
 
-        // Check all required pipeline parameters was defined properly for current build. Check all pipeline settings.
+        // Check all required pipeline parameters was defined properly for current build.
         if (noPipelineParamsInTheConfig) {
             if (pipelineParametersProcessingPass) CF.outMsg(1, 'No pipeline parameters in the config')
         } else {
             pipelineFailedReasonText += (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env) &&
-                    regexCheckAllRequiredPipelineParams(pipelineSettings, params, env, BuiltinPipelineParameters) &&
-                    checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true, false)) ? '' :
-                    'Required pipeline parameter(s) was not specified or incorrect.'
+                    regexCheckAllRequiredPipelineParams(pipelineSettings, params, env, BuiltinPipelineParameters)) ?
+                    '' : 'Required pipeline parameter(s) was not specified or incorrect.'
         }
 
-        // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it
+        // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
+        def (__, Boolean pipelineSettingsCheckOk) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings,
+                env, true, false)
+        pipelineFailedReasonText += pipelineSettingsCheckOk ? '' : 'Pipeline settings contains an error(s).'
+
+        // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it.
         pipelineFailedReasonText += (!pipelineParametersProcessingPass) ? '\nError(s) in pipeline yaml settings.' : ''
         if (pipelineFailedReasonText.trim())
             error String.format('%s\n%s.', pipelineFailedReasonText, 'Please fix then re-build')
+
+        // Execute wrapper pipeline settings stages.
+        def (Map pipelineStagesStates, Boolean allDone) = (checkOrExecutePipelineWrapperFromSettings(pipelineSettings,
+                env, false))
     }
 }
