@@ -515,7 +515,7 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  * @return - list of: true when checking and execution pass,
  *                    pipeline stages status map.
  */
-def checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
+ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                               Boolean execute = true) {
     Map stagesStates = [:]
     Boolean allPass = true
@@ -527,6 +527,10 @@ def checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVa
 
     }
     return allPass
+}
+
+ArrayList checkPipelineStageSettings() {
+
 }
 
 
