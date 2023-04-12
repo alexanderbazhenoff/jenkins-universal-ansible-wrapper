@@ -517,7 +517,14 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  */
 def checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean checkSettings = false,
                                               Boolean executeSettings = true) {
-    allPass = true
+    Map stagesStates = [:]
+    Boolean allPass = true
+    if (!pipelineSettings.get('stages')) {
+        if (!checkSettings) CF.outMsg(3, 'No stages in pipeline config. Nothing to execute.')
+        return [stagesStates, !executeSettings]
+    }
+
+
     return allPass
 }
 
