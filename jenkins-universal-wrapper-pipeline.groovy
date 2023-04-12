@@ -507,30 +507,70 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 /**
  * Check or execute wrapper pipeline from pipeline settings.
  *
- * @param pipelineSettings - pipeline settings map to check and/or execute.
+ * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param check - true to check pipeline settings structure and parameters.
  * @param execute - true to execute pipeline wrapper stages defined in the config, false for dry run.
- * @return - list of: true when checking and execution pass,
- *                    pipeline stages status map.
+ * @return - list of: pipeline stages status map (the structure of this map should be: key is the name with spaces cut,
+ *                    value should be a map of: [name: name, state: state, url: url]);
+ *                    true when checking and execution pass.
  */
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
-                                              Boolean execute = true) {
+                                                    Boolean execute = true) {
     Map stagesStates = [:]
     Boolean allPass = true
-    Boolean dryRun = envVariables.getEnvironment().get('DRY_RUN').asBoolean()
     Boolean debugMode = envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()
     if (!pipelineSettings.get('stages') && (execute || (check && debugMode)))
         CF.outMsg(execute ? 3 : 0, String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stage in pipelineSettings.stages) {
-
+        Boolean checkOk = (check) ? checkStageSettingsItem(stage.toString(), pipelineSettings, envVariables, debugMode)
+                : true
+        def (Map currentStageActionsStates, Boolean execOk) = (execute) ? executeStageSettingsItem(stage.toString(),
+                pipelineSettings, envVariables, debugMode) : true
+        allPass = checkOk && execOk
+        stagesStates = stagesStates + currentStageActionsStates
     }
-    return allPass
+    return [stagesStates, allPass]
 }
 
-ArrayList checkPipelineStageSettings() {
+/**
+ * Check pipeline stage settings item is defined properly.
+ *
+ * (Check actions in the stage, all ansible playbooks, ansible inventories, jobs, scripts or another action according to
+ * requirements described here: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings)
+ *
+ * @param stageName - stage settings name to check actions in it.
+ * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param debugMode - true when debug mode (verbose output).
+ * @return - true when check pass.
+ */
+Boolean checkStageSettingsItem(String stageName, Map pipelineSettings, Object envVariables, Boolean debugMode) {
 
+}
+
+/**
+ * Execute all actions in pipeline stage settings item.
+ *
+ * @param stageName - stage settings name to check actions in it.
+ * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
+ *                       (or pipeline parameter) as an element of envVariables to true for dry run mode.
+ * @param debugMode - true when debug mode (verbose output).
+ * @param dryRun - true when dry run mode.
+ * @return - arrayList of: all actions in the stage status map (the structure of this map should be: key is the name
+ *                         with spaces cut, value should be a map of: [name: name, state: state, url: url]);
+ *                         true when all stage actions execution successfully done.
+ */
+ArrayList executeStageSettingsItem(String stageName, Map pipelineSettings, Object envVariables, Boolean debugMode) {
+    Boolean dryRun = envVariables.getEnvironment().get('DRY_RUN').asBoolean()
+    Map currentStageActionsStates = [:]
+    Boolean allPass = true
+
+    return [currentStageActionsStates, allPass]
 }
 
 
