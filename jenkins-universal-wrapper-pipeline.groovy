@@ -179,6 +179,16 @@ static checkEnvironmentVariableNameCorrect(String name) {
 }
 
 /**
+ * Detect if an object will be human readable string after converting to string (exclude lists, maps, etc).
+ *
+ * @param obj - object to detect.
+ * @return - true when object is convertible to human readable string.
+ */
+static detectIsObjectConvertibleToString(Object obj) {
+    return (obj instanceof String || obj instanceof Integer || obj instanceof Float || obj instanceof BigInteger)
+}
+
+/**
  * Check pipeline parameters in pipeline settings item for correct keys structure, types and values.
  *
  * @param item - pipeline settings item to check.
@@ -233,8 +243,7 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
                     "'type' key not defined, but was detected and set", autodetectData[0], autodetectData[1]))
             item.type = autodetectData[1]
         } else {
-            String msg = item.containsKey('default') && (item.default instanceof String || item.default instanceof
-                    Integer || item.default instanceof Float || item.default instanceof BigInteger) ?
+            String msg = item.containsKey('default') && detectIsObjectConvertibleToString(item.default) ?
                     ". Probably 'type' is password or string, but for security reasons autodetect is not possible" : ''
             checkOk = pipelineSettingsItemError(3, item.name as String, String.format('%s%s',
                     "'type' is required, but undefined", msg))
@@ -520,14 +529,14 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
                                                     Boolean execute = true) {
     Map stagesStates = [:]
     Boolean allPass = true
-    if (!pipelineSettings.get('stages') && ((check && denvVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) ||
+    if (!pipelineSettings.get('stages') && ((check && envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) ||
             execute))
         CF.outMsg(execute ? 3 : 0, String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stage in pipelineSettings.stages) {
-        Boolean checkOk = (check) ? checkStageSettingsItem(stage.toString(), pipelineSettings, envVariables)
-                : true
-        def (Map currentStageActionsStates, Boolean execOk) = (execute) ? executeStageSettingsItem(stage.toString(),
-                pipelineSettings, envVariables) : true
+        def (__, Boolean checkOk) = (check) ? checkOrExecuteStageSettingsItem(stage.toString(), pipelineSettings,
+                envVariables, true) : true
+        def (Map currentStageActionsStates, Boolean execOk) = (execute) ? checkOrExecuteStageSettingsItem(stage
+                .toString(), pipelineSettings, envVariables, false) : true
         allPass = checkOk && execOk
         stagesStates = stagesStates + currentStageActionsStates
     }
@@ -535,49 +544,33 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 }
 
 /**
- * Check stage item from pipeline settings defined properly.
- *
+ * Check or execute all actions in pipeline stage settings item.
  * (Check actions in the stage, all ansible playbooks, ansible inventories, jobs, scripts or another action according to
  * requirements described here: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings)
  *
- * @param stageName - stage settings name to check actions in it.
- * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DEBUG_MODE' environment variable
- *                       (or pipeline parameter) as an element of envVariables for debug mode.
- * @return - true when check pass.
- */
-Boolean checkStageSettingsItem(String stageName, Map pipelineSettings, Object envVariables) {
-    Boolean allPass = true
-    pipelineSettings.stages.get(stageName).eachWithIndex { item, index ->
-        CF.outMsg(0, String.format('Checking action no. %s from %s stage', index.toString(), entry))
-        def (__, Boolean checkOk) = checkOrExecutePipelineActionItem(item as Map, pipelineSettings, envVariables)
-        allPass = checkOk ? allPass : false
-    }
-    return allPass
-}
-
-/**
- * Execute all actions in pipeline stage settings item.
- *
- * @param stageName - stage settings name to check actions in it.
+ * @param stageName - stage settings name to check/execute actions in it.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
- *                       (or pipeline parameter) as an element of envVariables to true for dry run mode. Set
- *                       'DEBUG_MODE' for debug mode.
- * @param dryRun - true when dry run mode.
+ *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on
+ *                       stage execute. Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
+ * @param check - set false to execute action item, true to check.
  * @return - arrayList of: all actions in the stage status map (the structure of this map should be: key is the name
- *                         with spaces cut, value should be a map of: [name: name, state: state, url: url]);
+ *                         with spaces cut, value should be a map of: [name: stage name and action,
+ *                         state: state, url: info and/or job url]);
  *                         true when all stage actions execution successfully done.
  */
-ArrayList executeStageSettingsItem(String stageName, Map pipelineSettings, Object envVariables) {
+// TODO: make a parallel option
+ArrayList checkOrExecuteStageSettingsItem(String stageName, Map pipelineSettings, Object envVariables, Boolean check) {
     Map actionsStates = [:]
     Boolean allPass = true
     pipelineSettings.stages.get(stageName).eachWithIndex { item, index ->
-        Boolean checkOk
-        (actionsStates, checkOk) = checkOrExecutePipelineActionItem(item as Map, pipelineSettings, envVariables)
-        allPass = checkOk ? allPass : false
+        CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
+                index.toString(), stageName))
+        def (Map actionState, Boolean checkOrExecOk) = checkOrExecutePipelineActionItem(stageName, item as Map,
+                pipelineSettings, envVariables, check)
+        allPass = checkOrExecOk ? allPass : false
+        actionsStates = actionsStates + actionState
     }
     return [actionsStates, allPass]
 }
@@ -585,17 +578,72 @@ ArrayList executeStageSettingsItem(String stageName, Map pipelineSettings, Objec
 /**
  * Check (all set and linked properly) or execute action item from stage.
  *
+ * @param stageName - the name of the current stage from which to test or execute the action item (just for logging
+ *                    in all action status map - see @return of this function).
  * @param actionItem - action item to check or execute.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
  *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on execution.
  *                       Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
+ * @param check - set false to execute action item, true to check.
  * @return - arrayList of: all actions in the stage status map (the structure of this map should be: key is the name
- *                         with spaces cut, value should be a map of: [name: name, state: state, url: url]);
+ *                         with spaces cut, value should be a map of: [name: stage name and action, state: state,
+ *                         url: info and/or job url]);
  *                         true when all stage actions execution successfully done.
  */
-Boolean checkOrExecutePipelineActionItem(Map actionItem, Map pipelineSettings, Object envVariables) {
+ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map pipelineSettings,
+                                           Object envVariables, Boolean check) {
+    Boolean actionStructureOk = true
+    Boolean actionLinkOk = true
+    String actionDescription = ''
+    Map nodeItem = [:]
+    String actionItemName = '<undefined>'
+    if (actionItem.get('action')) {
+
+        // Check name and node keys defined properly.
+        String warningMsgTemplate = "'%s' key defined for current action, but it's empty. Remove them or define."
+        if (check && actionItem.find { it.key == 'name' }?.key && !actionItem.get('name'))
+            CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'name')))
+        actionItemName = actionItem.get('name') ? actionItem.name : actionItemName
+        if (check && actionItem.find { it.key == 'node'}?.key && !actionItem.get('node')) {
+            CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'node')))
+        } else if (check && actionItem.get('node')) {
+            Boolean nodePatternSyntaxOk = (!actionItem.node.get('pattern')) ||
+                    (actionItem.node.get('pattern')) && actionItem.node.get('pattern') instanceof Boolean
+            // TODO: restructure this condition
+            if (!nodePatternSyntaxOk)
+                CF.outMsg(2, "Node sub-key 'pattern' should be boolean. Probably you should remove quotes.")
+            // TODO: actionItem.node.get('name') ^ actionItem.node.get('label') conditions-alike need to be refactored
+            if (actionItem.get('node') instanceof Map && (actionItem.node.get('name') ^
+                    actionItem.node.get('label')) && nodePatternSyntaxOk) {
+                nodeItem = actionItem.node as Map
+            } else if (actionItem.get('node') instanceof Map && (!actionItem.node.get('name') ||
+                    !actionItem.node.get('label'))) {
+                CF.outMsg(2, "No node sub-keys 'name' or 'label' specified. Remove node key or define sub-keys.")
+            } else if (actionItem.get('node') instanceof Map && actionItem.node.get('name') &&
+                    actionItem.node.get('label')) {
+                CF.outMsg(3, "Node sub-keys 'name' and 'label' are incompatible. Please set one of them.")
+            } else if (detectIsObjectConvertibleToString(actionItem.get('node'))) {
+                nodeItem.name = actionItem.node.toString()
+            } else {
+                CF.outMsg(2, String.format("Wrong format of 'node' key for current '%s' action in stage '%s'. %s",
+                        actionItemName, stageName, 'No node changes in current action, key will be ignored'))
+            }
+        }
+        (actionLinkOk, actionDescription) = checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem,
+                pipelineSettings, envVariables, check)
+    } else {
+        CF.outMsg(3, String.format("No 'action' key specified, nothing to %s current action.",
+                check ? 'check for' : 'perform at'))
+        actionStructureOk = false
+    }
+    return [CF.addPipelineStepsAndUrls([:], String.format('%s | %s', stageName, actionItemName), actionStructureOk &&
+            actionLinkOk, actionDescription), actionStructureOk && actionLinkOk]
+}
+
+ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
+                                           Object envVariables, Boolean check) {
 
 }
 
