@@ -535,7 +535,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 }
 
 /**
- * Check pipeline stage settings item is defined properly.
+ * Check stage item from pipeline settings defined properly.
  *
  * (Check actions in the stage, all ansible playbooks, ansible inventories, jobs, scripts or another action according to
  * requirements described here: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings)
