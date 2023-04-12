@@ -510,21 +510,22 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  * @param pipelineSettings - pipeline settings map to check and/or execute.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param checkSettings - true to check pipeline settings structure and parameters.
- * @param executeSettings - true to execute pipeline wrapper stages defined in the config, false for dry run.
+ * @param check - true to check pipeline settings structure and parameters.
+ * @param execute - true to execute pipeline wrapper stages defined in the config, false for dry run.
  * @return - list of: true when checking and execution pass,
  *                    pipeline stages status map.
  */
-def checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean checkSettings = false,
-                                              Boolean executeSettings = true) {
+def checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
+                                              Boolean execute = true) {
     Map stagesStates = [:]
     Boolean allPass = true
-    if (!pipelineSettings.get('stages')) {
-        if (!checkSettings) CF.outMsg(3, 'No stages in pipeline config. Nothing to execute.')
-        return [stagesStates, !executeSettings]
+    Boolean dryRun = envVariables.getEnvironment().get('DRY_RUN').asBoolean()
+    Boolean debugMode = envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()
+    if (!pipelineSettings.get('stages') && (execute || (check && debugMode)))
+        CF.outMsg(execute ? 3 : 0, String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
+    for (stage in pipelineSettings.stages) {
+
     }
-
-
     return allPass
 }
 
