@@ -611,30 +611,23 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         } else if (check && actionItem.get('node')) {
             String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
 
-            // Check node sub-keys defined properly.
+            // Check node keys and sub-keys defined properly.
             if (detectIsObjectConvertibleToString(actionItem.get('node'))) {
                 nodeItem.node.name = actionItem.node.get('name')
             } else if (actionItem.get('node') instanceof Map) {
                 nodeItem = actionItem.get('node') as Map
                 Boolean nodeNameOrLabelDefined = actionItem.node.get('name') ^ actionItem.node.get('label')
-                if (!nodeNameOrLabelDefined) {
-                    if (check) {
-                        CF.outMsg(2, String.format("Node sub-keys 'name' and 'label' are incompatible. Define %s",
-                                "only one of them, otherwise 'label' sub-key will be ignored."))
-                    }
-                }
+                if (!nodeNameOrLabelDefined)
+                    actionStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format('%s %s',
+                            "Node sub-keys 'name' and 'label' are incompatible.",
+                            "Define only one of them, otherwise 'label' sub-key will be ignored."))
 
-                if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get('name'))) {
-                    actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
-                            String.format(keyWarnOrErrMsgTemplate, 'sub-', 'name', printableStageAndAction, ''))
-                    nodeItem.node.remove('name')
-                }
-
-                if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get('label'))) {
-                    actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
-                            String.format(keyWarnOrErrMsgTemplate, 'sub-', 'label', printableStageAndAction, ''))
-                    nodeItem.node.remove('label')
-                }
+                (nodeItem, actionStructureOk) = detectNodeSubkeyConvertibleToString(check, nodeNameOrLabelDefined,
+                        actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
+                        'name')
+                (nodeItem, actionStructureOk) = detectNodeSubkeyConvertibleToString(check, nodeNameOrLabelDefined,
+                        actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
+                        'label')
 
                 if (actionItem.node.get('pattern') instanceof Boolean) {
                     nodeItem.pattern = actionItem.node.get('pattern')
@@ -678,6 +671,30 @@ Boolean actionStructureErrorMsgWrapper(Boolean check, Boolean actionStructureSta
         actionStructureState = eventNum == 3 ? false : actionStructureState
     }
     return actionStructureState
+}
+
+/**
+ * Detect node subkey ('name', 'label') in action item is convertible to string.
+ *
+ * @param check - set false to execute action item, true to check.
+ * @param nodeNameOrLabelDefined - pass true when only one of node 'name' or 'label' sub-keys defined.
+ * @param actionStructureOk - state of action item structure check: true when ok.
+ * @param actionItem - action item to check or execute.
+ * @param nodeItem - node item as a part of actionItem.
+ * @param printableStageAndAction - stage name and action name in printable format.
+ * @param keyWarnOrErrorMsgTemplate - Template for warning on error message.
+ * @param nodeSubkeyName - sub-key of node map to check (is convertible to string).
+ * @return - arrayList of: modified nodeItem,
+ *                         modified actionStructureOk (only when check = true, otherwise returns unchanged).
+ */
+ArrayList detectNodeSubkeyConvertibleToString(Boolean check, Boolean nodeNameOrLabelDefined, Boolean actionStructureOk,
+                                              Map actionItem, Map nodeItem, String printableStageAndAction,
+                                              String keyWarnOrErrorMsgTemplate, String nodeSubkeyName) {
+    if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubkeyName)))
+        actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
+                String.format(keyWarnOrErrorMsgTemplate, 'sub-', nodeSubkeyName, printableStageAndAction, ''))
+    nodeItem.node.remove(nodeSubkeyName)
+    return [nodeItem, actionStructureOk]
 }
 
 ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
