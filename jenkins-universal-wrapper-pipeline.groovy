@@ -575,7 +575,7 @@ ArrayList checkOrExecuteStageSettingsItem(String stageName, Map pipelineSettings
 }
 
 /**
- * Check (all set and linked properly) or execute action item from stage.
+ * Check all action items defined properly or execute action item from stage.
  *
  * @param stageName - the name of the current stage from which to test or execute the action item (just for logging
  *                    in all action status map - see @return of this function).
@@ -603,7 +603,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     CF.outMsg(0, String.format("%s '%s'...", check ? 'Checking' : 'Executing', printableStageAndAction))
     if (actionItem.get('action')) {
 
-        // Check name and node keys defined properly.
+        // Check 'name' and 'node' keys correct.
         if (check && actionItem.find { it.key == 'name' }?.key && !actionItem.get('name'))
             CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'name')))
         if (check && actionItem.find { it.key == 'node'}?.key && !actionItem.get('node')) {
@@ -616,12 +616,13 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 nodeItem.node.name = actionItem.node.get('name')
             } else if (actionItem.get('node') instanceof Map) {
                 nodeItem = actionItem.get('node') as Map
+
+                // Check only one of node sub-keys 'name' or 'label' defined and it's correct.
                 Boolean nodeNameOrLabelDefined = actionItem.node.get('name') ^ actionItem.node.get('label')
                 if (!nodeNameOrLabelDefined)
                     actionStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format('%s %s',
                             "Node sub-keys 'name' and 'label' are incompatible.",
                             "Define only one of them, otherwise 'label' sub-key will be ignored."))
-
                 (nodeItem, actionStructureOk) = detectNodeSubkeyConvertibleToString(check, nodeNameOrLabelDefined,
                         actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
                         'name')
@@ -629,6 +630,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                         actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
                         'label')
 
+                // Check when node sub-key defined it's boolean.
                 if (actionItem.node.get('pattern') instanceof Boolean) {
                     nodeItem.pattern = actionItem.node.get('pattern')
                 } else {
@@ -637,7 +639,6 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                                 'Sub-key should be boolean.'))
                     nodeItem.node.remove('pattern')
                 }
-
             } else {
                 actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
                         String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction,
@@ -648,7 +649,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 pipelineSettings, envVariables, check)
     } else {
         CF.outMsg(3, String.format("No 'action' key specified, nothing to %s '%s' action.",
-                check ? 'check for' : 'perform at', printableStageAndAction))
+                check ? 'check in' : 'perform at', printableStageAndAction))
         actionStructureOk = false
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
