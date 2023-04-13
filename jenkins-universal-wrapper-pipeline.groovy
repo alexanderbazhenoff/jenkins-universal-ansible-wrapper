@@ -599,37 +599,65 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     String actionDescription = ''
     Map nodeItem = [:]
     String actionItemName = '<undefined>'
+    String warningMsgTemplate = "'%s' key defined for current action, but it's empty. Remove this key or define value."
     if (actionItem.get('action')) {
 
         // Check name and node keys defined properly.
-        String warningMsgTemplate = "'%s' key defined for current action, but it's empty. Remove them or define."
         if (check && actionItem.find { it.key == 'name' }?.key && !actionItem.get('name'))
             CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'name')))
         actionItemName = actionItem.get('name') ? actionItem.name : actionItemName
         if (check && actionItem.find { it.key == 'node'}?.key && !actionItem.get('node')) {
             CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'node')))
         } else if (check && actionItem.get('node')) {
-            Boolean nodePatternSyntaxOk = (!actionItem.node.get('pattern')) ||
-                    (actionItem.node.get('pattern')) && actionItem.node.get('pattern') instanceof Boolean
-            // TODO: restructure this condition
-            if (!nodePatternSyntaxOk)
-                CF.outMsg(2, "Node sub-key 'pattern' should be boolean. Probably you should remove quotes.")
-            // TODO: actionItem.node.get('name') ^ actionItem.node.get('label') conditions-alike need to be refactored
-            if (actionItem.get('node') instanceof Map && (actionItem.node.get('name') ^
-                    actionItem.node.get('label')) && nodePatternSyntaxOk) {
-                nodeItem = actionItem.node as Map
-            } else if (actionItem.get('node') instanceof Map && (!actionItem.node.get('name') ||
-                    !actionItem.node.get('label'))) {
-                CF.outMsg(2, "No node sub-keys 'name' or 'label' specified. Remove node key or define sub-keys.")
-            } else if (actionItem.get('node') instanceof Map && actionItem.node.get('name') &&
-                    actionItem.node.get('label')) {
-                CF.outMsg(3, "Node sub-keys 'name' and 'label' are incompatible. Please set one of them.")
-            } else if (detectIsObjectConvertibleToString(actionItem.get('node'))) {
-                nodeItem.name = actionItem.node.toString()
+
+            // Check node sub-keys defined properly.
+            if (detectIsObjectConvertibleToString(actionItem.get('node'))) {
+                nodeItem.node.name = actionItem.node.get('name')
+            } else if (actionItem.get('node') instanceof Map) {
+                nodeItem = actionItem.get('node') as Map
+                Boolean nodeNameOrLabelDefined = actionItem.node.get('name') ^ actionItem.node.get('label')
+                if (!nodeNameOrLabelDefined) {
+                    if (check) {
+                        CF.outMsg(2, String.format("Node sub-keys 'name' and 'label' are incompatible. Define %s",
+                                "only one of them, otherwise 'label' sub-key will be ignored."))
+                    }
+                }
+
+                if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get('name'))) {
+                    if (check) {
+                        CF.outMsg(3, String.format("Wrong format of node 'name' sub-key for '%s' action in '%s' stage.",
+                                actionItemName, stageName))
+                        actionStructureOk = false
+                    }
+                    nodeItem.node.remove('name')
+                }
+
+                if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get('label'))) {
+                    if (check) {
+                        CF.outMsg(3, String.format("Wrong format of node 'label' sub-key for '%s' action in '%s' " +
+                                "stage.", actionItemName, stageName))
+                        actionStructureOk = false
+                    }
+                    nodeItem.node.remove('label')
+                }
+
+
             } else {
-                CF.outMsg(2, String.format("Wrong format of 'node' key for current '%s' action in stage '%s'. %s",
-                        actionItemName, stageName, 'No node changes in current action, key will be ignored'))
+                if (check) {
+                    CF.outMsg(3, String.format("Wrong format of 'node' key for '%s' action in '%s' stage. %s",
+                            actionItemName, stageName, 'Key will be ignored.'))
+                    actionStructureOk = false
+                }
             }
+
+            if (actionItem.node.get('pattern') instanceof Boolean) {
+                nodeItem.pattern = actionItem.node.get('pattern')
+            } else {
+                if (check)
+                    CF.outMsg(2, "Node sub-key 'pattern' should be boolean.")
+                nodeItem.node.remove('pattern')
+            }
+
         }
         (actionLinkOk, actionDescription) = checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem,
                 pipelineSettings, envVariables, check)
