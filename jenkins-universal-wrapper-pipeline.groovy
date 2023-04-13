@@ -163,8 +163,7 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
  * @return - 'false' as a failed pipeline check item state.
  */
 Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg) {
-    CF.outMsg(eventNum, String.format("Syntax %s in pipeline parameter '%s': %s.", eventNum == 3 ? 'ERROR' : 'WARNING',
-            itemName, errorMsg))
+    CF.outMsg(eventNum, String.format("Wrong syntax in pipeline parameter '%s': %s.", itemName, errorMsg))
     return false
 }
 
@@ -598,17 +597,19 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     Boolean actionLinkOk = true
     String actionDescription = ''
     Map nodeItem = [:]
-    String actionItemName = '<undefined>'
+    String actionItemName = actionItem.get('name') ? actionItem.name : '<undefined>'
+    String printableStageAndAction = String.format('%s | %s', stageName, actionItemName)
     String warningMsgTemplate = "'%s' key defined for current action, but it's empty. Remove this key or define value."
+    CF.outMsg(0, String.format("%s '%s'...", check ? 'Checking' : 'Executing', printableStageAndAction))
     if (actionItem.get('action')) {
 
         // Check name and node keys defined properly.
         if (check && actionItem.find { it.key == 'name' }?.key && !actionItem.get('name'))
             CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'name')))
-        actionItemName = actionItem.get('name') ? actionItem.name : actionItemName
         if (check && actionItem.find { it.key == 'node'}?.key && !actionItem.get('node')) {
             CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'node')))
         } else if (check && actionItem.get('node')) {
+            String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
 
             // Check node sub-keys defined properly.
             if (detectIsObjectConvertibleToString(actionItem.get('node'))) {
@@ -624,50 +625,59 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 }
 
                 if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get('name'))) {
-                    if (check) {
-                        CF.outMsg(3, String.format("Wrong format of node 'name' sub-key for '%s' action in '%s' stage.",
-                                actionItemName, stageName))
-                        actionStructureOk = false
-                    }
+                    actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
+                            String.format(keyWarnOrErrMsgTemplate, 'sub-', 'name', printableStageAndAction, ''))
                     nodeItem.node.remove('name')
                 }
 
                 if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get('label'))) {
-                    if (check) {
-                        CF.outMsg(3, String.format("Wrong format of node 'label' sub-key for '%s' action in '%s' " +
-                                "stage.", actionItemName, stageName))
-                        actionStructureOk = false
-                    }
+                    actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
+                            String.format(keyWarnOrErrMsgTemplate, 'sub-', 'label', printableStageAndAction, ''))
                     nodeItem.node.remove('label')
                 }
 
-
-            } else {
-                if (check) {
-                    CF.outMsg(3, String.format("Wrong format of 'node' key for '%s' action in '%s' stage. %s",
-                            actionItemName, stageName, 'Key will be ignored.'))
-                    actionStructureOk = false
+                if (actionItem.node.get('pattern') instanceof Boolean) {
+                    nodeItem.pattern = actionItem.node.get('pattern')
+                } else {
+                    actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk,2,
+                            String.format(keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction,
+                                'Sub-key should be boolean.'))
+                    nodeItem.node.remove('pattern')
                 }
-            }
 
-            if (actionItem.node.get('pattern') instanceof Boolean) {
-                nodeItem.pattern = actionItem.node.get('pattern')
             } else {
-                if (check)
-                    CF.outMsg(2, "Node sub-key 'pattern' should be boolean.")
-                nodeItem.node.remove('pattern')
+                actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
+                        String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction,
+                                'Key will be ignored.'))
             }
-
         }
         (actionLinkOk, actionDescription) = checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem,
                 pipelineSettings, envVariables, check)
     } else {
-        CF.outMsg(3, String.format("No 'action' key specified, nothing to %s current action.",
-                check ? 'check for' : 'perform at'))
+        CF.outMsg(3, String.format("No 'action' key specified, nothing to %s '%s' action.",
+                check ? 'check for' : 'perform at', printableStageAndAction))
         actionStructureOk = false
     }
-    return [CF.addPipelineStepsAndUrls([:], String.format('%s | %s', stageName, actionItemName), actionStructureOk &&
-            actionLinkOk, actionDescription), actionStructureOk && actionLinkOk]
+    Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
+    return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
+            actionStructureAndLinkOk]
+}
+
+/**
+ * Action structure error or warning message wrapper.
+ *
+ * @param check - true on check mode, false on execution.
+ * @param actionStructureState - a state of the whole action item: true when ok.
+ * @param eventNum - event number: 3 is an error, 2 is a warning.
+ * @param msg - error or warning message.
+ * @return - a state of the whole action item: true when ok.
+ */
+Boolean actionStructureErrorMsgWrapper(Boolean check, Boolean actionStructureState, Integer eventNum, String msg) {
+    if (check) {
+        CF.outMsg(eventNum, msg)
+        actionStructureState = eventNum == 3 ? false : actionStructureState
+    }
+    return actionStructureState
 }
 
 ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
