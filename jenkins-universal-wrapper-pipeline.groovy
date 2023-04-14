@@ -36,6 +36,7 @@ final JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
 // Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on.
 final JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
 
+// TODO: Update parameters built-in param UPDATE_PARAMETERS
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
 final BuiltinPipelineParameters = [
         [name       : 'SETTINGS_GIT_BRANCH',
@@ -53,8 +54,8 @@ final BuiltinPipelineParameters = [
          type       : 'boolean',
          description: String.format('%s (%s).', 'Dry run mode to use for pipeline settings troubleshooting',
                  'will be ignored on pipeline parameters needs to be injected')],
-        [name: 'DEBUG_MODE',
-         type: 'boolean']
+        [name       : 'DEBUG_MODE',
+         type       : 'boolean']
 ] as ArrayList
 
 
