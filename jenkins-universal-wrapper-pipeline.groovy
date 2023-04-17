@@ -206,7 +206,7 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
         item.name = "''"
     }
 
-    // Check 'assign' sub-key in 'on_empty' key is correct (if defined).
+    // Check 'assign' sub-key in 'on_empty' key is correct when defined.
     if (item.get('on_empty') && item.on_empty.get('assign') && item.on_empty.assign.startsWith('$') &&
             !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('\$', '')))
         checkOk = pipelineSettingsItemError(3, item as String, String.format("%s: '%s'",
