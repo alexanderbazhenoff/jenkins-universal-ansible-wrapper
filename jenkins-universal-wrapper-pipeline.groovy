@@ -363,6 +363,7 @@ static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVari
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @return - true when all required variables are specified.
  */
+// TODO: make iterating over optional parameters and check on_empty
 Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters, Object envVariables) {
     Boolean allSet = true
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
