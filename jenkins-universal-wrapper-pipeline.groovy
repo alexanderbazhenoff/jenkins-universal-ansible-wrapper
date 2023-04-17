@@ -37,7 +37,7 @@ final JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
 final JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
 
 // TODO: Update parameters built-in param UPDATE_PARAMETERS
-// TODO: to_list parameter key
+// TODO: replace action parameters key for variables in stages handling
 // TODO: regex_replace parameter key
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
 final BuiltinPipelineParameters = [
