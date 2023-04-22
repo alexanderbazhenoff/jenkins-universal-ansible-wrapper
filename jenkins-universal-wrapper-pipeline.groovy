@@ -36,12 +36,15 @@ final JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
 // Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on.
 final JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
 
-// TODO: Update parameters built-in param UPDATE_PARAMETERS
 // TODO: replace action parameters key for variables in stages handling
 // TODO: regex_replace parameter key
 // TODO: redo stages parsing
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
 final BuiltinPipelineParameters = [
+        [name       : 'UPDATE_PARAMETERS',
+         type       : 'boolean',
+         default    : false,
+         description: 'Update pipeline parameters from settings file only.'],
         [name       : 'SETTINGS_GIT_BRANCH',
          type       : 'string',
          regex      : '(\\*)? +(.*?) +(.*?)? ((\\[(.*?)(: (.*?) (\\d+))?\\])? ?(.*$))?',
@@ -475,7 +478,8 @@ ArrayList wrapperPipelineParametersProcessing(Map pipelineSettings, Object curre
     if (requiredPipelineParams[0]) {
         noPipelineParams = false
         CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings.')
-        if (verifyPipelineParamsArePresents(requiredPipelineParams, currentPipelineParams)) {
+        if (currentPipelineParams.get('UPDATE_PARAMETERS') || verifyPipelineParamsArePresents(requiredPipelineParams,
+                currentPipelineParams)) {
             CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings.')
             (requiredPipelineParams, checkPipelineParametersPass) =
                     checkPipelineParamsFormat(requiredPipelineParams)
