@@ -2,7 +2,7 @@
 
 
 @NonCPS
-@Grab(group='org.yaml', module='snakeyaml', version='1.5')
+@Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
 import org.yaml.snakeyaml.*
 
 import java.util.regex.Pattern
@@ -62,8 +62,8 @@ final BuiltinPipelineParameters = [
          type       : 'boolean',
          description: String.format('%s (%s).', 'Dry run mode to use for pipeline settings troubleshooting',
                  'will be ignored on pipeline parameters needs to be injected')],
-        [name       : 'DEBUG_MODE',
-         type       : 'boolean']
+        [name: 'DEBUG_MODE',
+         type: 'boolean']
 ] as ArrayList
 
 
@@ -96,7 +96,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  * @return - resulting text.
  */
 static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
-    regexItemsList.eachWithIndex{ value, Integer index ->
+    regexItemsList.eachWithIndex { value, Integer index ->
         text = text.replaceAll(value, replaceItemsList.contains(index) ? replaceItemsList[index] : '')
     }
     return text
@@ -134,7 +134,9 @@ static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
  */
 static verifyPipelineParamsArePresents(ArrayList requiredParams, Object currentPipelineParams) {
     Boolean updateParamsRequired = false
-    requiredParams.each { if (!currentPipelineParams.containsKey(it.name)) updateParamsRequired = true }
+    requiredParams.each {
+        if (it.get('name') && !currentPipelineParams.containsKey(it.name)) updateParamsRequired = true
+    }
     return updateParamsRequired
 }
 
@@ -325,8 +327,8 @@ ArrayList checkPipelineParamsFormat(ArrayList parameters) {
  *                             class java.util.Collections$UnmodifiableMap).
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param isUndefined - set true to detect pipeline parameter for current job is undefined, or false to detect
- *                      parameter is undefined.
+ * @param isUndefined - condition to check state: set true to detect pipeline parameter for current job is undefined, or
+ *                      false to detect parameter is defined.
  * @return - list of: parameter name (or '<>' when name wasn't set),
  *                    return true when condition specified in 'isUndefined' method variable met.
  */
@@ -381,7 +383,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                 String assignMessage = ''
                 Boolean assignmentComplete = false
                 def (Boolean paramNeedsToBeAssigned, String paramAssignment, Boolean fail, Boolean warn) =
-                        handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
+                handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
                 if (paramNeedsToBeAssigned && printableParamName != '<>' && paramAssignment.trim()) {
                     env[it.name.toString()] = paramAssignment
                     assignmentComplete = true
@@ -410,8 +412,8 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
 static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinPipelineParameters) {
     return (pipelineSettings.get('parameters')) ?
             (pipelineSettings.parameters.get('required') ? pipelineSettings.parameters.required : []) +
-            (pipelineSettings.parameters.get('optional') ? pipelineSettings.parameters.optional : []) +
-            builtinPipelineParameters : []
+                    (pipelineSettings.parameters.get('optional') ? pipelineSettings.parameters.optional : []) +
+                    builtinPipelineParameters : []
 }
 
 /**
@@ -617,7 +619,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         // Check 'name' and 'node' keys correct.
         if (check && actionItem.find { it.key == 'name' }?.key && !actionItem.get('name'))
             CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'name')))
-        if (check && actionItem.find { it.key == 'node'}?.key && !actionItem.get('node')) {
+        if (check && actionItem.find { it.key == 'node' }?.key && !actionItem.get('node')) {
             CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'node')))
         } else if (check && actionItem.get('node')) {
             String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
@@ -645,9 +647,9 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 if (actionItem.node.get('pattern') instanceof Boolean) {
                     nodeItem.pattern = actionItem.node.get('pattern')
                 } else {
-                    actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk,2,
+                    actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 2,
                             String.format(keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction,
-                                'Sub-key should be boolean.'))
+                                    'Sub-key should be boolean.'))
                     nodeItem.node.remove('pattern')
                 }
             } else {
@@ -728,7 +730,7 @@ node(jenkinsNodeToExecute) {
                 (params.get('DEBUG_MODE')) as Boolean)
         String pipelineFailedReasonText = ''
         def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
-                wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
+        wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
 
         // Check all required pipeline parameters was defined properly for current build.
         if (noPipelineParamsInTheConfig) {
