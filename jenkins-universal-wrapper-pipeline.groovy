@@ -5,6 +5,8 @@
 @Grab(group='org.yaml', module='snakeyaml', version='1.5')
 import org.yaml.snakeyaml.*
 
+import java.util.regex.Pattern
+
 
 // TODO: change branch
 @Library('jenkins-shared-library-alx@devel') _
@@ -532,6 +534,7 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *                    value should be a map of: [name: name, state: state, url: url]);
  *                    true when checking and execution pass.
  */
+// TODO: /// Continue format checking from here
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                                     Boolean execute = true) {
     Map stagesStates = [:]
