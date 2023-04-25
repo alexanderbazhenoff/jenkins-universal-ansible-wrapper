@@ -39,7 +39,6 @@ final JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
 final JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
 
 // TODO: replace action parameters key for variables in stages handling
-// TODO: regex_replace parameter key
 // TODO: redo stages parsing
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
 final BuiltinPipelineParameters = [
@@ -329,7 +328,7 @@ ArrayList checkPipelineParamsFormat(ArrayList parameters) {
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param isUndefined - condition to check state: set true to detect pipeline parameter for current job is undefined, or
  *                      false to detect parameter is defined.
- * @return - list of: parameter name (or '<>' when name wasn't set),
+ * @return - list of: printable parameter name (or '<>' when name wasn't set),
  *                    return true when condition specified in 'isUndefined' method variable met.
  */
 static getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
@@ -377,24 +376,24 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
     if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
-            def (String printableParamName, Boolean paramIsUndefined) = getPipelineParamNameAndDefinedState(it as Map,
-                    pipelineParameters, envVariables)
-            if (paramIsUndefined) {
+            def (String printableParameterName, Boolean parameterIsUndefined) = getPipelineParamNameAndDefinedState(it
+                    as Map, pipelineParameters, envVariables)
+            if (parameterIsUndefined) {
                 String assignMessage = ''
                 Boolean assignmentComplete = false
-                def (Boolean paramNeedsToBeAssigned, String paramAssignment, Boolean fail, Boolean warn) =
-                handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
-                if (paramNeedsToBeAssigned && printableParamName != '<>' && paramAssignment.trim()) {
-                    env[it.name.toString()] = paramAssignment
+                def (Boolean paramNeedsToBeAssigned, String parameterAssignment, Boolean fail, Boolean warn) =
+                        handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
+                if (paramNeedsToBeAssigned && printableParameterName != '<>' && parameterAssignment.trim()) {
+                    env[it.name.toString()] = parameterAssignment
                     assignmentComplete = true
-                } else if (printableParamName == '<>' || (paramNeedsToBeAssigned && !paramAssignment.trim())) {
+                } else if (printableParameterName == '<>' || (paramNeedsToBeAssigned && !parameterAssignment.trim())) {
                     assignMessage = paramNeedsToBeAssigned ? String.format("(and can't be assigned with %s variable) ",
                             it.on_empty.get('assign').toString()) : ''
                 }
                 allSet = !assignmentComplete && fail ? false : allSet
                 if (warn || (fail && !allSet))
                     CF.outMsg(fail ? 3 : 2, String.format("'%s' pipeline parameter is required, but undefined %s%s. %s",
-                            printableParamName, assignMessage, 'for current job run',
+                            printableParameterName, assignMessage, 'for current job run',
                             'Please specify then re-build again.'))
             }
         }
@@ -417,8 +416,10 @@ static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinP
 }
 
 /**
- * Regex check of current job build pipeline parameters.
- * (Check match when current build pipeline parameter is not empty and a key 'regex' is defined in pipeline settings).
+ * Perform regex check and regex replacement of current job build pipeline parameters.
+ *
+ * (Check match when current build pipeline parameter is not empty and a key 'regex' is defined in pipeline settings.
+ * Also perform regex replacement of parameter value when 'regex_replace' key is defined).
  *
  * @param pipelineSettings - pipeline settings map.
  * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
@@ -446,13 +447,56 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
                     regexPattern = it.regex.toString()
                 }
                 if (regexPattern.trim())
-                    CF.outMsg(0, String.format('Found regex for pipeline parameter %s: %s', printableParamName,
-                            regexPattern))
+                    CF.outMsg(0, String.format("Found '%s' regex for pipeline parameter '%s'.", regexPattern,
+                            printableParamName))
                 if (paramIsDefined && regexPattern.trim() && !envVariables[it.name as String].matches(regexPattern)) {
                     allCorrect = false
-                    CF.outMsg(3, String.format('%s parameter is incorrect due to regex missmatch.',
-                            printableParamName))
+                    CF.outMsg(3, String.format('%s parameter is incorrect due to regex missmatch.', printableParamName))
                 }
+            }
+
+            // Perform regex replacement when regex_replace was set and pipeline parameter is defined for current build.
+            if (it.get('regex_replace')) {
+                Boolean regexReplacementDone = false
+                String msgTemplateNoValue =
+                        "'%s' sub-key value of 'regex_replace' wasn't defined for '%s' pipeline parameter.%s"
+                String msgTemplateWrongType =
+                        "Wrong type of '%s' value sub-key of 'regex_replace' for '%s' pipeline parameter.%s"
+                String msgRecommendation = ' Please fix them. Otherwise, replacement will be skipped with an error.'
+
+                // Handle 'to' sub-key of 'regex_replace' parameter item key.
+                String regexReplacement = it.regex_replace.get('to')
+                Boolean regexToKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('to'))
+                if (regexReplacement?.trim() && !regexToKeyIsConvertibleToString) {
+                    CF.outMsg(3, String.format(msgTemplateWrongType, 'to', printableParamName, msgRecommendation))
+                }
+
+                // Handle 'regex' sub-key of 'regex_replace' parameter item key.
+                String regexPattern = it.regex_replace.get('regex')
+                Boolean regexKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('regex'))
+                if (regexPattern?.trim() && regexKeyIsConvertibleToString) {
+                    if (!regexReplacement?.trim()) {
+                        CF.outMsg(0, String.format(msgTemplateNoValue, 'to', printableParamName,
+                                'Regex match(es) will be removed.' ))
+                        regexReplacement = ''
+                    }
+                    if (paramIsDefined && printableParamName != '<>') {
+                        CF.outMsg(0, String.format("Replacing '%s' regex to '%s' in '%s' pipeline parameter value...",
+                                regexPattern, regexReplacement, printableParamName))
+                        env[it.name.toString()] = applyReplaceRegexItems(env[it.name.toString()] as String,
+                                [regexPattern], [regexReplacement])
+                        regexReplacementDone = true
+                    } else if (printableParamName == '<>') {
+                        CF.outMsg(3, String.format("Replace '%s' regex to '%s' is not possible: 'name' key is %s. %s.",
+                                regexPattern, regexReplacement, 'not defined for pipeline parameter item.',
+                                'Please fix pipeline config. Otherwise, replacement will be skipped with an error.'))
+                    }
+                } else if (regexPattern?.trim() && !regexKeyIsConvertibleToString) {
+                    CF.outMsg(3, String.format(msgTemplateWrongType, 'regex', printableParamName, msgRecommendation))
+                } else {
+                    CF.outMsg(3, String.format(msgTemplateNoValue, 'regex', printableParamName, msgRecommendation))
+                }
+                allCorrect = regexReplacementDone ? allCorrect : false
             }
 
         }
@@ -469,7 +513,7 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
  * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
  *                                which is class java.util.Collections$UnmodifiableMap).
  * @param builtinPipelineParameters - built-in pipeline parameters in the same format as pipelineSettings, e.g:
- *                                    'SETTINGS_GIT_BRANCH', 'DEBUG_MODE', etc...
+ *                                    'SETTINGS_GIT_BRANCH', 'DEBUG_MODE', 'DRY_RUN', etc...
  * @return - list of: true when there is no pipeline parameters in the pipelineSettings,
  *                    true when pipeline parameters processing pass.
  */
@@ -485,8 +529,7 @@ ArrayList wrapperPipelineParametersProcessing(Map pipelineSettings, Object curre
         if (currentPipelineParams.get('UPDATE_PARAMETERS') || verifyPipelineParamsArePresents(requiredPipelineParams,
                 currentPipelineParams)) {
             CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings.')
-            (requiredPipelineParams, checkPipelineParametersPass) =
-                    checkPipelineParamsFormat(requiredPipelineParams)
+            (requiredPipelineParams, checkPipelineParametersPass) = checkPipelineParamsFormat(requiredPipelineParams)
             if (checkPipelineParametersPass) {
                 CF.outMsg(1, 'Updating current pipeline parameters.')
                 updatePipelineParams(requiredPipelineParams)
@@ -547,8 +590,8 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     for (stage in pipelineSettings.stages) {
         def (__, Boolean checkOk) = (check) ? checkOrExecuteStageSettingsItem(stage.toString(), pipelineSettings,
                 envVariables, true) : true
-        def (Map currentStageActionsStates, Boolean execOk) = (execute) ? checkOrExecuteStageSettingsItem(stage
-                .toString(), pipelineSettings, envVariables, false) : true
+        def (Map currentStageActionsStates, Boolean execOk) = (execute) ?
+                checkOrExecuteStageSettingsItem(stage.toString(), pipelineSettings, envVariables, false) : true
         allPass = checkOk && execOk
         stagesStates = stagesStates + currentStageActionsStates
     }
@@ -742,8 +785,8 @@ node(jenkinsNodeToExecute) {
         }
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
-        def (Boolean pipelineSettingsCheckOk, __) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings,
-                env, true, false)
+        def (Boolean pipelineSettingsCheckOk, __) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env,
+                true, false)
         pipelineFailedReasonText += pipelineSettingsCheckOk ? '' : 'Pipeline settings contains an error(s).'
 
         // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it.
