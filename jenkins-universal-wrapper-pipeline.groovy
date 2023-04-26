@@ -574,12 +574,20 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param check - true to check pipeline settings structure and parameters.
- * @param execute - true to execute pipeline wrapper stages defined in the config, false for dry run.
+ * @param execute - true to execute pipeline wrapper stages defined in the config, false for dry run. Please note:
+ *
+ *        1. When 'check' is true pipeline settings will be checked, then if 'execute' is true pipeline settings will be
+ *        executed. So you can set both 'check' and 'execute' to true, but it's not recommended: use separate function
+ *        call to check settings first. And only then if this ok execute it (instead of possible stacktrace dumps on
+ *        errors). Otherwise, stop with fail the whole pipeline after the unsuccessful check.
+ *        2. You can also set envVariables.DEBUG_MODE to verbose output and/or envVariables.DRY_RUN to perform dry run.
  * @return - list of: pipeline stages status map (the structure of this map should be: key is the name with spaces cut,
  *                    value should be a map of: [name: name, state: state, url: url]);
- *                    true when checking and execution pass.
+ *                    true when checking and execution pass;
+ *                    return of environment variables ('env') that pass to function in 'envVariables'.
  */
 // TODO: /// Continue format checking from here
+// TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                                     Boolean execute = true) {
     Map stagesStates = [:]
@@ -595,7 +603,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         allPass = checkOk && execOk
         stagesStates = stagesStates + currentStageActionsStates
     }
-    return [stagesStates, allPass]
+    return [stagesStates, allPass, envVariables]
 }
 
 /**
@@ -785,8 +793,9 @@ node(jenkinsNodeToExecute) {
         }
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
-        def (Boolean pipelineSettingsCheckOk, __) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env,
-                true, false)
+        Boolean pipelineSettingsCheckOk
+        (pipelineSettingsCheckOk, __, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
+                false)
         pipelineFailedReasonText += pipelineSettingsCheckOk ? '' : 'Pipeline settings contains an error(s).'
 
         // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it.
@@ -795,7 +804,8 @@ node(jenkinsNodeToExecute) {
             error String.format('%s\n%s.', pipelineFailedReasonText, 'Please fix then re-build')
 
         // Execute wrapper pipeline settings stages.
-        def (Boolean allDone, Map pipelineStagesStates) = (checkOrExecutePipelineWrapperFromSettings(pipelineSettings,
-                env, false))
+        Boolean allDone
+        Map pipelineStagesStates
+        (allDone, pipelineStagesStates, env) = (checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, false))
     }
 }
