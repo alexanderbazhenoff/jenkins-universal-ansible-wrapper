@@ -608,8 +608,9 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 
 /**
  * Check or execute all actions in pipeline stage settings item.
+ *
  * (Check actions in the stage, all ansible playbooks, ansible inventories, jobs, scripts or another action according to
- * requirements described here: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings)
+ * requirements described here: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  *
  * @param stageName - stage settings name to check/execute actions in it.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
