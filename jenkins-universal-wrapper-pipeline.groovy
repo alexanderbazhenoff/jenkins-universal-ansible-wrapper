@@ -586,8 +586,6 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *                    true when checking and execution pass;
  *                    return of environment variables ('env') that pass to function in 'envVariables'.
  */
-// TODO: /// Continue format checking from here
-// TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                                     Boolean execute = true) {
     Map stagesStates = [:]
@@ -596,10 +594,13 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
             execute))
         CF.outMsg(execute ? 3 : 0, String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stage in pipelineSettings.stages) {
-        def (__, Boolean checkOk) = (check) ? checkOrExecuteStageSettingsItem(stage.toString(), pipelineSettings,
-                envVariables, true) : true
-        def (Map currentStageActionsStates, Boolean execOk) = (execute) ?
-                checkOrExecuteStageSettingsItem(stage.toString(), pipelineSettings, envVariables, false) : true
+        Boolean checkOk
+        (__, checkOk, envVariables) = (check) ? checkOrExecuteStageSettingsItem(stage.toString(), pipelineSettings,
+                envVariables, true) : [[:], true, envVariables]
+        Map currentStageActionsStates
+        Boolean execOk
+        (currentStageActionsStates, execOk, envVariables) = (execute) ? checkOrExecuteStageSettingsItem(stage
+                .toString(), pipelineSettings, envVariables, false) : [[:], true, envVariables]
         allPass = checkOk && execOk
         stagesStates = stagesStates + currentStageActionsStates
     }
@@ -625,6 +626,8 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
  *                         true when all stage actions execution successfully done.
  */
 // TODO: make a parallel option
+// TODO: /// Continue format checking from here
+// TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecuteStageSettingsItem(String stageName, Map pipelineSettings, Object envVariables, Boolean check) {
     Map actionsStates = [:]
     Boolean allPass = true
@@ -636,7 +639,7 @@ ArrayList checkOrExecuteStageSettingsItem(String stageName, Map pipelineSettings
         allPass = checkOrExecOk ? allPass : false
         actionsStates = actionsStates + actionState
     }
-    return [actionsStates, allPass]
+    return [actionsStates, allPass, envVariables]
 }
 
 /**
