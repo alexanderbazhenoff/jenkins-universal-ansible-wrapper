@@ -369,7 +369,8 @@ static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVari
  *                             class java.util.Collections$UnmodifiableMap).
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @return - true when all required variables are specified.
+ * @return - ArrayList of: true when all required variables are specified;
+ *                         changed or unchanged environment variables for current job build.
  */
 Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters, Object envVariables) {
     Boolean allSet = true
@@ -384,7 +385,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                 def (Boolean paramNeedsToBeAssigned, String parameterAssignment, Boolean fail, Boolean warn) =
                         handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
                 if (paramNeedsToBeAssigned && printableParameterName != '<>' && parameterAssignment.trim()) {
-                    env[it.name.toString()] = parameterAssignment
+                    envVariables[it.name.toString()] = parameterAssignment
                     assignmentComplete = true
                 } else if (printableParameterName == '<>' || (paramNeedsToBeAssigned && !parameterAssignment.trim())) {
                     assignMessage = paramNeedsToBeAssigned ? String.format("(and can't be assigned with %s variable) ",
@@ -398,7 +399,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
             }
         }
     }
-    return allSet
+    return [allSet, envVariables]
 }
 
 /**
@@ -427,7 +428,8 @@ static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinP
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param builtinPipelineParameters - additional built-in pipeline parameters arrayList.
- * @return - true when all pass.
+ * @return - ArrayList of: true when all pass;
+ *                         changed or unchanged environment variables for current job build.
  */
 Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelineParameters, Object envVariables,
                                             ArrayList builtinPipelineParameters) {
@@ -483,8 +485,8 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
                     if (paramIsDefined && printableParamName != '<>') {
                         CF.outMsg(0, String.format("Replacing '%s' regex to '%s' in '%s' pipeline parameter value...",
                                 regexPattern, regexReplacement, printableParamName))
-                        env[it.name.toString()] = applyReplaceRegexItems(env[it.name.toString()] as String,
-                                [regexPattern], [regexReplacement])
+                        envVariables[it.name.toString()] = applyReplaceRegexItems(envVariables[it.name.toString()] as
+                                String, [regexPattern], [regexReplacement])
                         regexReplacementDone = true
                     } else if (printableParamName == '<>') {
                         CF.outMsg(3, String.format("Replace '%s' regex to '%s' is not possible: 'name' key is %s. %s.",
@@ -501,7 +503,7 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
 
         }
     }
-    return allCorrect
+    return [allCorrect, envVariables]
 }
 
 /**
@@ -578,12 +580,11 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *
  *        1. When 'check' is true pipeline settings will be checked, then if 'execute' is true pipeline settings will be
  *        executed. So you can set both 'check' and 'execute' to true, but it's not recommended: use separate function
- *        call to check settings first. And only then if this ok execute it (instead of possible stacktrace dumps on
- *        errors). Otherwise, stop with fail the whole pipeline after the unsuccessful check.
+ *        call to check settings first.
  *        2. You can also set envVariables.DEBUG_MODE to verbose output and/or envVariables.DRY_RUN to perform dry run.
  * @return - list of: pipeline stages status map (the structure of this map should be: key is the name with spaces cut,
  *                    value should be a map of: [name: name, state: state, url: url]);
- *                    true when checking and execution pass;
+ *                    true when checking and execution pass, false on checking or execution errors (or skipped);
  *                    return of environment variables ('env') that pass to function in 'envVariables'.
  */
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
@@ -593,14 +594,14 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     if (!pipelineSettings.get('stages') && ((check && envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) ||
             execute))
         CF.outMsg(execute ? 3 : 0, String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
-    for (stage in pipelineSettings.stages) {
+    for (stageItem in pipelineSettings.stages) {
         Boolean checkOk
-        (__, checkOk, envVariables) = (check) ? checkOrExecuteStageSettingsItem(stage.toString(), pipelineSettings,
-                envVariables, true) : [[:], true, envVariables]
+        (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
+                envVariables, true) : [[:], false, envVariables]
         Map currentStageActionsStates
         Boolean execOk
-        (currentStageActionsStates, execOk, envVariables) = (execute) ? checkOrExecuteStageSettingsItem(stage
-                .toString(), pipelineSettings, envVariables, false) : [[:], true, envVariables]
+        (currentStageActionsStates, execOk, envVariables) = execute ? checkOrExecuteStageSettingsItem(stageItem as Map,
+                pipelineSettings, envVariables, false) : [[:], false, envVariables]
         allPass = checkOk && execOk
         stagesStates = stagesStates + currentStageActionsStates
     }
@@ -613,7 +614,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
  * (Check actions in the stage, all ansible playbooks, ansible inventories, jobs, scripts or another action according to
  * requirements described here: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  *
- * @param stageName - stage settings name to check/execute actions in it.
+ * @param stageItem - stage settings item to check/execute actions in it.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
@@ -628,7 +629,8 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 // TODO: make a parallel option
 // TODO: /// Continue format checking from here
 // TODO: done the env pass inside other functions and return from this
-ArrayList checkOrExecuteStageSettingsItem(String stageName, Map pipelineSettings, Object envVariables, Boolean check) {
+ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables, Boolean check) {
+    if (detectIsObjectConvertibleToString(stageItem))
     Map actionsStates = [:]
     Boolean allPass = true
     pipelineSettings.stages.get(stageName).eachWithIndex { item, index ->
@@ -636,7 +638,7 @@ ArrayList checkOrExecuteStageSettingsItem(String stageName, Map pipelineSettings
                 index.toString(), stageName))
         Map actionState
         Boolean checkOrExecuteOk
-        (actionState, checkOrExecuteOk, env) = checkOrExecutePipelineActionItem(stageName, item as Map,
+        (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(stageName, item as Map,
                 pipelineSettings, envVariables, check)
         allPass = checkOrExecuteOk ? allPass : false
         actionsStates = actionsStates + actionState
@@ -791,11 +793,15 @@ node(jenkinsNodeToExecute) {
 
         // Check all required pipeline parameters was defined properly for current build.
         if (noPipelineParamsInTheConfig) {
-            if (pipelineParametersProcessingPass) CF.outMsg(1, 'No pipeline parameters in the config')
+            if (pipelineParametersProcessingPass) CF.outMsg(1, 'No pipeline parameters in the config.')
         } else {
-            pipelineFailedReasonText += (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env) &&
-                    regexCheckAllRequiredPipelineParams(pipelineSettings, params, env, BuiltinPipelineParameters)) ?
-                    '' : 'Required pipeline parameter(s) was not specified or incorrect.'
+            Boolean requiredPipelineParamsSet
+            Boolean regexCheckAllRequiredPipelineParamsOk
+            (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env))
+            (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(pipelineSettings,
+                    params, env, BuiltinPipelineParameters)
+            pipelineFailedReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
+                    'Required pipeline parameter(s) was not specified or incorrect.'
         }
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
