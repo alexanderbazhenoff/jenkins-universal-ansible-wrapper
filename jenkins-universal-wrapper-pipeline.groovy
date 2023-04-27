@@ -622,8 +622,8 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
  *                       stage execute. Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
  * @param check - set false to execute action item, true to check.
  * @return - arrayList of: all actions in the stage status map (the structure of this map should be: key is the name
- *                         with spaces cut, value should be a map of: [name: stage name and action,
- *                         state: state, url: info and/or job url]);
+ *                         with spaces cut, value should be a map of: [name: stage name and action, state: state,
+ *                         url: info and/or job url]);
  *                         true when all stage actions execution successfully done.
  */
 // TODO: make a parallel option
