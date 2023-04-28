@@ -630,18 +630,19 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 // TODO: /// Continue format checking from here
 // TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables, Boolean check) {
-    if (detectIsObjectConvertibleToString(stageItem))
     Map actionsStates = [:]
     Boolean allPass = true
-    pipelineSettings.stages.get(stageName).eachWithIndex { item, index ->
-        CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
-                index.toString(), stageName))
-        Map actionState
-        Boolean checkOrExecuteOk
-        (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(stageName, item as Map,
-                pipelineSettings, envVariables, check)
-        allPass = checkOrExecuteOk ? allPass : false
-        actionsStates = actionsStates + actionState
+    if (detectIsObjectConvertibleToString(stageItem.get('name'))) {
+        pipelineSettings.stages.get(stageName).eachWithIndex { item, index ->
+            CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
+                    index.toString(), stageName))
+            Map actionState
+            Boolean checkOrExecuteOk
+            (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(stageName, item as Map,
+                    pipelineSettings, envVariables, check)
+            allPass = checkOrExecuteOk ? allPass : false
+            actionsStates = actionsStates + actionState
+        }
     }
     return [actionsStates, allPass, envVariables]
 }
