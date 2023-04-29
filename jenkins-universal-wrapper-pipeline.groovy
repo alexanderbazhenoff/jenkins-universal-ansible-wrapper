@@ -198,6 +198,16 @@ static detectIsObjectConvertibleToString(Object obj) {
 }
 
 /**
+ * Detect if an object will be correct after conversion to boolean.
+ *
+ * @param obj - object to detect.
+ * @return - ttue when object will be correct.
+ */
+static detectIsObjectConvertibleToBoolean(Object obj) {
+    return (obj?.toBoolean()).toString() == obj?.toString()
+}
+
+/**
  * Check pipeline parameters in pipeline settings item for correct keys structure, types and values.
  *
  * @param item - pipeline settings item to check.
@@ -632,18 +642,32 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables, Boolean check) {
     Map actionsStates = [:]
     Boolean allPass = true
-    if (detectIsObjectConvertibleToString(stageItem.get('name'))) {
-        pipelineSettings.stages.get(stageName).eachWithIndex { item, index ->
+    if (!stageItem.findAll { it.key == 'name' } || !detectIsObjectConvertibleToString(stageItem.get('name'))) {
+        CF.outMsg(3, "Unable to convert stage name to a string, just undefined or empty.")
+        allPass = false
+    }
+    if (!stageItem.findAll { it.key == 'actions' } || !stageItem.get('actions') instanceof ArrayList) {
+        CF.outMsg(3, 'Actions are not defined for current stage or just empty')
+        allPass = false
+    }
+    if (stageItem.findAll { it.key == 'parallel' } && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))) {
+        CF.outMsg(3, "Unable to determine parallel option for current stage. Skip them or set as boolean.")
+        allPass = !check
+    }
+        Booolean parallelActions = stageItem.get('parallel')?.toBoolean()
+        if (check && stageItem.findAll { it.key == 'name' })
+        Map actionsRuns =
+        pipelineSettings.actions.get(stageName).eachWithIndex { item, index ->
             CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
-                    index.toString(), stageName))
+                    index.toString(), stageItem.name))
             Map actionState
             Boolean checkOrExecuteOk
-            (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(stageName, item as Map,
-                    pipelineSettings, envVariables, check)
+            (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(stageItem.name as String,
+                    item as Map, pipelineSettings, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             actionsStates = actionsStates + actionState
         }
-    }
+
     return [actionsStates, allPass, envVariables]
 }
 
@@ -664,6 +688,8 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
  *                         url: info and/or job url]);
  *                         true when all stage actions execution successfully done.
  */
+// TODO: /// Continue format checking from here
+// TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map pipelineSettings,
                                            Object envVariables, Boolean check) {
     Boolean actionStructureOk = true
