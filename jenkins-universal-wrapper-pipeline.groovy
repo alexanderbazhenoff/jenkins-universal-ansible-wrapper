@@ -843,7 +843,7 @@ ArrayList detectNodeSubkeyConvertibleToString(Boolean check, Boolean nodeNameOrL
 
 ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
                                            Object envVariables, Boolean check) {
-
+    return []
 }
 
 
