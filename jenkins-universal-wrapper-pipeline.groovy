@@ -264,19 +264,17 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
     Boolean checkOk = true
 
     // Check 'name' key is present and valid
-    if (item.containsKey('name')) {
-        if (!checkEnvironmentVariableNameCorrect(item.name.toString()))
-            checkOk = pipelineSettingsItemError(3, item as String, "Invalid parameter name")
-    } else {
+    if (item.containsKey('name') && !checkEnvironmentVariableNameCorrect(item.get('name'))) {
+        checkOk = pipelineSettingsItemError(3, item as String, "Invalid parameter name")
+    } else if (!item.containsKey('name')) {
         checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
-        item.name = "''"
     }
 
     // Check 'assign' sub-key in 'on_empty' key is correct when defined.
-    if (item.get('on_empty') && item.on_empty.get('assign') && item.on_empty.assign.startsWith('$') &&
-            !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('\$', '')))
+    if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
+            !checkEnvironmentVariableNameCorrect(item.on_empty.assign.replaceAll('\$', '')))
         checkOk = pipelineSettingsItemError(3, item as String, String.format("%s: '%s'",
-                'Unable to assign due to incorrect variable name', item.on_empty.assign))
+                'Unable to assign due to incorrect variable name', item.get('on_empty').get('assign')))
 
     if (item.containsKey('type')) {
 
@@ -364,10 +362,9 @@ def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess) {
  * values.
  *
  * @param parameters - all pipeline parameters to check.
- * @return - list of: corrected parameters ArrayList (when fix is possible),
- *                    the whole pipeline parameters check status (true when ok).
+ * @return - the whole pipeline parameters check status (true when ok).
  */
-ArrayList checkPipelineParamsFormat(ArrayList parameters) {
+Boolean checkPipelineParamsFormat(ArrayList parameters) {
     Boolean allPass = true
     ArrayList correctedParams = []
     parameters.each {
@@ -375,7 +372,8 @@ ArrayList checkPipelineParamsFormat(ArrayList parameters) {
         allPass = itemCheckPass ? allPass : false
         correctedParams += correctedItem
     }
-    return [correctedParams, allPass]
+    // TODO: remove all correctedParams assigning
+    return allPass
 }
 
 /**
@@ -435,7 +433,7 @@ static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVari
  */
 Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters, Object envVariables) {
     Boolean allSet = true
-    if (pipelineSettings.get('parameters') && pipelineSettings.parameters.get('required')) {
+    if (pipelineSettings.get('parameters') && pipelineSettings.get('parameters').get('required')) {
         CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
         pipelineSettings.parameters.required.each {
             def (String printableParameterName, Boolean parameterIsUndefined) = getPipelineParamNameAndDefinedState(it
@@ -483,7 +481,7 @@ static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinP
  * (Check match when current build pipeline parameter is not empty and a key 'regex' is defined in pipeline settings.
  * Also perform regex replacement of parameter value when 'regex_replace' key is defined).
  *
- * @param pipelineSettings - pipeline settings map.
+ * @param pipelineSettings - ArrayList of pipeline parameters from settings.
  * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
  *                             class java.util.Collections$UnmodifiableMap).
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
@@ -492,12 +490,11 @@ static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinP
  * @return - ArrayList of: true when all pass;
  *                         changed or unchanged environment variables for current job build.
  */
-Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelineParameters, Object envVariables,
-                                            ArrayList builtinPipelineParameters) {
+Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object pipelineParameters,
+                                            Object envVariables) {
     Boolean allCorrect = true
-    ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
-    if (requiredPipelineParams[0]) {
-        requiredPipelineParams.each {
+    if (allPipelineParams[0]) {
+        allPipelineParams.each {
             def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndDefinedState(it as Map,
                     pipelineParameters, envVariables, false)
 
@@ -571,28 +568,25 @@ Boolean regexCheckAllRequiredPipelineParams(Map pipelineSettings, Object pipelin
  * Processing wrapper pipeline parameters: check all parameters from pipeline settings are presents. If not inject
  * parameters to pipeline.
  *
- * @param pipelineSettings - 'universal-wrapper-pipeline-settings' converted to map. See
- *                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings for details.
+ * @param pipelineSettings - pipeline parameters in 'universal-wrapper-pipeline-settings' standard and built-in pipeline
+ *                           parameters (e.g. 'DEBUG_MODE', etc) converted to ArrayList.
+ *                           See https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings for details.
  * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
  *                                which is class java.util.Collections$UnmodifiableMap).
- * @param builtinPipelineParameters - built-in pipeline parameters in the same format as pipelineSettings, e.g:
- *                                    'SETTINGS_GIT_BRANCH', 'DEBUG_MODE', 'DRY_RUN', etc...
  * @return - list of: true when there is no pipeline parameters in the pipelineSettings,
  *                    true when pipeline parameters processing pass.
  */
-ArrayList wrapperPipelineParametersProcessing(Map pipelineSettings, Object currentPipelineParams,
-                                              ArrayList builtinPipelineParameters = []) {
+ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object currentPipelineParams) {
     Boolean noPipelineParams = true
     Boolean allPass = true
-    ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
-    if (requiredPipelineParams[0]) {
+    if (pipelineParams[0]) {
         noPipelineParams = false
         Boolean updateParamsRequired
         CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings...')
-        (updateParamsRequired, allPass) = verifyPipelineParamsArePresents(requiredPipelineParams, currentPipelineParams)
+        (updateParamsRequired, allPass) = verifyPipelineParamsArePresents(pipelineParams, currentPipelineParams)
         if (currentPipelineParams.get('UPDATE_PARAMETERS') || updateParamsRequired) {
             CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings. Updating...')
-                updatePipelineParams(requiredPipelineParams, allPass)
+                updatePipelineParams(pipelineParams, allPass)
         }
     }
     return [noPipelineParams, allPass]
@@ -874,27 +868,33 @@ node(jenkinsNodeToExecute) {
         Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath,
                 (params.get('DEBUG_MODE')) as Boolean)
         String pipelineFailedReasonText = ''
+        ArrayList allPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, BuiltinPipelineParameters)
         def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
-        wrapperPipelineParametersProcessing(pipelineSettings, params, BuiltinPipelineParameters)
+                wrapperPipelineParametersProcessing(allPipelineParams, params)
 
-        // Check all required pipeline parameters was defined properly for current build.
+        // Check pipeline parameters in the settings are correct, all of them was defined properly for current build.
+        Boolean checkPipelineParametersPass
         if (noPipelineParamsInTheConfig) {
             if (pipelineParametersProcessingPass) CF.outMsg(1, 'No pipeline parameters in the config.')
         } else {
-            Boolean requiredPipelineParamsSet
-            Boolean regexCheckAllRequiredPipelineParamsOk
-            (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env))
-            (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(pipelineSettings,
-                    params, env, BuiltinPipelineParameters)
-            pipelineFailedReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
-                    'Required pipeline parameter(s) was not specified or incorrect.'
+            checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
+            if (checkPipelineParametersPass) {
+                Boolean requiredPipelineParamsSet
+                Boolean regexCheckAllRequiredPipelineParamsOk
+                (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env))
+                (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
+                        params, env)
+                pipelineFailedReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
+                        'Required pipeline parameter(s) was not specified or incorrect.'
+            }
         }
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
         Boolean pipelineSettingsCheckOk
         (pipelineSettingsCheckOk, __, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                 false)
-        pipelineFailedReasonText += pipelineSettingsCheckOk ? '' : 'Pipeline settings contains an error(s).'
+        pipelineFailedReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
+                'Pipeline settings contains an error(s).'
 
         // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it.
         pipelineFailedReasonText += (!pipelineParametersProcessingPass) ? '\nError(s) in pipeline yaml settings.' : ''
@@ -904,6 +904,6 @@ node(jenkinsNodeToExecute) {
         // Execute wrapper pipeline settings stages.
         Boolean allDone
         Map pipelineStagesStates
-        (allDone, pipelineStagesStates, env) = (checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, false))
+        (allDone, pipelineStagesStates, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, false)
     }
 }
