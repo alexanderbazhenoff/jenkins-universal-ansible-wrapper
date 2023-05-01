@@ -139,7 +139,7 @@ ArrayList verifyPipelineParamsArePresents(ArrayList requiredParams, Object curre
     String keyValueIncorrectMsg = 'key for pipeline parameter is undefined or incorrect value specified'
     requiredParams.each {
         Boolean paramNameConvertibleToString = detectIsObjectConvertibleToString(it.get('name'))
-        Boolean paramNamingCorrect = checkEnvironmentVariableNameCorrect(item.get('name'))
+        Boolean paramNamingCorrect = checkEnvironmentVariableNameCorrect(it.get('name'))
         if (!it.get('type') && !detectPipelineParameterItemIsProbablyChoice(it as Map) &&
                 !detectPipelineParameterItemIsProbablyBoolean(it as Map)) {
             CF.outMsg(3, String.format("%s: '%s' %s.", 'Parameter from pipeline settings might be ignored', 'type',
