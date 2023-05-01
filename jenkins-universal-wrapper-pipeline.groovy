@@ -641,34 +641,47 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 // TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables, Boolean check) {
     Map actionsStates = [:]
+    Map actionsRuns = [:]
     Boolean allPass = true
     if (!stageItem.findAll { it.key == 'name' } || !detectIsObjectConvertibleToString(stageItem.get('name'))) {
         CF.outMsg(3, "Unable to convert stage name to a string, just undefined or empty.")
         allPass = false
     }
     if (!stageItem.findAll { it.key == 'actions' } || !stageItem.get('actions') instanceof ArrayList) {
-        CF.outMsg(3, 'Actions are not defined for current stage or just empty')
+        CF.outMsg(3, 'Actions are not defined for current stage or just empty.')
         allPass = false
     }
     if (stageItem.findAll { it.key == 'parallel' } && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))) {
-        CF.outMsg(3, "Unable to determine parallel option for current stage. Skip them or set as boolean.")
+        CF.outMsg(3, "Unable to determine parallel option for current stage. Remove them or set as boolean.")
         allPass = !check
     }
-        Booolean parallelActions = stageItem.get('parallel')?.toBoolean()
-        if (check && stageItem.findAll { it.key == 'name' })
-        Map actionsRuns =
-        pipelineSettings.actions.get(stageName).eachWithIndex { item, index ->
+    String printableStageName = stageItem.get('name') ? stageItem.name.toString() : '<>'
+    stageItem.get('actions').eachWithIndex { item, index ->
+        actionsRuns[index] = {
             CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
                     index.toString(), stageItem.name))
             Map actionState
             Boolean checkOrExecuteOk
-            (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(stageItem.name as String,
-                    item as Map, pipelineSettings, envVariables, check)
+            (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
+                    stageItem.get('actions')[index as String] as Map, pipelineSettings, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             actionsStates = actionsStates + actionState
         }
-
+    }
+    if (stageItem.get('parallel')?.toBoolean()) {
+        parallel actionsRuns
+    } else {
+        actionsRuns.each { it.value.call() }
+    }
     return [actionsStates, allPass, envVariables]
+}
+
+ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionItem, Map pipelineSettings,
+                                                  Object envVariables, Boolean check) {
+    CF.outMsg(1, String.format("%s action in stage '%s': %s", check ? 'Checking' : 'Executing', stageName,
+            actionItem.toString()))
+    Map actionState = [name: stageName, state: true, jobUrl: actionItem.toString()]
+    return [actionState, true, envVariables]
 }
 
 /**
