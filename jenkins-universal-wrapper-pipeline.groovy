@@ -257,10 +257,9 @@ static detectIsObjectConvertibleToBoolean(Object obj) {
  * Check pipeline parameters in pipeline settings item for correct keys structure, types and values.
  *
  * @param item - pipeline settings item to check.
- * @return - list of: corrected map item (when fix is possible),
- *                    pipeline parameters item check status (true when ok).
+ * @return - pipeline parameters item check status (true when ok).
  */
-ArrayList pipelineParametersSettingsItemCheck(Map item) {
+Boolean pipelineParametersSettingsItemCheck(Map item) {
     Boolean checkOk = true
 
     // Check 'name' key is present and valid
@@ -274,22 +273,18 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
             !checkEnvironmentVariableNameCorrect(item.on_empty.assign.replaceAll('\$', '')))
         checkOk = pipelineSettingsItemError(3, item as String, String.format("%s: '%s'",
-                'Unable to assign due to incorrect variable name', item.get('on_empty').get('assign')))
+                'Unable to assign due to incorrect variable name', item.on_empty.assign))
 
     if (item.containsKey('type')) {
 
-        // Convert 'default' value to string (e.g. it's ok when default value in yaml file as number or float).
-        if (item.type == 'string' && item.containsKey('default'))
-            item.default = item.default.toString()
-
         // Check 'type' value with other keys data type mismatch.
         String msg = ''
-        msg = (item.type == 'boolean' && item.containsKey('default') && !(item.default instanceof Boolean)) ?
+        msg = item.type == 'boolean' && !(item.get('default') instanceof Boolean) ?
                 String.format("'type' set as boolean while 'default' key is not. It's %s",
-                        item.default.getClass().toString().tokenize('.').last().toLowerCase()) : msg
-        msg = (item.type == 'choice' && !item.containsKey('choices')) ?
+                        item.get('default').getClass().toString().tokenize('.').last().toLowerCase()) : msg
+        msg = item.type == 'choice' && !item.containsKey('choices') ?
                 "'type' set as choice while no 'choices' list defined" : msg
-        checkOk = msg.trim() ? pipelineSettingsItemError(3, item.name as String, msg) : checkOk
+        checkOk = msg.trim() ? pipelineSettingsItemError(3, item.get('name') as String, msg) : checkOk
     } else {
 
         // Try to detect 'type' when not defined.
@@ -300,37 +295,37 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
                 ['choices', 'choice'] : autodetectData
         autodetectData = item.containsKey('action') && item.action ? ['action', 'choice'] : autodetectData
 
-        // Output reason and set 'type' key when autodetect is possible, otherwise print an error message.
+        // Output reason and 'type' key when autodetect is possible.
         if (autodetectData) {
-            Boolean __ = pipelineSettingsItemError(2, item.name as String, String.format("%s by '%s' key: %s",
-                    "'type' key not defined, but was detected and set", autodetectData[0], autodetectData[1]))
-            item.type = autodetectData[1]
+            checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format("%s by '%s' key: %s",
+                    "'type' key not defined, but was detected", autodetectData[0], autodetectData[1]))
         } else {
             String msg = item.containsKey('default') && detectIsObjectConvertibleToString(item.default) ?
-                    ". Probably 'type' is password or string, but for security reasons autodetect is not possible" : ''
-            checkOk = pipelineSettingsItemError(3, item.name as String, String.format('%s%s',
-                    "'type' is required, but undefined", msg))
+                    ". Probably 'type' is password, string or text" : ''
+            checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format('%s%s',
+                    "'type' is required, but wasn't defined", msg))
         }
     }
 
     // Check 'action' was set for choice or string parameter types.
-    Boolean actionKeyEnabled = item.containsKey('action') && item.action
-    Boolean actionKeyIsForChoices = item.containsKey('choices') && item.choices instanceof ArrayList
-    Boolean actionKeyIsForString = item.containsKey('type') && item.type == 'string'
+    Boolean actionKeyEnabled = item.containsKey('action') && item.get('action')
+    Boolean actionKeyIsForChoices = item.containsKey('choices') && item.get('choices') instanceof ArrayList
+    Boolean actionKeyIsForString = item.containsKey('type') && item.get('type') == 'string'
     if (actionKeyEnabled && !actionKeyIsForChoices && !actionKeyIsForString)
-        checkOk = pipelineSettingsItemError(3, item.name as String, "'action' is for 'string' or 'choices' types")
+        checkOk = pipelineSettingsItemError(3, item.get('name') as String,
+                "'action' is for 'string' or 'choices' types")
 
     // Check 'action' set for 'type: choices' with a list of choices.
-    if (actionKeyEnabled && actionKeyIsForChoices && !(item.choices instanceof ArrayList))
-        checkOk = pipelineSettingsItemError(3, item.name as String,
+    if (actionKeyEnabled && actionKeyIsForChoices && !(item.get('choices') instanceof ArrayList))
+        checkOk = pipelineSettingsItemError(3, item.get('name') as String,
                 "'action' is 'True' while 'choices' key value is not a list of choices")
 
     // Check 'default' and 'choices' keys incompatibility.
-    if (item.containsKey('default') && item.containsKey('choices') && item.choices instanceof ArrayList)
-        checkOk = pipelineSettingsItemError(3, item.name as String,
+    if (item.containsKey('default') && item.containsKey('choices') && item.get('choices') instanceof ArrayList)
+        checkOk = pipelineSettingsItemError(3, item.get('name') as String,
                 "'default' key is not required for type choice")
 
-    return [item, checkOk]
+    return checkOk
 }
 
 /**
@@ -366,13 +361,9 @@ def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess) {
  */
 Boolean checkPipelineParamsFormat(ArrayList parameters) {
     Boolean allPass = true
-    ArrayList correctedParams = []
     parameters.each {
-        def (Map correctedItem, Boolean itemCheckPass) = pipelineParametersSettingsItemCheck(it as Map)
-        allPass = itemCheckPass ? allPass : false
-        correctedParams += correctedItem
+        allPass = pipelineParametersSettingsItemCheck(it as Map) ? allPass : false
     }
-    // TODO: remove all correctedParams assigning
     return allPass
 }
 
