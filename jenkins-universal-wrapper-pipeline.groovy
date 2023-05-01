@@ -130,20 +130,52 @@ static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
  *
  *                                 More info: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings
  * @return - ArrayList of: true when jenkins pipeline parameters update required;
- *                         true when at least one pipeline parameter in the config has no name.
+ *                         true when no errors.
  */
 ArrayList verifyPipelineParamsArePresents(ArrayList requiredParams, Object currentPipelineParams) {
     Boolean updateParamsRequired = false
-    Boolean verifyPipelineParamsErrors = false
+    Boolean verifyPipelineParamsOk = true
+    String ignoreMsg = 'Skipping parameter from pipeline settings'
+    String keyValueIncorrectMsg = 'key for pipeline parameter is undefined or incorrect value specified'
     requiredParams.each {
-        if (!it.get('name')) {
-            verifyPipelineParamsErrors = true
-            CF.outMsg(3, "Ignoring parameter from pipeline settings: 'name' key for pipeline parameter is undefined.")
+        Boolean paramNameConvertibleToString = detectIsObjectConvertibleToString(it.get('name'))
+        Boolean paramNamingCorrect = checkEnvironmentVariableNameCorrect(item.get('name'))
+        if (!it.get('type') && !detectPipelineParameterItemIsProbablyChoice(it as Map) &&
+                !detectPipelineParameterItemIsProbablyBoolean(it as Map)) {
+            CF.outMsg(3, String.format("%s: '%s' %s.", 'Parameter from pipeline settings might be ignored', 'type',
+                    keyValueIncorrectMsg))
+            verifyPipelineParamsOk = false
+        }
+        if (!it.get('name') || !paramNameConvertibleToString || !paramNamingCorrect) {
+            verifyPipelineParamsOk = false
+            String namingErrorReasonMsg = paramNameConvertibleToString && !paramNamingCorrect ?
+                    " (parameter name didn't met POSIX standards)." : '.'
+            CF.outMsg(3, String.format("%s: '%s' %s%s", ignoreMsg, 'name', keyValueIncorrectMsg, namingErrorReasonMsg))
         } else if (it.get('name') && !currentPipelineParams.containsKey(it.get('name'))) {
             updateParamsRequired = true
         }
     }
-    return [updateParamsRequired, verifyPipelineParamsErrors]
+    return [updateParamsRequired, verifyPipelineParamsOk]
+}
+
+/**
+ * Detect is pipeline parameter item probably 'choice' type.
+ *
+ * @param paramItem - pipeline parameter item to detect.
+ * @return - true when 'choice'.
+ */
+static detectPipelineParameterItemIsProbablyChoice(Map paramItem) {
+    return paramItem.containsKey('choices') && paramItem.get('choices') instanceof ArrayList
+}
+
+/**
+ * Detect is pipeline parameter item probably 'boolean' type.
+ *
+ * @param paramItem - pipeline parameter item to detect.
+ * @return - true when 'boolean'.
+ */
+static detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
+    return paramItem.containsKey('default') && paramItem.get('default') instanceof Boolean
 }
 
 /**
@@ -156,18 +188,21 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
     ArrayList param = []
     String defaultString = item.containsKey('default') ? item.default.toString() : ''
     String description = item.containsKey('description') ? item.description : ''
-    if (item.type == 'choice' || (item.containsKey('choices') && item.choices instanceof ArrayList))
-        param += [choice(name: item.name, choices: item.choices.each { it.toString() }, description: description)]
-    if (item.type == 'boolean' || (item.containsKey('default') && item.default instanceof Boolean))
-        param += [booleanParam(name: item.name, description: description,
-                defaultValue: item.containsKey('default') ? item.default : false)]
-    if (item.type == 'password')
-        param += [password(name: item.name, defaultValue: defaultString, description: description)]
-    if (item.type == 'text')
-        param += [text(name: item.name, defaultValue: defaultString, description: description)]
-    if (item.type == 'string')
-        param += [string(name: item.name, defaultValue: defaultString, description: description,
-                trim: item.containsKey('trim') ? item.trim : false)]
+    if (item.get('name') && detectIsObjectConvertibleToString(item.get('name')) &&
+            checkEnvironmentVariableNameCorrect(item.get('name'))) {
+        if (item.get('type') == 'choice' || detectPipelineParameterItemIsProbablyChoice(item))
+            param += [choice(name: item.name, choices: item.choices.each { it.toString() }, description: description)]
+        if (item.get('type') == 'boolean' || detectPipelineParameterItemIsProbablyBoolean(item))
+            param += [booleanParam(name: item.name, description: description,
+                    defaultValue: item.containsKey('default') ? item.default : false)]
+        if (item.get('type') == 'password')
+            param += [password(name: item.name, defaultValue: defaultString, description: description)]
+        if (item.get('type') == 'text')
+            param += [text(name: item.name, defaultValue: defaultString, description: description)]
+        if (item.get('type') == 'string')
+            param += [string(name: item.name, defaultValue: defaultString, description: description,
+                    trim: item.containsKey('trim') ? item.trim : false)]
+    }
     return param
 }
 
@@ -190,8 +225,12 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
  * @param name - variable name to check regex match.
  * @return - true when match.
  */
-static checkEnvironmentVariableNameCorrect(String name) {
-    return name.matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
+static checkEnvironmentVariableNameCorrect(Object name) {
+    try {
+        return name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
+    } catch (ignored) {
+        return false
+    }
 }
 
 /**
@@ -305,14 +344,19 @@ ArrayList pipelineParametersSettingsItemCheck(Map item) {
  *                          [string(name: 'PARAM2', defaultValue: 'default', description: 'description2')]
  *                         ]
  *                         etc... Check pipelineSettingsItemToPipelineParam() function for details.
+ * @param finishWithFail - when true finish with success parameters injection. Otherwise, with fail.
  */
-def updatePipelineParams(ArrayList requiredParams) {
+def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess) {
     ArrayList newPipelineParams = []
     currentBuild.displayName = String.format('pipeline_parameters_update--#%s', env.BUILD_NUMBER)
     requiredParams.each { newPipelineParams += pipelineSettingsItemToPipelineParam(it as Map) }
     properties([parameters(newPipelineParams)])
-    CF.outMsg(1, "Pipeline parameters was successfully injected. Select 'Build with parameters' and run again.")
-    CF.interruptPipelineOk(3)
+    if (finishWithSuccess) {
+        CF.outMsg(1, "Pipeline parameters was successfully injected. Select 'Build with parameters' and run again.")
+        CF.interruptPipelineOk(3)
+    } else {
+        error 'Pipeline parameters injection failed. Check pipeline config and run again.'
+    }
 }
 
 /**
@@ -428,8 +472,8 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
  */
 static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinPipelineParameters) {
     return (pipelineSettings.get('parameters')) ?
-            (pipelineSettings.parameters.get('required') ? pipelineSettings.parameters.required : []) +
-                    (pipelineSettings.parameters.get('optional') ? pipelineSettings.parameters.optional : []) +
+            (pipelineSettings.parameters.get('required') ? pipelineSettings.parameters.get('required') : []) +
+                    (pipelineSettings.parameters.get('optional') ? pipelineSettings.parameters.get('optional') : []) +
                     builtinPipelineParameters : []
 }
 
@@ -543,12 +587,12 @@ ArrayList wrapperPipelineParametersProcessing(Map pipelineSettings, Object curre
     ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     if (requiredPipelineParams[0]) {
         noPipelineParams = false
-        CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings.')
-        if (currentPipelineParams.get('UPDATE_PARAMETERS') || verifyPipelineParamsArePresents(requiredPipelineParams,
-                currentPipelineParams)) {
+        Boolean updateParamsRequired
+        CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings...')
+        (updateParamsRequired, allPass) = verifyPipelineParamsArePresents(requiredPipelineParams, currentPipelineParams)
+        if (currentPipelineParams.get('UPDATE_PARAMETERS') || updateParamsRequired) {
             CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings. Updating...')
-                updatePipelineParams(requiredPipelineParams)
-
+                updatePipelineParams(requiredPipelineParams, allPass)
         }
     }
     return [noPipelineParams, allPass]
