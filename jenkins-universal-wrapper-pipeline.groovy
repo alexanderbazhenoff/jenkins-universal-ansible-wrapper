@@ -272,7 +272,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     // Check 'assign' sub-key in 'on_empty' key is correct when defined.
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
             !checkEnvironmentVariableNameCorrect(item.on_empty.assign.replaceAll('\$', '')))
-        checkOk = pipelineSettingsItemError(3, item as String, String.format("%s: '%s'",
+        checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format("%s: '%s'",
                 'Unable to assign due to incorrect variable name', item.on_empty.assign))
 
     if (item.containsKey('type')) {
