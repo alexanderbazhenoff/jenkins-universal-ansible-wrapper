@@ -129,14 +129,21 @@ static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
  *                               - 'description' key is optional, by default it's '' (empty line).
  *
  *                                 More info: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings
- * @return - true when jenkins pipeline parameters update required.
+ * @return - ArrayList of: true when jenkins pipeline parameters update required;
+ *                         true when at least one pipeline parameter in the config has no name.
  */
-static verifyPipelineParamsArePresents(ArrayList requiredParams, Object currentPipelineParams) {
+ArrayList verifyPipelineParamsArePresents(ArrayList requiredParams, Object currentPipelineParams) {
     Boolean updateParamsRequired = false
+    Boolean verifyPipelineParamsErrors = false
     requiredParams.each {
-        if (it.get('name') && !currentPipelineParams.containsKey(it.name)) updateParamsRequired = true
+        if (!it.get('name')) {
+            verifyPipelineParamsErrors = true
+            CF.outMsg(3, "Ignoring parameter from pipeline settings: 'name' key for pipeline parameter is undefined.")
+        } else if (it.get('name') && !currentPipelineParams.containsKey(it.get('name'))) {
+            updateParamsRequired = true
+        }
     }
-    return updateParamsRequired
+    return [updateParamsRequired, verifyPipelineParamsErrors]
 }
 
 /**
@@ -533,21 +540,15 @@ ArrayList wrapperPipelineParametersProcessing(Map pipelineSettings, Object curre
                                               ArrayList builtinPipelineParameters = []) {
     Boolean noPipelineParams = true
     Boolean allPass = true
-    Boolean checkPipelineParametersPass
     ArrayList requiredPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     if (requiredPipelineParams[0]) {
         noPipelineParams = false
         CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings.')
         if (currentPipelineParams.get('UPDATE_PARAMETERS') || verifyPipelineParamsArePresents(requiredPipelineParams,
                 currentPipelineParams)) {
-            CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings.')
-            (requiredPipelineParams, checkPipelineParametersPass) = checkPipelineParamsFormat(requiredPipelineParams)
-            if (checkPipelineParametersPass) {
-                CF.outMsg(1, 'Updating current pipeline parameters.')
+            CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings. Updating...')
                 updatePipelineParams(requiredPipelineParams)
-            } else {
-                allPass = false
-            }
+
         }
     }
     return [noPipelineParams, allPass]
