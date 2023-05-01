@@ -680,7 +680,7 @@ ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionIt
                                                   Object envVariables, Boolean check) {
     CF.outMsg(1, String.format("%s action in stage '%s': %s", check ? 'Checking' : 'Executing', stageName,
             actionItem.toString()))
-    Map actionState = [name: stageName, state: true, jobUrl: actionItem.toString()]
+    Map actionState = [String.format('%s', stageName): [name: stageName, state: true, jobUrl: actionItem.toString()]]
     return [actionState, true, envVariables]
 }
 
