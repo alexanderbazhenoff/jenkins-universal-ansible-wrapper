@@ -262,14 +262,15 @@ static detectIsObjectConvertibleToBoolean(Object obj) {
 Boolean pipelineParametersSettingsItemCheck(Map item) {
     Boolean checkOk = true
 
-    // Check 'name' key is present and valid
+    // Check 'name' key is present and valid.
     if (item.containsKey('name') && !checkEnvironmentVariableNameCorrect(item.get('name'))) {
         checkOk = pipelineSettingsItemError(3, item as String, "Invalid parameter name")
     } else if (!item.containsKey('name')) {
         checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
     }
 
-    // Check 'assign' sub-key in 'on_empty' key is correct when defined.
+    // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
+    println 'ololo' + checkEnvironmentVariableNameCorrect(item.on_empty.assign.replaceAll('\$', ''))
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
             !checkEnvironmentVariableNameCorrect(item.on_empty.assign.replaceAll('\$', '')))
         checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format("%s: '%s'",
