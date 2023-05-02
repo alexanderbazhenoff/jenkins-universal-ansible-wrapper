@@ -665,7 +665,6 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 // TODO: /// Continue format checking from here
 // TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables, Boolean check) {
-    Map actionsStates = [:]
     Map actionsRuns = [:]
     Boolean allPass = true
 
@@ -691,7 +690,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
                     stageItem.get('actions')[index as String] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
-            actionsStates = actionsStates + actionState
+            //actionsStates = actionsStates + actionStates
         }
     }
     if (stageItem.get('parallel')?.toBoolean()) {
