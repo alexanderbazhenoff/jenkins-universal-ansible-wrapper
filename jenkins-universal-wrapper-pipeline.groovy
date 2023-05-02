@@ -265,7 +265,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
         checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
     }
     String printableParameterName = item.get('name') && detectIsObjectConvertibleToString(item.name) ?
-            item.name.toString() : '<>'
+            item.name.toString() : '<undefined>'
 
     // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
@@ -370,12 +370,12 @@ Boolean checkPipelineParamsFormat(ArrayList parameters) {
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param isUndefined - condition to check state: set true to detect pipeline parameter for current job is undefined, or
  *                      false to detect parameter is defined.
- * @return - list of: printable parameter name (or '<>' when name wasn't set),
+ * @return - list of: printable parameter name (or '<undefined>' when name wasn't set),
  *                    return true when condition specified in 'isUndefined' method variable met.
  */
 static getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
                                            Boolean isUndefined = true) {
-    return [paramItem.get('name') ? paramItem.name : '<>', (paramItem.get('name') && pipelineParameters
+    return [paramItem.get('name') ? paramItem.name : '<undefined>', (paramItem.get('name') && pipelineParameters
             .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
 }
 
@@ -426,10 +426,11 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                 Boolean assignmentComplete = false
                 def (Boolean paramNeedsToBeAssigned, String parameterAssignment, Boolean fail, Boolean warn) =
                         handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
-                if (paramNeedsToBeAssigned && printableParameterName != '<>' && parameterAssignment.trim()) {
+                if (paramNeedsToBeAssigned && printableParameterName != '<undefined>' && parameterAssignment.trim()) {
                     envVariables[it.name.toString()] = parameterAssignment
                     assignmentComplete = true
-                } else if (printableParameterName == '<>' || (paramNeedsToBeAssigned && !parameterAssignment.trim())) {
+                } else if (printableParameterName == '<undefined>' || (paramNeedsToBeAssigned &&
+                        !parameterAssignment.trim())) {
                     assignMessage = paramNeedsToBeAssigned ? String.format("(can't be assigned with '%s' variable) ",
                             it.on_empty.get('assign').toString()) : ''
                 }
@@ -523,13 +524,13 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                                 'Regex match(es) will be removed.' ))
                         regexReplacement = ''
                     }
-                    if (paramIsDefined && printableParamName != '<>') {
+                    if (paramIsDefined && printableParamName != '<undefined>') {
                         CF.outMsg(0, String.format("Replacing '%s' regex to '%s' in '%s' pipeline parameter value...",
                                 regexPattern, regexReplacement, printableParamName))
                         envVariables[it.name.toString()] = applyReplaceRegexItems(envVariables[it.name.toString()] as
                                 String, [regexPattern], [regexReplacement])
                         regexReplacementDone = true
-                    } else if (printableParamName == '<>') {
+                    } else if (printableParamName == '<undefined>') {
                         CF.outMsg(3, String.format("Replace '%s' regex to '%s' is not possible: 'name' key is %s. %s.",
                                 regexPattern, regexReplacement, 'not defined for pipeline parameter item.',
                                 'Please fix pipeline config. Otherwise, replacement will be skipped with an error.'))
@@ -667,19 +668,20 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     Map actionsStates = [:]
     Map actionsRuns = [:]
     Boolean allPass = true
-    if (!stageItem.containsKey('name') || !detectIsObjectConvertibleToString(stageItem.get('name'))) {
-        CF.outMsg(3, "Unable to convert stage name to a string, just undefined or empty.")
-        allPass = false
-    }
-    if (!stageItem.containsKey('actions') || !stageItem.get('actions') instanceof ArrayList) {
-        CF.outMsg(3, 'Actions are not defined for current stage or just empty.')
-        allPass = false
-    }
-    if (stageItem.containsKey('parallel') && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))) {
-        CF.outMsg(3, "Unable to determine parallel option for current stage. Remove them or set as boolean.")
-        allPass = !check
-    }
-    String printableStageName = stageItem.get('name') ? stageItem.name.toString() : '<>'
+
+    // Handling 'name', 'actions' and 'parallel' stages keys.
+    allPass = !stageItem.containsKey('name') || !detectIsObjectConvertibleToString(stageItem.get('name')) ?
+            !configStructureErrorMsgWrapper(true, false, 3,
+                    "Unable to convert stage name to a string, just undefined or empty.") : allPass
+    allPass = !stageItem.containsKey('actions') || !(stageItem.get('actions') instanceof ArrayList) ?
+            !configStructureErrorMsgWrapper(true, false, 3,
+                    'Actions are not defined for current stage or just empty.') : allPass
+    allPass = stageItem.containsKey('parallel') && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel')) ?
+            !check ^ !configStructureErrorMsgWrapper(true, false, 3,
+                    "Unable to determine 'parallel' value for current stage. Remove them or set as boolean.") : allPass
+    String printableStageName = stageItem.get('name') ? stageItem.name.toString() : '<undefined>'
+
+    // Creating map and processing 'actions' items.
     stageItem.get('actions').eachWithIndex { item, index ->
         actionsRuns[index] = {
             CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
@@ -757,7 +759,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 // Check only one of node sub-keys 'name' or 'label' defined and it's correct.
                 Boolean nodeNameOrLabelDefined = actionItem.node.get('name') ^ actionItem.node.get('label')
                 if (!nodeNameOrLabelDefined)
-                    actionStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format('%s %s',
+                    configStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format('%s %s',
                             "Node sub-keys 'name' and 'label' are incompatible.",
                             "Define only one of them, otherwise 'label' sub-key will be ignored."))
                 (nodeItem, actionStructureOk) = detectNodeSubkeyConvertibleToString(check, nodeNameOrLabelDefined,
@@ -771,13 +773,13 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 if (actionItem.node.get('pattern') instanceof Boolean) {
                     nodeItem.pattern = actionItem.node.get('pattern')
                 } else {
-                    actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 2,
+                    actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2,
                             String.format(keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction,
                                     'Sub-key should be boolean.'))
                     nodeItem.node.remove('pattern')
                 }
             } else {
-                actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
+                actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
                         String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction,
                                 'Key will be ignored.'))
             }
@@ -803,7 +805,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
  * @param msg - error or warning message.
  * @return - a state of the whole action item: true when ok.
  */
-Boolean actionStructureErrorMsgWrapper(Boolean check, Boolean actionStructureState, Integer eventNum, String msg) {
+Boolean configStructureErrorMsgWrapper(Boolean check, Boolean actionStructureState, Integer eventNum, String msg) {
     if (check) {
         CF.outMsg(eventNum, msg)
         actionStructureState = eventNum == 3 ? false : actionStructureState
@@ -829,7 +831,7 @@ ArrayList detectNodeSubkeyConvertibleToString(Boolean check, Boolean nodeNameOrL
                                               Map actionItem, Map nodeItem, String printableStageAndAction,
                                               String keyWarnOrErrorMsgTemplate, String nodeSubkeyName) {
     if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubkeyName)))
-        actionStructureOk = actionStructureErrorMsgWrapper(check, actionStructureOk, 3,
+        actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
                 String.format(keyWarnOrErrorMsgTemplate, 'sub-', nodeSubkeyName, printableStageAndAction, ''))
     nodeItem.node.remove(nodeSubkeyName)
     return [nodeItem, actionStructureOk]
