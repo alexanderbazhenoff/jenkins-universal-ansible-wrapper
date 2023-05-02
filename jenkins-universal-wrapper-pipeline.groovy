@@ -672,8 +672,8 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     allPass = !stageItem.containsKey('name') || !detectIsObjectConvertibleToString(stageItem.get('name')) ?
             !configStructureErrorMsgWrapper(true, false, 3,
                     "Unable to convert stage name to a string, just undefined or empty.") : allPass
-    allPass = !stageItem.containsKey('actions') || !(stageItem.get('actions') instanceof ArrayList) ?
-            !configStructureErrorMsgWrapper(true, false, 3,
+    Boolean actionsIsNotList = stageItem.containsKey('actions') && !(stageItem.get('actions') instanceof ArrayList)
+    allPass = !stageItem.containsKey('actions') || actionsIsNotList ? !configStructureErrorMsgWrapper(true, false, 3,
                     'Actions are not defined for current stage or just empty.') : allPass
     allPass = stageItem.containsKey('parallel') && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel')) ?
             !check ^ !configStructureErrorMsgWrapper(true, false, 3,
