@@ -404,7 +404,7 @@ static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVari
         return [false, '', true, false]
     Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').asBoolean() : true
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
-    if (!settingsItem.get('on_empty').get('assign'))
+    if (settingsItem.on_empty.containsKey('assign') && !settingsItem.on_empty.get('assign'))
         return [false, '', fail, warn]
     Boolean assignment = settingsItem.on_empty.toString().startsWith('$') ? envVariables[settingsItem.on_empty.assign
             .toString().replaceAll('\\$', '')] : settingsItem.on_empty.assign.toString()
