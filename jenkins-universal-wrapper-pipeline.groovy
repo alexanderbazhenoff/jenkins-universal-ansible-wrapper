@@ -270,7 +270,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     }
 
     // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
-    println 'ololo' + checkEnvironmentVariableNameCorrect(item.on_empty.assign.replaceAll('\$', ''))
+    println 'ololo' + checkEnvironmentVariableNameCorrect(item.get('on_empty').get('assign').replaceAll('\$', ''))
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
             !checkEnvironmentVariableNameCorrect(item.on_empty.assign.replaceAll('\$', '')))
         checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format("%s: '%s'",
@@ -404,7 +404,7 @@ static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVari
         return [false, '', true, false]
     Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').asBoolean() : true
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
-    if (settingsItem.on_empty.containsKey('assign') && !settingsItem.on_empty.get('assign'))
+    if (!settingsItem.on_empty.get('assign'))
         return [false, '', fail, warn]
     Boolean assignment = settingsItem.on_empty.toString().startsWith('$') ? envVariables[settingsItem.on_empty.assign
             .toString().replaceAll('\\$', '')] : settingsItem.on_empty.assign.toString()
@@ -439,7 +439,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                     envVariables[it.name.toString()] = parameterAssignment
                     assignmentComplete = true
                 } else if (printableParameterName == '<>' || (paramNeedsToBeAssigned && !parameterAssignment.trim())) {
-                    assignMessage = paramNeedsToBeAssigned ? String.format("(and can't be assigned with %s variable) ",
+                    assignMessage = paramNeedsToBeAssigned ? String.format("(can't be assigned with '%s' variable) ",
                             it.on_empty.get('assign').toString()) : ''
                 }
                 allSet = !assignmentComplete && fail ? false : allSet
