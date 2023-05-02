@@ -334,14 +334,21 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
  *                         ]
  *                         etc... Check pipelineSettingsItemToPipelineParam() function for details.
  * @param finishWithFail - when true finish with success parameters injection. Otherwise, with fail.
+ * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
+ *                                which is class java.util.Collections$UnmodifiableMap).
  */
-def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess) {
+def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess, Object currentPipelineParams) {
     ArrayList newPipelineParams = []
-    currentBuild.displayName = String.format('pipeline_parameters_update--#%s', env.BUILD_NUMBER)
+    Boolean dryRun = currentPipelineParams.get('DRY_RUN').asBoolean()
+    currentBuild.displayName = String.format('pipeline_parameters_update--#%s%s', env.BUILD_NUMBER,
+            dryRun ? '-dry_run' : '')
     requiredParams.each { newPipelineParams += pipelineSettingsItemToPipelineParam(it as Map) }
-    properties([parameters(newPipelineParams)])
+    if (!dryRun)
+        properties([parameters(newPipelineParams)])
     if (finishWithSuccess) {
-        CF.outMsg(1, "Pipeline parameters was successfully injected. Select 'Build with parameters' and run again.")
+        ArrayList msgArgs = dryRun ? ["n't", 'Disable dry-run mode'] : [' successfully',
+                                                                        "Select 'Build with parameters'"]
+        CF.outMsg(1, String.format('Pipeline parameters was%s injected. %s and run again.', msgArgs[0], msgArgs[1]))
         CF.interruptPipelineOk(3)
     } else {
         error 'Pipeline parameters injection failed. Check pipeline config and run again.'
@@ -574,7 +581,7 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
         if (currentPipelineParams.get('UPDATE_PARAMETERS') || updateParamsRequired) {
             CF.outMsg(1, String.format('Current pipeline parameters requires an update from settings. Updating%s',
                     currentPipelineParams.get('DRY_RUN').asBoolean() ? ' will be skipped in dry-run mode.' : '...'))
-            updatePipelineParams(pipelineParams, allPass)
+            updatePipelineParams(pipelineParams, allPass, currentPipelineParams)
         }
     }
     return [noPipelineParams, allPass]
