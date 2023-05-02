@@ -225,13 +225,8 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
  * @param name - variable name to check regex match.
  * @return - true when match.
  */
-Boolean checkEnvironmentVariableNameCorrect(Object name) {
-    println 'ololo2: ' + name + ':' + name.getClass() + ':' + name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
-    try {
-        return name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
-    } catch (ignored) {
-        return false
-    }
+static checkEnvironmentVariableNameCorrect(Object name) {
+        return detectIsObjectConvertibleToString(name) && name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
 }
 
 /**
@@ -271,9 +266,9 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     }
 
     // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
-    println "${env.DEBUG_MODE}"
+    println test = "${ }".replaceAll('[\${}]', '')
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
-            !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('\\$', '')))
+            !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('[\${}]', '')))
         checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format("%s: '%s'",
                 'Unable to assign due to incorrect variable name', item.on_empty.assign))
 
