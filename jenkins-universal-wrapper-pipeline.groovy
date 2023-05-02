@@ -271,8 +271,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     }
 
     // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
-    println String.format('ololo: %s', item.containsKey('on_empty') && item.on_empty.containsKey('assign') &&
-            checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('\\$', '')))
+    println "${env.DEBUG_MODE}"
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
             !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('\\$', '')))
         checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format("%s: '%s'",
