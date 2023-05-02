@@ -685,6 +685,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
         actionsRuns[index] = {
             CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
                     index.toString(), stageItem.name))
+            println 'index: ' + index
             Map actionState = [:]
             Boolean checkOrExecuteOk
             (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
