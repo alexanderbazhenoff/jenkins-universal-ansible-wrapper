@@ -401,8 +401,8 @@ static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVari
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
     if (!settingsItem.on_empty.get('assign'))
         return [false, '', fail, warn]
-    Boolean assignment = settingsItem.on_empty.toString().startsWith('$') ? envVariables[settingsItem.on_empty.assign
-            .toString().replaceAll('\\$', '')] : settingsItem.on_empty.assign.toString()
+    Boolean assignment = settingsItem.on_empty.toString().matches('\\$[^{].+') ? envVariables[settingsItem.on_empty
+            .assign.toString().replaceAll('\\$', '')] : settingsItem.on_empty.assign.toString()
     return [true, assignment, fail, warn]
 }
 
@@ -572,8 +572,9 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
         CF.outMsg(1, 'Checking that current pipeline parameters are the same with pipeline settings...')
         (updateParamsRequired, allPass) = verifyPipelineParamsArePresents(pipelineParams, currentPipelineParams)
         if (currentPipelineParams.get('UPDATE_PARAMETERS') || updateParamsRequired) {
-            CF.outMsg(1, 'Current pipeline parameters requires an update from pipeline settings. Updating...')
-                updatePipelineParams(pipelineParams, allPass)
+            CF.outMsg(1, String.format('Current pipeline parameters requires an update from settings. Updating%s',
+                    currentPipelineParams.get('DEBUG_MODE').asBoolean() ? ' will be skipped in dry-run mode.' : '...'))
+            updatePipelineParams(pipelineParams, allPass)
         }
     }
     return [noPipelineParams, allPass]
