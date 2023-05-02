@@ -697,7 +697,10 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     if (stageItem.get('parallel')?.toBoolean()) {
         parallel actionsRuns
     } else {
-        actionsRuns.each { it.value.call() }
+        actionsRuns.each {
+            println String.format('action value class: %s', it.value.getClass())
+            it.value.call()
+        }
     }
     return [actionsStates, allPass, envVariables]
 }
