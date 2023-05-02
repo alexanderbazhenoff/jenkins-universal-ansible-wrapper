@@ -194,7 +194,7 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
             param += [choice(name: item.name, choices: item.choices.each { it.toString() }, description: description)]
         if (item.get('type') == 'boolean' || detectPipelineParameterItemIsProbablyBoolean(item))
             param += [booleanParam(name: item.name, description: description,
-                    defaultValue: item.containsKey('default') ? item.default : false)]
+                    defaultValue: item.containsKey('default') ? item.default.toBoolean() : false)]
         if (item.get('type') == 'password')
             param += [password(name: item.name, defaultValue: defaultString, description: description)]
         if (item.get('type') == 'text')
@@ -264,62 +264,47 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     } else if (!item.containsKey('name')) {
         checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
     }
+    String printableParameterName = item.get('name') && detectIsObjectConvertibleToString(item.name) ?
+            item.name.toString() : '<>'
 
     // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
             !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('[\${}]', '')))
-        checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format("%s: '%s'",
+        checkOk = pipelineSettingsItemError(3, printableParameterName, String.format("%s: '%s'",
                 'Unable to assign due to incorrect variable name', item.on_empty.assign))
 
     if (item.containsKey('type')) {
 
         // Check 'type' value with other keys data type mismatch.
-        String msg = ''
-        msg = item.type == 'boolean' && !(item.get('default') instanceof Boolean) ?
-                String.format("'type' set as boolean while 'default' key is not. It's %s",
-                        item.get('default').getClass().toString().tokenize('.').last().toLowerCase()) : msg
-        msg = item.type == 'choice' && !item.containsKey('choices') ?
-                "'type' set as choice while no 'choices' list defined" : msg
-        checkOk = msg.trim() ? pipelineSettingsItemError(3, item.get('name') as String, msg) : checkOk
+        String msg = item.type == 'choice' && !item.containsKey('choices') ?
+                "'type' set as choice while no 'choices' list defined" : ''
+        if (item.type == 'boolean' && item.containsKey('default') && !(item.default instanceof Boolean))
+            msg = String.format("'type' set as boolean while 'default' key is not. It's %s%s",
+                    item.get('default').getClass().toString().tokenize('.').last().toLowerCase(),
+                    detectPipelineParameterItemIsProbablyBoolean(item) ? ", but it's convertible to boolean" : '')
+        checkOk = msg.trim() ? pipelineSettingsItemError(3, printableParameterName, msg) : checkOk
     } else {
 
-        // Try to detect 'type' when not defined.
+        // Try to detect 'type' when not defined. detectPipelineParameterItemIsProbablyBoolean(
         ArrayList autodetectData = []
-        autodetectData = item.containsKey('default') && item.default instanceof Boolean ?
-                ['default', 'boolean'] : autodetectData
-        autodetectData = item.containsKey('choices') && item.choices instanceof ArrayList ?
-                ['choices', 'choice'] : autodetectData
-        autodetectData = item.containsKey('action') && item.action ? ['action', 'choice'] : autodetectData
+        autodetectData = detectPipelineParameterItemIsProbablyBoolean(item) ? ['default', 'boolean'] : autodetectData
+        autodetectData = detectPipelineParameterItemIsProbablyChoice(item) ? ['choices', 'choice'] : autodetectData
 
         // Output reason and 'type' key when autodetect is possible.
         if (autodetectData) {
-            checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format("%s by '%s' key: %s",
-                    "'type' key not defined, but was detected", autodetectData[0], autodetectData[1]))
+            checkOk = pipelineSettingsItemError(3, printableParameterName, String.format("%s by '%s' key: %s",
+                    "'type' key is not defined, but was detected", autodetectData[0], autodetectData[1]))
         } else {
             String msg = item.containsKey('default') && detectIsObjectConvertibleToString(item.default) ?
                     ". Probably 'type' is password, string or text" : ''
-            checkOk = pipelineSettingsItemError(3, item.get('name') as String, String.format('%s%s',
+            checkOk = pipelineSettingsItemError(3, printableParameterName, String.format('%s%s',
                     "'type' is required, but wasn't defined", msg))
         }
     }
 
-    // Check 'action' was set for choice or string parameter types.
-    Boolean actionKeyEnabled = item.containsKey('action') && item.get('action')
-    Boolean actionKeyIsForChoices = item.containsKey('choices') && item.get('choices') instanceof ArrayList
-    Boolean actionKeyIsForString = item.containsKey('type') && item.get('type') == 'string'
-    if (actionKeyEnabled && !actionKeyIsForChoices && !actionKeyIsForString)
-        checkOk = pipelineSettingsItemError(3, item.get('name') as String,
-                "'action' is for 'string' or 'choices' types")
-
-    // Check 'action' set for 'type: choices' with a list of choices.
-    if (actionKeyEnabled && actionKeyIsForChoices && !(item.get('choices') instanceof ArrayList))
-        checkOk = pipelineSettingsItemError(3, item.get('name') as String,
-                "'action' is 'True' while 'choices' key value is not a list of choices")
-
     // Check 'default' and 'choices' keys incompatibility.
     if (item.containsKey('default') && item.containsKey('choices') && item.get('choices') instanceof ArrayList)
-        checkOk = pipelineSettingsItemError(3, item.get('name') as String,
-                "'default' key is not required for type choice")
+        checkOk = pipelineSettingsItemError(3, printableParameterName, "'default' key is not required for type choice")
 
     return checkOk
 }
