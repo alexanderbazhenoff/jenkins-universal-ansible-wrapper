@@ -702,7 +702,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             it.value.call()
         }
     }
-    return [actionsStates, allPass, envVariables]
+    return [[:], allPass, envVariables]
 }
 
 ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionItem, Map pipelineSettings, Integer index,
