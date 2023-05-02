@@ -573,7 +573,7 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
         (updateParamsRequired, allPass) = verifyPipelineParamsArePresents(pipelineParams, currentPipelineParams)
         if (currentPipelineParams.get('UPDATE_PARAMETERS') || updateParamsRequired) {
             CF.outMsg(1, String.format('Current pipeline parameters requires an update from settings. Updating%s',
-                    currentPipelineParams.get('DEBUG_MODE').asBoolean() ? ' will be skipped in dry-run mode.' : '...'))
+                    currentPipelineParams.get('DRY_RUN').asBoolean() ? ' will be skipped in dry-run mode.' : '...'))
             updatePipelineParams(pipelineParams, allPass)
         }
     }
