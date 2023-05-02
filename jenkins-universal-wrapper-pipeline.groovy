@@ -689,7 +689,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             Map actionState
             Boolean checkOrExecuteOk
             (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
-                    stageItem.get('actions')[index as String] as Map, pipelineSettings, envVariables, check)
+                    stageItem.get('actions')[index as String] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             actionsStates = actionsStates + actionState
         }
@@ -702,12 +702,13 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     return [actionsStates, allPass, envVariables]
 }
 
-ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionItem, Map pipelineSettings,
+ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionItem, Map pipelineSettings, Integer index,
                                                   Object envVariables, Boolean check) {
     CF.outMsg(1, String.format("%s action in stage '%s': %s", check ? 'Checking' : 'Executing', stageName,
             actionItem.toString()))
     Map actionState = [:]
-    actionState[stageName] = [name: stageName, state: true, jobUrl: actionItem.toString()]
+    String actionMapIndex = String.format('%s_%s', stageName.replaceAll('<\\|>', ''), index.toString())
+    actionState[actionMapIndex] = [name : stageName, state: true, jobUrl: actionItem.toString()]
     return [actionState, true, envVariables]
 }
 
