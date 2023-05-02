@@ -226,7 +226,7 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
  * @return - true when match.
  */
 Boolean checkEnvironmentVariableNameCorrect(Object name) {
-    println 'ololo2: ' + name + ' : ' + name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
+    println 'ololo2: ' + name + ' : ' name.getClass() + ' : ' + name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
     try {
         return name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
     } catch (ignored) {
