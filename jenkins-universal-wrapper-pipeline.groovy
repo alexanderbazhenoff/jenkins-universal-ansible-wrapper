@@ -225,7 +225,8 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
  * @param name - variable name to check regex match.
  * @return - true when match.
  */
-static checkEnvironmentVariableNameCorrect(Object name) {
+Boolean checkEnvironmentVariableNameCorrect(Object name) {
+    println 'ololo2: ' + name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
     try {
         return name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
     } catch (ignored) {
