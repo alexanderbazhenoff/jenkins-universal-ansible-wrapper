@@ -668,7 +668,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     Map actionsRuns = [:]
     Boolean allPass = true
 
-    // Handling 'name', 'actions' and 'parallel' stages keys.
+    // Handling 'name', 'actions' and 'parallel' stage keys.
     allPass = !stageItem.containsKey('name') || !detectIsObjectConvertibleToString(stageItem.get('name')) ?
             !configStructureErrorMsgWrapper(true, false, 3,
                     "Unable to convert stage name to a string, just undefined or empty.") : allPass
@@ -680,12 +680,12 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
                     "Unable to determine 'parallel' value for current stage. Remove them or set as boolean.") : allPass
     String printableStageName = stageItem.get('name') ? stageItem.name.toString() : '<undefined>'
 
-    // Creating map and processing 'actions' items.
+    // Creating map and processing items from 'actions' key.
     stageItem.get('actions').eachWithIndex { item, index ->
         actionsRuns[index] = {
             CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
                     index.toString(), stageItem.name))
-            Map actionState
+            Map actionState = [:]
             Boolean checkOrExecuteOk
             (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
                     stageItem.get('actions')[index as String] as Map, pipelineSettings, index, envVariables, check)
