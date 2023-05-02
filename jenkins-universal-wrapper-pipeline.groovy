@@ -335,7 +335,8 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
  *                         etc... Check pipelineSettingsItemToPipelineParam() function for details.
  * @param finishWithFail - when true finish with success parameters injection. Otherwise, with fail.
  * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
- *                                which is class java.util.Collections$UnmodifiableMap).
+ *                                which is class java.util.Collections$UnmodifiableMap). When
+ *                                currentPipelineParams.DRY_RUN is 'true' pipeline parameters update won't be performed.
  */
 def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess, Object currentPipelineParams) {
     ArrayList newPipelineParams = []
@@ -348,7 +349,7 @@ def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess, Ob
     if (finishWithSuccess) {
         ArrayList msgArgs = dryRun ? ["n't", 'Disable dry-run mode'] : [' successfully',
                                                                         "Select 'Build with parameters'"]
-        CF.outMsg(1, String.format('Pipeline parameters was%s injected. %s and run again.', msgArgs[0], msgArgs[1]))
+        CF.outMsg(2, String.format('Pipeline parameters was%s injected. %s and run again.', msgArgs[0], msgArgs[1]))
         CF.interruptPipelineOk(3)
     } else {
         error 'Pipeline parameters injection failed. Check pipeline config and run again.'
@@ -566,7 +567,8 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
  *                           parameters (e.g. 'DEBUG_MODE', etc) converted to ArrayList.
  *                           See https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings for details.
  * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
- *                                which is class java.util.Collections$UnmodifiableMap).
+ *                                which is class java.util.Collections$UnmodifiableMap). Set
+ *                                currentPipelineParams.DRY_RUN to 'true' for dry-run mode.
  * @return - list of: true when there is no pipeline parameters in the pipelineSettings,
  *                    true when pipeline parameters processing pass.
  */
