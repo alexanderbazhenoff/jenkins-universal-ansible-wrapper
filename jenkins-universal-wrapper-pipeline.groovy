@@ -302,10 +302,13 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
         }
     }
 
-    // Check 'default' and 'choices' keys incompatibility.
-    if (item.containsKey('default') && item.containsKey('choices') && item.get('choices') instanceof ArrayList)
-        checkOk = pipelineSettingsItemError(3, printableParameterName, "'default' key is not required for type choice")
-
+    // Check 'default' and 'choices' keys incompatibility and 'choices' value.
+    if (item.containsKey('choices')) {
+        checkOk = item.containsKey('default') ? pipelineSettingsItemError(3, printableParameterName,
+                "'default' and 'choices' keys are incompatible") : checkOk
+        checkOk = !(item.get('choices') instanceof ArrayList) ? pipelineSettingsItemError(3, printableParameterName,
+                "'choices' value is not a list of items") : checkOk
+    }
     return checkOk
 }
 
@@ -664,15 +667,15 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     Map actionsStates = [:]
     Map actionsRuns = [:]
     Boolean allPass = true
-    if (!stageItem.findAll { it.key == 'name' } || !detectIsObjectConvertibleToString(stageItem.get('name'))) {
+    if (!stageItem.containsKey('name') || !detectIsObjectConvertibleToString(stageItem.get('name'))) {
         CF.outMsg(3, "Unable to convert stage name to a string, just undefined or empty.")
         allPass = false
     }
-    if (!stageItem.findAll { it.key == 'actions' } || !stageItem.get('actions') instanceof ArrayList) {
+    if (!stageItem.containsKey('actions') || !stageItem.get('actions') instanceof ArrayList) {
         CF.outMsg(3, 'Actions are not defined for current stage or just empty.')
         allPass = false
     }
-    if (stageItem.findAll { it.key == 'parallel' } && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))) {
+    if (stageItem.containsKey('parallel') && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))) {
         CF.outMsg(3, "Unable to determine parallel option for current stage. Remove them or set as boolean.")
         allPass = !check
     }
