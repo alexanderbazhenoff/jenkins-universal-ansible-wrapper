@@ -875,7 +875,7 @@ node(jenkinsNodeToExecute) {
             if (pipelineParametersProcessingPass) CF.outMsg(1, 'No pipeline parameters in the config.')
         } else {
             checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
-            if (checkPipelineParametersPass) {
+            if (checkPipelineParametersPass || params.get('DRY_RUN').asBoolean()) {
                 Boolean requiredPipelineParamsSet
                 Boolean regexCheckAllRequiredPipelineParamsOk
                 (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env))
