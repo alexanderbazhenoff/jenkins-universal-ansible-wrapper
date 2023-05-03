@@ -640,6 +640,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         allPass = checkOk && execOk
         stagesStates = stagesStates + currentStageActionsStates
     }
+    println 'kuku'
     return [stagesStates, allPass, envVariables]
 }
 
