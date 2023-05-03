@@ -691,7 +691,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
                     stageItem.get('actions')[index] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
-            println 'index: ' + index
+            println 'index: ' + index + ' : ' + stageItem.get('parallel')?.toBoolean()
             actionsStates = actionsStates + actionState
         }
     }
