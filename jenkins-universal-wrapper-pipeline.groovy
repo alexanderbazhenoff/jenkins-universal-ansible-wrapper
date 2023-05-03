@@ -535,7 +535,7 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                                 regexPattern, regexReplacement, 'not defined for pipeline parameter item.',
                                 'Please fix pipeline config. Otherwise, replacement will be skipped with an error.'))
                     }
-                } else if (regexPattern?.trim() && !regexKeyIsConvertibleToString) {
+                } else if (regexPattern?.length() && !regexKeyIsConvertibleToString) {
                     CF.outMsg(3, String.format(msgTemplateWrongType, 'regex', printableParamName, msgRecommendation))
                 } else {
                     CF.outMsg(3, String.format(msgTemplateNoValue, 'regex', printableParamName, msgRecommendation))
