@@ -640,7 +640,6 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         allPass = checkOk && execOk
         stagesStates = stagesStates + currentStageActionsStates
     }
-    println 'kuku'
     return [stagesStates, allPass, envVariables]
 }
 
@@ -899,7 +898,7 @@ node(jenkinsNodeToExecute) {
 
         // Execute wrapper pipeline settings stages.
         Boolean allDone
-        Map pipelineStagesStates
+        Map pipelineStagesStates = [:]
         (allDone, pipelineStagesStates, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, false)
     }
 }
