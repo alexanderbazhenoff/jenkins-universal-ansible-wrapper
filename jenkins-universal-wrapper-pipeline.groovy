@@ -102,6 +102,19 @@ static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
 }
 
 /**
+ * Get printable key value from map item (e.g. printable 'name' key which convertible to string).
+ *
+ * @param mapItem - map item to get printable key value from.
+ * @param keyName - key name to get.
+ * @param nameOnUndefined - printable value when key is absent or not convertible to string.
+ * @return - printable key value.
+ */
+static getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'name', String nameOnUndefined = '<undefined>') {
+    return mapItem.containsKey(keyName) && detectIsObjectConvertibleToString(mapItem.get(keyName)) ?
+            mapItem.get(keyName).toString() : nameOnUndefined
+}
+
+/**
  * Verify all required jenkins pipeline parameters are presents.
  *
  * @param pipelineParams - jenkins built-in 'params' UnmodifiableMap variable with current build pipeline parameters.
@@ -264,8 +277,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     } else if (!item.containsKey('name')) {
         checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
     }
-    String printableParameterName = item.get('name') && detectIsObjectConvertibleToString(item.name) ?
-            item.name.toString() : '<undefined>'
+    String printableParameterName = getPrintableValueKeyFromMapItem(item)
 
     // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
     if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
@@ -375,7 +387,7 @@ Boolean checkPipelineParamsFormat(ArrayList parameters) {
  */
 static getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
                                            Boolean isUndefined = true) {
-    return [paramItem.get('name') ? paramItem.name : '<undefined>', (paramItem.get('name') && pipelineParameters
+    return [getPrintableValueKeyFromMapItem(paramItem), (paramItem.get('name') && pipelineParameters
             .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
 }
 
@@ -417,7 +429,7 @@ static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVari
 Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipelineParameters, Object envVariables) {
     Boolean allSet = true
     if (pipelineSettings.get('parameters') && pipelineSettings.get('parameters').get('required')) {
-        CF.outMsg(1, 'Checking that all required pipeline parameters was specified for current build.')
+        CF.outMsg(1, 'Checking that all required pipeline parameters was defined for current build.')
         pipelineSettings.parameters.required.each {
             def (String printableParameterName, Boolean parameterIsUndefined) = getPipelineParamNameAndDefinedState(it
                     as Map, pipelineParameters, envVariables)
@@ -619,28 +631,30 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *        2. You can also set envVariables.DEBUG_MODE to verbose output and/or envVariables.DRY_RUN to perform dry run.
  * @return - list of: pipeline stages status map (the structure of this map should be: key is the name with spaces cut,
  *                    value should be a map of: [name: name, state: state, url: url]);
- *                    true when checking and execution pass, false on checking or execution errors (or skipped);
+ *                    true when checking and execution pass (or skipped), false on checking or execution errors;
  *                    return of environment variables ('env') that pass to function in 'envVariables'.
  */
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                                     Boolean execute = true) {
     Map stagesStates = [:]
-    Boolean allPass = true
+    Boolean checkOk = true
+    Boolean execOk = true
     if (!pipelineSettings.get('stages') && ((check && envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) ||
             execute))
-        CF.outMsg(execute ? 3 : 0, String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
+        CF.outMsg(0, String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stageItem in pipelineSettings.stages) {
-        Boolean checkOk
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
-                envVariables, true) : [[:], false, envVariables]
-        Map currentStageActionsStates
-        Boolean execOk
-        (currentStageActionsStates, execOk, envVariables) = execute ? checkOrExecuteStageSettingsItem(stageItem as Map,
-                pipelineSettings, envVariables, false) : [[:], false, envVariables]
-        allPass = checkOk && execOk
+                envVariables, true) : [[:], true, envVariables]
+        Map currentStageActionsStates = [:]
+        if (execute) {
+            stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
+                (currentStageActionsStates, execOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
+                        pipelineSettings, envVariables, false)
+            }
+        }
         stagesStates = stagesStates + currentStageActionsStates
     }
-    return [stagesStates, allPass, envVariables]
+    return [stagesStates, checkOk && execOk, envVariables]
 }
 
 /**
@@ -679,7 +693,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     allPass = stageItem.containsKey('parallel') && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel')) ?
             !check ^ !configStructureErrorMsgWrapper(true, false, 3,
                     "Unable to determine 'parallel' value for current stage. Remove them or set as boolean.") : allPass
-    String printableStageName = stageItem.get('name') ? stageItem.name.toString() : '<undefined>'
+    String printableStageName = getPrintableValueKeyFromMapItem(stageItem)
 
     // Creating map and processing items from 'actions' key.
     stageItem.get('actions').eachWithIndex { item, index ->
