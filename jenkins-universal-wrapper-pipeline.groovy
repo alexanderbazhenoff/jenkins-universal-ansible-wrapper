@@ -38,8 +38,6 @@ final JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
 // Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on.
 final JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
 
-// TODO: replace action parameters key for variables in stages handling
-// TODO: redo stages parsing
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
 final BuiltinPipelineParameters = [
         [name       : 'UPDATE_PARAMETERS',
@@ -706,7 +704,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             actionsStates = actionsStates + actionState
         }
     }
-
     if (stageItem.get('parallel')?.toBoolean()) {
         parallel actionsRuns
     } else {
