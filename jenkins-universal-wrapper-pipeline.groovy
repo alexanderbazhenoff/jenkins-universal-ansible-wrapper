@@ -96,7 +96,8 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  */
 static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     regexItemsList.eachWithIndex { value, Integer index ->
-        text = text.replaceAll(value, replaceItemsList.contains(index) ? replaceItemsList[index] : '')
+        text = text.replaceAll(value as CharSequence, replaceItemsList.contains(index) ? replaceItemsList[index] as
+                String : '')
     }
     return text
 }
@@ -693,7 +694,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     String printableStageName = getPrintableValueKeyFromMapItem(stageItem)
 
     // Creating map and processing items from 'actions' key.
-    stageItem.get('actions').eachWithIndex { item, index ->
+    stageItem.get('actions').eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
             CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
                     index.toString(), stageItem.name))
@@ -733,6 +734,7 @@ ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionIt
  *                    in all action status map - see @return of this function).
  * @param actionItem - action item to check or execute.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
+ * @param actionIndex - number of current action in stages.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
  *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on execution.
@@ -745,7 +747,7 @@ ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionIt
  */
 // TODO: /// Continue format checking from here
 // TODO: done the env pass inside other functions and return from this
-ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map pipelineSettings,
+ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map pipelineSettings, Integer actionIndex,
                                            Object envVariables, Boolean check) {
     Boolean actionStructureOk = true
     Boolean actionLinkOk = true
