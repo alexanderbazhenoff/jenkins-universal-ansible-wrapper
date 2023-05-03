@@ -869,9 +869,9 @@ node(jenkinsNodeToExecute) {
 
         // Check pipeline parameters in the settings are correct, all of them was defined properly for current build.
         Boolean checkPipelineParametersPass
-        if (noPipelineParamsInTheConfig) {
-            if (pipelineParametersProcessingPass) CF.outMsg(1, 'No pipeline parameters in the config.')
-        } else {
+        if (noPipelineParamsInTheConfig && pipelineParametersProcessingPass) {
+            CF.outMsg(1, 'No pipeline parameters in the config.')
+        } else if (!noPipelineParamsInTheConfig) {
             checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
             if (checkPipelineParametersPass || params.get('DRY_RUN').asBoolean()) {
                 Boolean requiredPipelineParamsSet
@@ -880,7 +880,7 @@ node(jenkinsNodeToExecute) {
                 (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
                         params, env)
                 pipelineFailedReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
-                        'Required pipeline parameter(s) was not specified or incorrect.'
+                        'Required pipeline parameter(s) was not specified or incorrect. '
             }
         }
 
@@ -892,16 +892,19 @@ node(jenkinsNodeToExecute) {
         pipelineFailedReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
 
-        // Interrupt when settings error was found or required pipeline parameters wasn't set, otherwise execute it.
-        pipelineFailedReasonText += (!pipelineParametersProcessingPass) ? '\nError(s) in pipeline yaml settings.' : ''
+        // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
+        pipelineFailedReasonText += !pipelineParametersProcessingPass ? '\nError(s) in pipeline yaml settings. ' : ''
+        Boolean allDone
+        Map pipelineStagesStates
+        if (!pipelineFailedReasonText.trim() || params.get('DRY_RUN').asBoolean()) {
+            CF.outMsg(2, String.format('%s %s.', 'Dry-run mode enabled. All pipeline and settings errors will be',
+                    'ignored and pipeline stages will be emulated skipping the scripts, playbooks and pipeline runs.'))
+            (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env,
+                    false)
+            pipelineFailedReasonText += allDone ? '' : 'Stages execution finished with fail.'
+        }
         if (pipelineFailedReasonText.trim())
             error String.format('%s\n%s.', pipelineFailedReasonText, 'Please fix then re-build')
 
-        // Execute wrapper pipeline settings stages.
-        println 'kuku2'
-        Boolean allDone
-        Map pipelineStagesStates
-        (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, false)
-        println 'kuku3'
     }
 }
