@@ -518,7 +518,7 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 // Handle 'regex' sub-key of 'regex_replace' parameter item key.
                 String regexPattern = it.regex_replace.get('regex')
                 Boolean regexKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('regex'))
-                if (regexPattern?.trim() && regexKeyIsConvertibleToString) {
+                if (regexPattern?.length() && regexKeyIsConvertibleToString) {
                     if (!regexReplacement?.trim()) {
                         CF.outMsg(0, String.format(msgTemplateNoValue, 'to', printableParamName,
                                 'Regex match(es) will be removed.' ))
