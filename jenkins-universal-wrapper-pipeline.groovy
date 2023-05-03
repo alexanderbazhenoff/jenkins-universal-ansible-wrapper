@@ -886,7 +886,7 @@ node(jenkinsNodeToExecute) {
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
         Boolean pipelineSettingsCheckOk
-        (pipelineSettingsCheckOk, __, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
+        (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                 false)
         println 'kuku'
         pipelineFailedReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
@@ -900,7 +900,8 @@ node(jenkinsNodeToExecute) {
         // Execute wrapper pipeline settings stages.
         println 'kuku2'
         Boolean allDone
-        Map pipelineStagesStates = [:]
-        (allDone, pipelineStagesStates, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, false)
+        Map pipelineStagesStates
+        (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, false)
+        println 'kuku3'
     }
 }
