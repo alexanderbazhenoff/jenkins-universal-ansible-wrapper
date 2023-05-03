@@ -750,8 +750,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     Boolean actionLinkOk = true
     String actionDescription = ''
     Map nodeItem = [:]
-    String actionItemName = actionItem.get('name') ? actionItem.name : '<undefined>'
-    String printableStageAndAction = String.format('%s | %s', stageName, actionItemName)
+    String printableStageAndAction = String.format('%s | %s', stageName, actionIndex)
     String warningMsgTemplate = "'%s' key defined for current action, but it's empty. Remove this key or define value."
     CF.outMsg(0, String.format("%s '%s'...", check ? 'Checking' : 'Executing', printableStageAndAction))
     if (actionItem.get('action')) {
