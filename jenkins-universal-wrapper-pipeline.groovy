@@ -897,6 +897,7 @@ node(jenkinsNodeToExecute) {
             error String.format('%s\n%s.', pipelineFailedReasonText, 'Please fix then re-build')
 
         // Execute wrapper pipeline settings stages.
+        println 'kuku'
         Boolean allDone
         Map pipelineStagesStates = [:]
         (allDone, pipelineStagesStates, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, false)
