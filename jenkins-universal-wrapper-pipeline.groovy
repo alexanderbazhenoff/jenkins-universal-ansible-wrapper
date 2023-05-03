@@ -646,11 +646,10 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
                 envVariables, true) : [[:], true, envVariables]
         Map currentStageActionsStates = [:]
-        if (execute) {
+        if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (currentStageActionsStates, execOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
                         pipelineSettings, envVariables, false)
-            }
         }
         stagesStates = stagesStates + currentStageActionsStates
     }
@@ -675,9 +674,6 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
  *                         url: info and/or job url]);
  *                         true when all stage actions execution successfully done.
  */
-// TODO: make a parallel option
-// TODO: /// Continue format checking from here
-// TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables, Boolean check) {
     Map actionsRuns = [:]
     Map actionsStates = [:]
@@ -705,15 +701,14 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
                     stageItem.get('actions')[index] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
-            println 'index: ' + index + ' : ' + stageItem.get('parallel')?.toBoolean()
             actionsStates = actionsStates + actionState
         }
     }
+
     if (stageItem.get('parallel')?.toBoolean()) {
         parallel actionsRuns
     } else {
         actionsRuns.each {
-            println String.format('action value class: %s', it.value.getClass())
             it.value.call()
         }
     }
@@ -725,16 +720,13 @@ ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionIt
     CF.outMsg(1, String.format("%s action %s in stage '%s': %s", check ? 'Checking' : 'Executing', index, stageName,
             actionItem.toString()))
     Map actionState = [:]
-    println 'index2: ' + index
     String actionMapIndex = String.format('%s_%s', stageName.replaceAll('<\\|>', ''), index.toString())
-    println 'index3: ' + index
     actionState[actionMapIndex] = [name : stageName, state: true, jobUrl: actionItem.toString()]
-    println 'index4: ' + index
     return [actionState, true, envVariables]
 }
 
 /**
- * Check all action items defined properly or execute action item from stage.
+ * Check action item defined properly or execute action item from stage.
  *
  * @param stageName - the name of the current stage from which to test or execute the action item (just for logging
  *                    in all action status map - see @return of this function).
@@ -902,7 +894,6 @@ node(jenkinsNodeToExecute) {
         Boolean pipelineSettingsCheckOk
         (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                 false)
-        println 'kuku'
         pipelineFailedReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
 
@@ -913,8 +904,7 @@ node(jenkinsNodeToExecute) {
         if (!pipelineFailedReasonText.trim() || params.get('DRY_RUN').asBoolean()) {
             CF.outMsg(2, String.format('%s %s.', 'Dry-run mode enabled. All pipeline and settings errors will be',
                     'ignored and pipeline stages will be emulated skipping the scripts, playbooks and pipeline runs.'))
-            (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env,
-                    false)
+            (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env)
             pipelineFailedReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
         if (pipelineFailedReasonText.trim())
