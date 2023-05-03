@@ -666,6 +666,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 // TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables, Boolean check) {
     Map actionsRuns = [:]
+    Map actionsStates = [:]
     Boolean allPass = true
 
     // Handling 'name', 'actions' and 'parallel' stage keys.
@@ -685,13 +686,13 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
         actionsRuns[index] = {
             CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
                     index.toString(), stageItem.name))
-            Map actionState = [:]
+            Map actionState
             Boolean checkOrExecuteOk
             (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
                     stageItem.get('actions')[index] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             println 'index: ' + index
-            //actionsStates = actionsStates + actionStates
+            actionsStates = actionsStates + actionState
         }
     }
     if (stageItem.get('parallel')?.toBoolean()) {
@@ -702,7 +703,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             it.value.call()
         }
     }
-    return [[:], allPass, envVariables]
+    return [actionsStates, allPass, envVariables]
 }
 
 ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionItem, Map pipelineSettings, Integer index,
