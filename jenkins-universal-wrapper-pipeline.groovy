@@ -694,11 +694,11 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     // Creating map and processing items from 'actions' key.
     stageItem.get('actions').eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
-            CF.outMsg(0, String.format("%s action number %s from '%s' stage", check ? 'Checking' : 'Executing',
-                    index.toString(), stageItem.name))
+            CF.outMsg(check ? 0 : 1, String.format("%s action number %s from '%s' stage", check ? 'Checking' :
+                    'Executing', index.toString(), stageItem.name))
             Map actionState
             Boolean checkOrExecuteOk
-            (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItemEmulate(printableStageName,
+            (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(printableStageName,
                     stageItem.get('actions')[index] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             actionsStates = actionsStates + actionState
@@ -714,14 +714,37 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     return [actionsStates, allPass, envVariables]
 }
 
-ArrayList checkOrExecutePipelineActionItemEmulate(String stageName, Map actionItem, Map pipelineSettings, Integer index,
-                                                  Object envVariables, Boolean check) {
-    CF.outMsg(1, String.format("%s action %s in stage '%s': %s", check ? 'Checking' : 'Executing', index, stageName,
-            actionItem.toString()))
-    Map actionState = [:]
-    String actionMapIndex = String.format('%s_%s', stageName.replaceAll('<\\|>', ''), index.toString())
-    actionState[actionMapIndex] = [name : stageName, state: true, jobUrl: actionItem.toString()]
-    return [actionState, true, envVariables]
+/**
+ * Check list of keys from map is probably string or boolean.
+ *
+ * @param check - true on check mode, false on execution (to skip messages and no results change).
+ * @param listOfKeys - list of keys to check from map.
+ * @param map - map to check from.
+ * @param isString - check is a string when true, check is a boolean when false.
+ * @param index - just an index to print 'that map is a part of <index>' for ident.
+ * @param warningTemplates - ArrayList of warning message templates to print an errors: [0] is for wrong type of key,
+ *                              [1] is for empty key. E.g:
+ *                              [
+ *                               "'%s' key in action #%s should be a %s.",
+ *                               "'%s' key defined for action #%s, but it's empty. Remove a key or define it's value."
+ *                              ]
+ * @param currentStatus - current status to change on error in check mode, or not to change on execution.
+ * @return - true when all map items is not empty and correct type.
+ */
+// TODO: Take a look at parameters and stages check and implement this function.
+Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList listOfKeys, Map map, Boolean isString,
+                                                      String index, ArrayList warningTemplates, Boolean currentStatus) {
+    listOfKeys.each {
+        if (map.containsKey(it) && map.get(it)) {
+            Boolean typeOk = isString ? detectIsObjectConvertibleToString(it) : detectIsObjectConvertibleToBoolean(it)
+            currentStatus = configStructureErrorMsgWrapper(!typeOk, currentStatus, 3,
+                    String.format(warningTemplates[0] as String, it, index, isString ? 'string' : 'boolean'))
+        } else if (map.containsKey(it) && !map.get(it)) {
+            currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2,
+                    String.format(warningTemplates[1] as String, it, index))
+        }
+    }
+    return currentStatus
 }
 
 /**
@@ -751,62 +774,90 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     String actionDescription = ''
     Map nodeItem = [:]
     String printableStageAndAction = String.format('%s | %s', stageName, actionIndex)
-    String warningMsgTemplate = "'%s' key defined for current action, but it's empty. Remove this key or define value."
-    CF.outMsg(0, String.format("%s '%s'...", check ? 'Checking' : 'Executing', printableStageAndAction))
-    if (actionItem.get('action')) {
+    ArrayList warningTemplates = ["'%s' key in action #%s should be a %s.",
+                                  "'%s' key defined for action #%s, but it's empty. Remove a key or define it's value."]
+    String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
 
-        // Check 'name' and 'node' keys correct.
-        if (check && actionItem.find { it.key == 'name' }?.key && !actionItem.get('name'))
-            CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'name')))
-        if (check && actionItem.find { it.key == 'node' }?.key && !actionItem.get('node')) {
-            CF.outMsg(2, CF.outMsg(String.format(warningMsgTemplate, 'node')))
-        } else if (check && actionItem.get('node')) {
-            String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
+    // Check optional action keys are not empty and convertible to string.
+    ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message']
+    ArrayList booleanKeys = ['ignore_fail', 'stop_on_fail']
+    actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
+            actionIndex.toString(), warningTemplates, actionStructureOk)
+    actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
+            actionIndex.toString(), warningTemplates, actionStructureOk)
 
-            // Check node keys and sub-keys defined properly.
-            if (detectIsObjectConvertibleToString(actionItem.get('node'))) {
-                nodeItem.node.name = actionItem.node.get('name')
-            } else if (actionItem.get('node') instanceof Map) {
-                nodeItem = actionItem.get('node') as Map
+    // Check node keys and sub-keys defined properly.
+    Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
+    if (detectIsObjectConvertibleToString(actionItem.get('node')) || anyJenkinsNode) {
+        configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
+                "This stage will run on any free Jenkins node.", printableStageAndAction))
+        nodeItem.node.name = actionItem.node.get('name')
+    } else if (actionItem.get('node') instanceof Map) {
+        nodeItem = actionItem.get('node') as Map
 
-                // Check only one of node sub-keys 'name' or 'label' defined and it's correct.
-                Boolean nodeNameOrLabelDefined = actionItem.node.get('name') ^ actionItem.node.get('label')
-                if (!nodeNameOrLabelDefined)
-                    configStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format('%s %s',
-                            "Node sub-keys 'name' and 'label' are incompatible.",
-                            "Define only one of them, otherwise 'label' sub-key will be ignored."))
-                (nodeItem, actionStructureOk) = detectNodeSubkeyConvertibleToString(check, nodeNameOrLabelDefined,
-                        actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
-                        'name')
-                (nodeItem, actionStructureOk) = detectNodeSubkeyConvertibleToString(check, nodeNameOrLabelDefined,
-                        actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
-                        'label')
+        // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
+        Boolean nodeNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.get('label')
+        actionStructureOk = configStructureErrorMsgWrapper(!nodeNameOrLabelDefined, actionStructureOk, 2,
+                String.format('%s %s', "Node sub-keys 'name' and 'label' are incompatible.",
+                "Define only one of them, otherwise 'label' sub-key will be ignored."))
+        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
+                actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
+                'name')
+        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
+                actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
+                'label')
 
-                // Check when node sub-key defined it's boolean.
-                if (actionItem.node.get('pattern') instanceof Boolean) {
-                    nodeItem.pattern = actionItem.node.get('pattern')
-                } else {
-                    actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2,
-                            String.format(keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction,
-                                    'Sub-key should be boolean.'))
-                    nodeItem.node.remove('pattern')
-                }
-            } else {
-                actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
-                        String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction,
-                                'Key will be ignored.'))
-            }
+        // Check when 'node' sub-key defined it's boolean.
+        if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
+                actionIndex.toString(), warningTemplates, true)) {
+            nodeItem.pattern = actionItem.node.get('pattern').toBoolean()
+        } else {
+            actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2,
+                    String.format(keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction,
+                            'Sub-key should be boolean.'))
+            nodeItem.node.remove('pattern')
         }
+    } else {
+        actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
+                String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction,
+                        'Key will be ignored.'))
+    }
+
+    // Check or execute current stage action when 'action' key is not empty and convertible to string.
+    if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, actionIndex.toString(),
+            warningTemplates, true)) {
+        // TODO: before message, after etc. stop on fail and skip_fail
+        actionMessageOutputWrapper(check, actionItem, 'before')
         (actionLinkOk, actionDescription) = checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem,
                 pipelineSettings, envVariables, check)
-    } else {
-        CF.outMsg(3, String.format("No 'action' key specified, nothing to %s '%s' action.",
-                check ? 'check in' : 'perform at', printableStageAndAction))
-        actionStructureOk = false
+        actionMessageOutputWrapper(check, actionItem, 'after')
+        actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail')
+        actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
+        if (actionItem.get('stop_on_fail') && !check)
+            error String.format("Terminating current pipeline run due to an error in '%s' action %s.",
+                    printableStageAndAction, "('stop_on_fail' is enabled for current action)")
+    } else if (!actionItem.containsKey('action')) {
+        actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
+                String.format("No 'action' key specified, nothing to %s '%s' action.",
+                        check ? 'check in' : 'perform at', printableStageAndAction))
     }
+
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
             actionStructureAndLinkOk]
+}
+
+/**
+ * Message output wrapper for action in a stage: before, after, on success or fail.
+ *
+ * @param check - true on checking action item to skip message output.
+ * @param actionItem action item to check or execute where the massage
+ * @param messageType - message type (or action item key prefix): before, after, success, fail.
+ */
+def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType) {
+    String messageKey = String.format('%s_message', messageType)
+    configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
+            messageType == 'fail' ? 3 : 1, actionItem.get(messageKey) as String)
 }
 
 /**
@@ -827,7 +878,7 @@ Boolean configStructureErrorMsgWrapper(Boolean check, Boolean actionStructureSta
 }
 
 /**
- * Detect node subkey ('name', 'label') in action item is convertible to string.
+ * Detect node sub-key ('name', 'label') in action item is convertible to string.
  *
  * @param check - set false to execute action item, true to check.
  * @param nodeNameOrLabelDefined - pass true when only one of node 'name' or 'label' sub-keys defined.
@@ -836,17 +887,17 @@ Boolean configStructureErrorMsgWrapper(Boolean check, Boolean actionStructureSta
  * @param nodeItem - node item as a part of actionItem.
  * @param printableStageAndAction - stage name and action name in printable format.
  * @param keyWarnOrErrorMsgTemplate - Template for warning on error message.
- * @param nodeSubkeyName - sub-key of node map to check (is convertible to string).
+ * @param nodeSubKeyName - sub-key of node map to check (is convertible to string).
  * @return - arrayList of: modified nodeItem,
  *                         modified actionStructureOk (only when check = true, otherwise returns unchanged).
  */
-ArrayList detectNodeSubkeyConvertibleToString(Boolean check, Boolean nodeNameOrLabelDefined, Boolean actionStructureOk,
+ArrayList detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLabelDefined, Boolean actionStructureOk,
                                               Map actionItem, Map nodeItem, String printableStageAndAction,
-                                              String keyWarnOrErrorMsgTemplate, String nodeSubkeyName) {
-    if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubkeyName)))
+                                              String keyWarnOrErrorMsgTemplate, String nodeSubKeyName) {
+    if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubKeyName)))
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
                 String.format(keyWarnOrErrorMsgTemplate, 'sub-', nodeSubkeyName, printableStageAndAction, ''))
-    nodeItem.node.remove(nodeSubkeyName)
+    nodeItem.node.remove(nodeSubKeyName)
     return [nodeItem, actionStructureOk]
 }
 
