@@ -801,11 +801,9 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 String.format('%s %s', "Node sub-keys 'name' and 'label' are incompatible.",
                 "Define only one of them, otherwise 'label' sub-key will be ignored."))
         (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
-                actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
-                'name')
+                actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction, 'name')
         (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
-                actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction,
-                'label')
+                actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction, 'label')
 
         // Check when 'node' sub-key defined it's boolean.
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
@@ -819,8 +817,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         }
     } else {
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
-                String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction,
-                        'Key will be ignored.'))
+                String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction, 'Key will be ignored.'))
     }
 
     // Check or execute current stage action when 'action' key is not empty and convertible to string.
@@ -841,7 +838,6 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
                         check ? 'check in' : 'perform at', printableStageAndAction))
     }
-
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
             actionStructureAndLinkOk]
