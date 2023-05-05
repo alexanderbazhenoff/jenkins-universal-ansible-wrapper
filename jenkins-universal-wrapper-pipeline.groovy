@@ -763,7 +763,8 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
  * @return - arrayList of: all actions in the stage status map (the structure of this map should be: key is the name
  *                         with spaces cut, value should be a map of: [name: stage name and action, state: state,
  *                         url: info and/or job url]);
- *                         true when all stage actions execution successfully done.
+ *                         true when all stage actions execution successfully done;
+ *                         environment variables ('env').
  */
 // TODO: /// Continue format checking from here
 // TODO: done the env pass inside other functions and return from this
@@ -825,8 +826,8 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             warningTemplates, true)) {
         actionMessageOutputWrapper(check, actionItem, 'before')
         // TODO: release or not 'requires: <stage_name> or <action_name>', 'success_only' and 'fail_only'?
-        (actionLinkOk, actionDescription) = checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem,
-                pipelineSettings, envVariables, check)
+        (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action as String,
+                nodeItem, pipelineSettings, envVariables, check)
         actionMessageOutputWrapper(check, actionItem, 'after')
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail')
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
@@ -840,7 +841,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
-            actionStructureAndLinkOk]
+            actionStructureAndLinkOk, envVariables]
 }
 
 /**
@@ -897,6 +898,7 @@ ArrayList detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrL
     return [nodeItem, actionStructureOk]
 }
 
+// TODO:
 ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
                                            Object envVariables, Boolean check) {
     return []
