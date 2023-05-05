@@ -826,8 +826,8 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     // Check or execute current stage action when 'action' key is not empty and convertible to string.
     if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, actionIndex.toString(),
             warningTemplates, true)) {
-        // TODO: before message, after etc. stop on fail and skip_fail
         actionMessageOutputWrapper(check, actionItem, 'before')
+        // TODO: release or not 'requires: <stage_name> or <action_name>', 'success_only' and 'fail_only'?
         (actionLinkOk, actionDescription) = checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem,
                 pipelineSettings, envVariables, check)
         actionMessageOutputWrapper(check, actionItem, 'after')
