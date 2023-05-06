@@ -33,10 +33,10 @@ final PipelineNameRegexReplace = ['^(admin|devops|qa)_'] as ArrayList
 final AnsibleInstallationName = 'home_local_bin_ansible' as String
 
 // Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on.
-final JenkinsNodeNamePipelineParameter = 'NODE_NAME' as String
+final NodePipelineParameterName = 'NODE_NAME' as String
 
 // Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on.
-final JenkinsNodeTagPipelineParameterName = 'NODE_TAG' as String
+final NodeTagPipelineParameterName = 'NODE_TAG' as String
 
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
 final BuiltinPipelineParameters = [
@@ -48,10 +48,10 @@ final BuiltinPipelineParameters = [
          type       : 'string',
          regex      : '(\\*)? +(.*?) +(.*?)? ((\\[(.*?)(: (.*?) (\\d+))?\\])? ?(.*$))?',
          description: 'Git branch of ansible-wrapper-settings project (to override defaults on development).'],
-        [name       : JenkinsNodeNamePipelineParameter,
+        [name       : NodePipelineParameterName,
          type       : 'string',
          description: 'Jenkins node name to run.'],
-        [name       : JenkinsNodeTagPipelineParameterName,
+        [name       : NodeTagPipelineParameterName,
          type       : 'string',
          default    : 'ansible210',
          description: 'Jenkins node tag to run.'],
@@ -159,10 +159,9 @@ ArrayList verifyPipelineParamsArePresents(ArrayList requiredParams, Object curre
             verifyPipelineParamsOk = false
         }
         if (!it.get('name') || !paramNameConvertibleToString || !paramNamingCorrect) {
-            verifyPipelineParamsOk = false
-            String namingErrorReasonMsg = paramNameConvertibleToString && !paramNamingCorrect ?
-                    " (parameter name didn't met POSIX standards)." : '.'
-            CF.outMsg(3, String.format("%s: '%s' %s%s", ignoreMsg, 'name', keyValueIncorrectMsg, namingErrorReasonMsg))
+            verifyPipelineParamsOk = configStructureErrorMsgWrapper(true, true, 3, String.format("%s: '%s' %s%s",
+                    ignoreMsg, 'name', keyValueIncorrectMsg, paramNameConvertibleToString && !paramNamingCorrect ?
+                    " (parameter name didn't met POSIX standards)." : '.'))
         } else if (it.get('name') && !currentPipelineParams.containsKey(it.get('name'))) {
             updateParamsRequired = true
         }
@@ -224,11 +223,31 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
  * @param eventNum - event number to output: 3 is an ERROR, 2 is a WARNING.
  * @param itemName - pipeline settings item name to output.
  * @param errorMsg - details of error to output.
+ * @param enable - enable message and possible return status changes.
+ * @param currentState -
  * @return - 'false' as a failed pipeline check item state.
  */
-Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg) {
-    CF.outMsg(eventNum, String.format("Wrong syntax in pipeline parameter '%s': %s.", itemName, errorMsg))
-    return false
+Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg, Boolean enable = true,
+                                  Boolean currentState = true) {
+    return configStructureErrorMsgWrapper(enable, currentState, eventNum,
+            String.format("Wrong syntax in pipeline parameter '%s': %s.", itemName, errorMsg))
+}
+
+/**
+ * Action structure error or warning message wrapper.
+ *
+ * @param check - true on check mode, false on execution.
+ * @param actionStructureState - a state of the whole action item: true when ok.
+ * @param eventNum - event number: 3 is an error, 2 is a warning.
+ * @param msg - error or warning message.
+ * @return - a state of the whole action item: true when ok.
+ */
+Boolean configStructureErrorMsgWrapper(Boolean check, Boolean actionStructureState, Integer eventNum, String msg) {
+    if (check) {
+        CF.outMsg(eventNum, msg)
+        actionStructureState = eventNum == 3 ? false : actionStructureState
+    }
+    return actionStructureState
 }
 
 /**
@@ -825,7 +844,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, actionIndex.toString(),
             warningTemplates, true)) {
         actionMessageOutputWrapper(check, actionItem, 'before')
-        // TODO: release or not 'requires: <stage_name> or <action_name>', 'success_only' and 'fail_only'?
+        // TODO: release or not: 'requires: <stage_name> or <action_name>', 'success_only' and 'fail_only'?
         (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action as String,
                 nodeItem, pipelineSettings, envVariables, check)
         actionMessageOutputWrapper(check, actionItem, 'after')
@@ -855,23 +874,6 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
     String messageKey = String.format('%s_message', messageType)
     configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
             messageType == 'fail' ? 3 : 1, actionItem.get(messageKey) as String)
-}
-
-/**
- * Action structure error or warning message wrapper.
- *
- * @param check - true on check mode, false on execution.
- * @param actionStructureState - a state of the whole action item: true when ok.
- * @param eventNum - event number: 3 is an error, 2 is a warning.
- * @param msg - error or warning message.
- * @return - a state of the whole action item: true when ok.
- */
-Boolean configStructureErrorMsgWrapper(Boolean check, Boolean actionStructureState, Integer eventNum, String msg) {
-    if (check) {
-        CF.outMsg(eventNum, msg)
-        actionStructureState = eventNum == 3 ? false : actionStructureState
-    }
-    return actionStructureState
 }
 
 /**
@@ -905,8 +907,8 @@ ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem
 }
 
 
-def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, JenkinsNodeNamePipelineParameter,
-        JenkinsNodeTagPipelineParameterName)
+def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, NodePipelineParameterName,
+        NodeTagPipelineParameterName)
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
