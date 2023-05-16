@@ -289,6 +289,7 @@ static detectIsObjectConvertibleToBoolean(Object obj) {
  */
 Boolean pipelineParametersSettingsItemCheck(Map item) {
     String printableParameterName = getPrintableValueKeyFromMapItem(item)
+    CF.outMsg(0, String.format("Checking pipeline parameter '%s':\n%s", printableParameterName, CF.readableMap(item)))
 
     // Check 'name' key is present and valid.
     Boolean checkOk = pipelineSettingsItemError(3, printableParameterName, "Invalid parameter name",
