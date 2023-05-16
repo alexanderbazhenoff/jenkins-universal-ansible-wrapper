@@ -652,6 +652,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     Boolean checkOk = configStructureErrorMsgWrapper(!pipelineSettings.get('stages') && ((check &&
             envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) || execute), true, 0,
             String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
+    // TODO: execOk and checkOk should return all states
     for (stageItem in pipelineSettings.stages) {
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
                 envVariables, true) : [[:], true, envVariables]
@@ -690,6 +691,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     Boolean allPass = true
 
     // Handling 'name', 'actions' and 'parallel' stage keys.
+    // TODO: this part is strange
     allPass = !stageItem.containsKey('name') || !detectIsObjectConvertibleToString(stageItem.get('name')) ?
             !configStructureErrorMsgWrapper(true, false, 3,
                     "Unable to convert stage name to a string, just undefined or empty.") : allPass
