@@ -223,27 +223,28 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
  * @param eventNum - event number to output: 3 is an ERROR, 2 is a WARNING.
  * @param itemName - pipeline settings item name to output.
  * @param errorMsg - details of error to output.
- * @param enable - enable message and possible return status changes.
- * @param currentState -
+ * @param enableCheck - enable message and possible return status changes.
+ * @param currentState - current overall state value to return from function: false when previous items contains an
+ *                       error(s).
  * @return - 'false' as a failed pipeline check item state.
  */
-Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg, Boolean enable = true,
+Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg, Boolean enableCheck = true,
                                   Boolean currentState = true) {
-    return configStructureErrorMsgWrapper(enable, currentState, eventNum,
+    return configStructureErrorMsgWrapper(enableCheck, currentState, eventNum,
             String.format("Wrong syntax in pipeline parameter '%s': %s.", itemName, errorMsg))
 }
 
 /**
  * Action structure error or warning message wrapper.
  *
- * @param check - true on check mode, false on execution.
+ * @param enable - true on check mode, false on execution to skip checking.
  * @param actionStructureState - a state of the whole action item: true when ok.
  * @param eventNum - event number: 3 is an error, 2 is a warning.
  * @param msg - error or warning message.
  * @return - a state of the whole action item: true when ok.
  */
-Boolean configStructureErrorMsgWrapper(Boolean check, Boolean actionStructureState, Integer eventNum, String msg) {
-    if (check) {
+Boolean configStructureErrorMsgWrapper(Boolean enable, Boolean actionStructureState, Integer eventNum, String msg) {
+    if (enable) {
         CF.outMsg(eventNum, msg)
         actionStructureState = eventNum == 3 ? false : actionStructureState
     }
@@ -287,21 +288,19 @@ static detectIsObjectConvertibleToBoolean(Object obj) {
  * @return - pipeline parameters item check status (true when ok).
  */
 Boolean pipelineParametersSettingsItemCheck(Map item) {
-    Boolean checkOk = true
-
-    // Check 'name' key is present and valid.
-    if (item.containsKey('name') && !checkEnvironmentVariableNameCorrect(item.get('name'))) {
-        checkOk = pipelineSettingsItemError(3, item as String, "Invalid parameter name")
-    } else if (!item.containsKey('name')) {
-        checkOk = pipelineSettingsItemError(3, item as String, "'name' key is required, but undefined")
-    }
     String printableParameterName = getPrintableValueKeyFromMapItem(item)
 
+    // Check 'name' key is present and valid.
+    Boolean checkOk = pipelineSettingsItemError(3, printableParameterName, "Invalid parameter name",
+            item.containsKey('name') && !checkEnvironmentVariableNameCorrect(item.get('name')), true)
+    checkOk = pipelineSettingsItemError(3, printableParameterName, "'name' key is required, but undefined",
+            !item.containsKey('name'), checkOk)
+
     // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
-    if (item.get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
-            !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('[\${}]', '')))
-        checkOk = pipelineSettingsItemError(3, printableParameterName, String.format("%s: '%s'",
-                'Unable to assign due to incorrect variable name', item.on_empty.assign))
+    checkOk = pipelineSettingsItemError(3, printableParameterName, String.format("%s: '%s'",
+            'Unable to assign due to incorrect variable name', item.on_empty.assign), item.get('on_empty') &&
+            item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
+            !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('[\${}]', '')), checkOk)
 
     if (item.containsKey('type')) {
 
@@ -312,12 +311,11 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
             msg = String.format("'type' set as boolean while 'default' key is not. It's %s%s",
                     item.get('default').getClass().toString().tokenize('.').last().toLowerCase(),
                     detectPipelineParameterItemIsProbablyBoolean(item) ? ", but it's convertible to boolean" : '')
-        checkOk = msg.trim() ? pipelineSettingsItemError(3, printableParameterName, msg) : checkOk
+        checkOk = pipelineSettingsItemError(3, printableParameterName, msg, msg.trim() as Boolean, checkOk)
     } else {
 
-        // Try to detect 'type' when not defined. detectPipelineParameterItemIsProbablyBoolean(
-        ArrayList autodetectData = []
-        autodetectData = detectPipelineParameterItemIsProbablyBoolean(item) ? ['default', 'boolean'] : autodetectData
+        // Try to detect 'type' when not defined.
+        ArrayList autodetectData = detectPipelineParameterItemIsProbablyBoolean(item) ? ['default', 'boolean'] : []
         autodetectData = detectPipelineParameterItemIsProbablyChoice(item) ? ['choices', 'choice'] : autodetectData
 
         // Output reason and 'type' key when autodetect is possible.
@@ -333,13 +331,10 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     }
 
     // Check 'default' and 'choices' keys incompatibility and 'choices' value.
-    if (item.containsKey('choices')) {
-        checkOk = item.containsKey('default') ? pipelineSettingsItemError(3, printableParameterName,
-                "'default' and 'choices' keys are incompatible") : checkOk
-        checkOk = !(item.get('choices') instanceof ArrayList) ? pipelineSettingsItemError(3, printableParameterName,
-                "'choices' value is not a list of items") : checkOk
-    }
-    return checkOk
+    checkOk = pipelineSettingsItemError(3, printableParameterName, "'default' and 'choices' keys are incompatible",
+            item.containsKey('choices') && item.containsKey('default'), checkOk)
+    return pipelineSettingsItemError(3, printableParameterName, "'choices' value is not a list of items",
+            item.containsKey('choices') && !(item.get('choices') instanceof ArrayList), checkOk)
 }
 
 /**
