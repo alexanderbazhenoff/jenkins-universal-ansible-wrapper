@@ -237,14 +237,14 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
 /**
  * Structure error or warning message wrapper.
  *
- * @param enable - true on check mode, false on execution to skip checking.
+ * @param enableCheck - true on check mode, false on execution to skip checking.
  * @param structureState - a state of a structure for the whole item: true when ok.
  * @param eventNum - event number: 3 is an error, 2 is a warning.
  * @param msg - error or warning message.
  * @return - a state of a structure for the whole item: true when ok.
  */
-Boolean configStructureErrorMsgWrapper(Boolean enable, Boolean structureState, Integer eventNum, String msg) {
-    if (enable) {
+Boolean configStructureErrorMsgWrapper(Boolean enableCheck, Boolean structureState, Integer eventNum, String msg) {
+    if (enableCheck) {
         CF.outMsg(eventNum, msg)
         structureState = eventNum == 3 ? false : structureState
     }
