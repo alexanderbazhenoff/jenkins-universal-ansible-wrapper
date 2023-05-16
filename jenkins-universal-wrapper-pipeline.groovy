@@ -521,7 +521,7 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                             printableParamName))
                 if (paramIsDefined && regexPattern.trim() && !envVariables[it.name as String].matches(regexPattern)) {
                     allCorrect = false
-                    CF.outMsg(3, String.format('%s parameter is incorrect due to regex missmatch.', printableParamName))
+                    CF.outMsg(3, String.format('%s parameter is incorrect due to regex mismatch.', printableParamName))
                 }
             }
 
