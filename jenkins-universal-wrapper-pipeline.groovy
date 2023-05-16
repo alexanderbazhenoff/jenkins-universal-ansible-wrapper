@@ -516,18 +516,15 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 } else if (!(it.regex instanceof ArrayList) && it.regex?.trim()) {
                     regexPattern = it.regex.toString()
                 }
-                if (regexPattern.trim())
-                    CF.outMsg(0, String.format("Found '%s' regex for pipeline parameter '%s'.", regexPattern,
-                            printableParamName))
-                if (paramIsDefined && regexPattern.trim() && !envVariables[it.name as String].matches(regexPattern)) {
-                    allCorrect = false
-                    CF.outMsg(3, String.format('%s parameter is incorrect due to regex mismatch.', printableParamName))
-                }
+                configStructureErrorMsgWrapper(regexPattern.trim() as Boolean, true, 0, String
+                        .format("Found '%s' regex for pipeline parameter '%s'.", regexPattern, printableParamName))
+                allCorrect = configStructureErrorMsgWrapper(paramIsDefined && regexPattern.trim() &&
+                        !envVariables[it.name as String].matches(regexPattern), allCorrect, 3,
+                        String.format('%s parameter is incorrect due to regex mismatch.', printableParamName))
             }
 
             // Perform regex replacement when regex_replace was set and pipeline parameter is defined for current build.
             if (it.get('regex_replace')) {
-                Boolean regexReplacementDone = false
                 String msgTemplateNoValue =
                         "'%s' sub-key value of 'regex_replace' wasn't defined for '%s' pipeline parameter.%s"
                 String msgTemplateWrongType =
@@ -537,9 +534,9 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 // Handle 'to' sub-key of 'regex_replace' parameter item key.
                 String regexReplacement = it.regex_replace.get('to')
                 Boolean regexToKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('to'))
-                if (regexReplacement?.trim() && !regexToKeyIsConvertibleToString) {
-                    CF.outMsg(3, String.format(msgTemplateWrongType, 'to', printableParamName, msgRecommendation))
-                }
+                Boolean regexReplacementDone = configStructureErrorMsgWrapper(regexReplacement?.trim() &&
+                        !regexToKeyIsConvertibleToString, false, 3, String.format(msgTemplateWrongType, 'to',
+                        printableParamName, msgRecommendation))
 
                 // Handle 'regex' sub-key of 'regex_replace' parameter item key.
                 String regexPattern = it.regex_replace.get('regex')
@@ -638,7 +635,6 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param check - true to check pipeline settings structure and parameters.
  * @param execute - true to execute pipeline wrapper stages defined in the config, false for dry run. Please note:
- *
  *                  1. When 'check' is true pipeline settings will be checked, then if 'execute' is true pipeline
  *                  settings will be executed. So you can set both 'check' and 'execute' to true, but it's not
  *                  recommended: use separate function call to check settings first.
@@ -652,11 +648,10 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                                     Boolean execute = true) {
     Map stagesStates = [:]
-    Boolean checkOk = true
     Boolean execOk = true
-    if (!pipelineSettings.get('stages') && ((check && envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) ||
-            execute))
-        CF.outMsg(0, String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
+    Boolean checkOk = configStructureErrorMsgWrapper(!pipelineSettings.get('stages') && ((check &&
+            envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) || execute), true, 0,
+            String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stageItem in pipelineSettings.stages) {
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
                 envVariables, true) : [[:], true, envVariables]
