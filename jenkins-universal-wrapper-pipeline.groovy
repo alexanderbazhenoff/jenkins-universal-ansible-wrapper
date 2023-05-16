@@ -223,7 +223,7 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
  * @param eventNum - event number to output: 3 is an ERROR, 2 is a WARNING.
  * @param itemName - pipeline settings item name to output.
  * @param errorMsg - details of error to output.
- * @param enableCheck - enable message and possible return status changes.
+ * @param enableCheck - when true enable message and possible return status changes.
  * @param currentState - current overall state value to return from function: false when previous items contains an
  *                       error(s).
  * @return - 'false' as a failed pipeline check item state.
