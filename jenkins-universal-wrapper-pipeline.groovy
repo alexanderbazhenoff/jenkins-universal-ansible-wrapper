@@ -872,7 +872,7 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
  * Detect node sub-key ('name', 'label') in action item is convertible to string.
  *
  * @param check - set false to execute action item, true to check.
- * @param nodeNameOrLabelDefined - pass true when only one of node 'name' or 'label' sub-keys defined.
+ * @param nodeNameOrLabelDefined - pass true when one of node 'name' or 'label' sub-keys defined.
  * @param actionStructureOk - state of action item structure check: true when ok.
  * @param actionItem - action item to check or execute.
  * @param nodeItem - node item as a part of actionItem.
