@@ -809,16 +809,16 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         nodeItem = actionItem.get('node') as Map
 
         // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
-        Boolean nodeNameAndLabelDefined = actionItem.node.containsKey('name') && actionItem.node.containsKey('label')
-        actionStructureOk = configStructureErrorMsgWrapper(nodeNameAndLabelDefined, actionStructureOk, 2,
+        Boolean nodeNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
+        actionStructureOk = configStructureErrorMsgWrapper(check && !nodeNameOrLabelDefined, actionStructureOk, 2,
                 String.format('%s %s', "Node sub-keys 'name' and 'label' are incompatible.",
                 "Define only one of them, otherwise 'label' sub-key will be ignored."))
-        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, actionStructureOk,
+        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
                 actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction, 'name')
-        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, actionStructureOk,
+        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
                 actionStructureOk, actionItem, nodeItem, printableStageAndAction, printableStageAndAction, 'label')
 
-        // Check when 'node' sub-key defined it's boolean.
+        // Check when 'pattern' node sub-key defined and boolean.
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
                 actionIndex.toString(), warningTemplates, true)) {
             nodeItem.pattern = actionItem.node.get('pattern').toBoolean()
