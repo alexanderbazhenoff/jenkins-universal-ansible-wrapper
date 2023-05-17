@@ -888,7 +888,7 @@ ArrayList detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrL
                                               String keyWarnOrErrorMsgTemplate, String nodeSubKeyName) {
     if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubKeyName)))
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
-                String.format(keyWarnOrErrorMsgTemplate, 'sub-', nodeSubkeyName, printableStageAndAction, ''))
+                String.format(keyWarnOrErrorMsgTemplate, 'sub-', nodeSubKeyName, printableStageAndAction, ''))
     nodeItem.node.remove(nodeSubKeyName)
     return [nodeItem, actionStructureOk]
 }
