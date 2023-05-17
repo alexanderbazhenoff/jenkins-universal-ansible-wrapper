@@ -820,7 +820,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         // Check when 'pattern' node sub-key defined and boolean.
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
                 actionIndex.toString(), warningTemplates, true)) {
-            nodeItem.pattern = actionItem.node.get('pattern').toBoolean()
+            nodeItem.pattern = actionItem.node.get('pattern')?.toBoolean()
         } else {
             actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2,
                     String.format(keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction,
