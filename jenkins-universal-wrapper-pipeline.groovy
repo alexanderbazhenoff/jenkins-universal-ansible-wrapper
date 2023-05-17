@@ -648,23 +648,22 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                                     Boolean execute = true) {
     Map stagesStates = [:]
-    Boolean execOk = true
+    Boolean executeOk = true
     Boolean checkOk = configStructureErrorMsgWrapper(!pipelineSettings.get('stages') && ((check &&
             envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) || execute), true, 0,
             String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
-    // TODO: execOk and checkOk should return all states
     for (stageItem in pipelineSettings.stages) {
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
-                envVariables, true) : [[:], true, envVariables]
+                envVariables, checkOk) : [[:], true, envVariables]
         Map currentStageActionsStates = [:]
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
-                (currentStageActionsStates, execOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
-                        pipelineSettings, envVariables, false)
+                (currentStageActionsStates, executeOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
+                        pipelineSettings, envVariables, executeOk, false)
             }
         stagesStates = stagesStates + currentStageActionsStates
     }
-    return [stagesStates, checkOk && execOk, envVariables]
+    return [stagesStates, checkOk && executeOk, envVariables]
 }
 
 /**
@@ -679,29 +678,31 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
  *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on
  *                       stage execute. Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
+ * @param allPass - current overall state of the structure check/execute pass. Will be changed on error(s) or return
+ *                  unchanged.
  * @param check - set false to execute action item, true to check.
  * @return - arrayList of: all actions in the stage status map (the structure of this map should be: key is the name
  *                         with spaces cut, value should be a map of: [name: stage name and action, state: state,
  *                         url: info and/or job url]);
- *                         true when all stage actions execution successfully done.
+ *                         true when all stage actions execution/checking successfully done;
+ *                         return of environment variables for current job build.
  */
-ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables, Boolean check) {
+ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables,
+                                          Boolean allPass = true, Boolean check = true) {
     Map actionsRuns = [:]
     Map actionsStates = [:]
-    Boolean allPass = true
 
     // Handling 'name', 'actions' and 'parallel' stage keys.
-    // TODO: this part is strange
-    allPass = !stageItem.containsKey('name') || !detectIsObjectConvertibleToString(stageItem.get('name')) ?
-            !configStructureErrorMsgWrapper(true, false, 3,
-                    "Unable to convert stage name to a string, just undefined or empty.") : allPass
-    Boolean actionsIsNotList = stageItem.containsKey('actions') && !(stageItem.get('actions') instanceof ArrayList)
-    allPass = !stageItem.containsKey('actions') || actionsIsNotList ? !configStructureErrorMsgWrapper(true, false, 3,
-                    'Actions are not defined for current stage or just empty.') : allPass
-    allPass = stageItem.containsKey('parallel') && !detectIsObjectConvertibleToBoolean(stageItem.get('parallel')) ?
-            !check ^ !configStructureErrorMsgWrapper(true, false, 3,
-                    "Unable to determine 'parallel' value for current stage. Remove them or set as boolean.") : allPass
+    allPass = configStructureErrorMsgWrapper(check && (!stageItem.containsKey('name') ||
+            !detectIsObjectConvertibleToString(stageItem.get('name'))), allPass, 3,
+            "Unable to convert stage name to a string, probably it's undefined or empty.")
     String printableStageName = getPrintableValueKeyFromMapItem(stageItem)
+    Boolean actionsIsNotList = stageItem.containsKey('actions') && !(stageItem.get('actions') instanceof ArrayList)
+    allPass = configStructureErrorMsgWrapper(check && (!stageItem.containsKey('actions') || actionsIsNotList),
+            allPass, 3, String.format("Incorrect or undefined actions for '%s' stage.", printableStageName))
+    allPass = configStructureErrorMsgWrapper(check && (stageItem.containsKey('parallel') &&
+            !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))), allPass, 3, String.format(
+            "Unable to determine 'parallel' value for '%s' stage. Remove them or set as boolean.", printableStageName))
 
     // Creating map and processing items from 'actions' key.
     stageItem.get('actions').eachWithIndex { item, Integer index ->
@@ -778,7 +779,6 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
  *                         true when all stage actions execution successfully done;
  *                         environment variables ('env').
  */
-// TODO: /// Continue format checking from here
 // TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map pipelineSettings, Integer actionIndex,
                                            Object envVariables, Boolean check) {
