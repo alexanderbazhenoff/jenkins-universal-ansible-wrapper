@@ -15,7 +15,7 @@ import java.util.regex.Pattern
 // Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings from, e.g:
 // 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'. Will be ignored when SETTINGS_GIT_BRANCH pipeline
 // parameter present and not blank.
-final SettingsGitUrl = 'https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings' as String
+final SettingsGitUrl = 'http://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings' as String
 final DefaultSettingsGitBranch = 'main' as String
 
 // Prefix for pipeline settings relative path inside the 'universal-wrapper-pipeline-settings' project, that will be
