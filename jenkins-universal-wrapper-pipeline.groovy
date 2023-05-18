@@ -750,7 +750,7 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
     listOfKeys.each {
         if (map.containsKey(it) && map.get(it)) {
             Boolean typeOk = isString ? detectIsObjectConvertibleToString(it) : detectIsObjectConvertibleToBoolean(it)
-            currentStatus = configStructureErrorMsgWrapper(check, currentStatus && typeOk, 3,
+            currentStatus = configStructureErrorMsgWrapper(check && !typeOk, currentStatus, 3,
                     String.format(warningTemplates[0] as String, it, index, isString ? 'string' : 'boolean'))
         } else if (map.containsKey(it) && !map.get(it)) {
             currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2,
