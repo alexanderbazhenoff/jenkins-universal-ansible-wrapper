@@ -655,12 +655,11 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
                 envVariables, checkOk) : [[:], true, envVariables]
         Map currentStageActionsStates = [:]
-        if (execute)
+        /*if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
-                println getPrintableValueKeyFromMapItem(stageItem as Map)
                 (currentStageActionsStates, executeOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
                         pipelineSettings, envVariables, executeOk, false)
-            }
+            }*/
         stagesStates = stagesStates + currentStageActionsStates
     }
     return [stagesStates, checkOk && executeOk, envVariables]
