@@ -813,7 +813,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         actionStructureOk = configStructureErrorMsgWrapper(check && !nodeNameOrLabelDefined, actionStructureOk, 2,
                 "Node sub-keys 'name' and 'label' are incompatible. Please define only one of them.")
         (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
-                actionStructureOk, actionItem, nodeItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
+                actionStructureOk, actionItem, nodeItem, printableStageAndAction, 'aaa', 'name')
         (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
                 actionStructureOk, actionItem, nodeItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'label')
 
