@@ -809,12 +809,12 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         nodeItem = actionItem.get('node') as Map
 
         // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
-        Boolean nodeNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
-        actionStructureOk = configStructureErrorMsgWrapper(check && !nodeNameOrLabelDefined, actionStructureOk, 2,
+        Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
+        actionStructureOk = configStructureErrorMsgWrapper(check && !onlyNameOrLabelDefined, actionStructureOk, 2,
                 "Node sub-keys 'name' and 'label' are incompatible. Please define only one of them.")
-        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
-                actionStructureOk, actionItem, nodeItem, printableStageAndAction, 'aaa', 'name')
-        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, nodeNameOrLabelDefined,
+        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, onlyNameOrLabelDefined,
+                actionStructureOk, actionItem, nodeItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
+        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, onlyNameOrLabelDefined,
                 actionStructureOk, actionItem, nodeItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'label')
 
         // Check when 'pattern' node sub-key defined and boolean.
