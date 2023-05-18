@@ -655,11 +655,11 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
                 envVariables, checkOk) : [[:], true, envVariables]
         Map currentStageActionsStates = [:]
-        /*if (execute)
+        if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (currentStageActionsStates, executeOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
                         pipelineSettings, envVariables, executeOk, false)
-            }*/
+            }
         stagesStates = stagesStates + currentStageActionsStates
     }
     return [stagesStates, checkOk && executeOk, envVariables]
@@ -828,7 +828,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     // Check or execute current stage action when 'action' key is not empty and convertible to string.
     if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, printableStageAndAction)) {
         actionMessageOutputWrapper(check, actionItem, 'before')
-        // TODO: release or not: 'requires: <stage_name> or <action_name>', 'success_only' and 'fail_only'?
+        // TODO: release or not: 'success_only' and 'fail_only'?
         (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action as String,
                 nodeItem, pipelineSettings, envVariables, check)
         actionMessageOutputWrapper(check, actionItem, 'after')
