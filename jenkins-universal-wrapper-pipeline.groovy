@@ -827,7 +827,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                             'Sub-key should be boolean.'))
             nodeItem.node.remove('pattern')
         }
-    } else {
+    } else if (actionItem.containsKey('node') && !anyJenkinsNode && !(actionItem.get('node') instanceof Map)) {
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
                 String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction, 'Key will be ignored.'))
     }
