@@ -750,7 +750,7 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
     listOfKeys.each {
         if (map.containsKey(it) && map.get(it)) {
             Boolean typeOk = isString ? detectIsObjectConvertibleToString(it) : detectIsObjectConvertibleToBoolean(it)
-            currentStatus = configStructureErrorMsgWrapper(!typeOk, currentStatus, 3,
+            currentStatus = configStructureErrorMsgWrapper(check, currentStatus && typeOk, 3,
                     String.format(warningTemplates[0] as String, it, index, isString ? 'string' : 'boolean'))
         } else if (map.containsKey(it) && !map.get(it)) {
             currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2,
@@ -841,7 +841,6 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         actionMessageOutputWrapper(check, actionItem, 'after')
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail')
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
-        println actionItem.get('ignore_fail')?.getClass()
         if (actionItem.get('stop_on_fail') && !check)
             error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                     "('stop_on_fail' is enabled for current action)")
