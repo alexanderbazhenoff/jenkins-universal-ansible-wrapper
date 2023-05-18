@@ -1,6 +1,5 @@
 #!/usr/bin/env groovy
-
-
+import com.thoughtworks.xstream.mapper.Mapper
 @NonCPS
 @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
 import org.yaml.snakeyaml.*
@@ -748,12 +747,13 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
 Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList listOfKeys, Map map, Boolean isString,
                                                       String index, ArrayList warningTemplates, Boolean currentStatus) {
     listOfKeys.each {
-        if (map.containsKey(it) && map.get(it)) {
-            Boolean typeOk = isString ? detectIsObjectConvertibleToString(it) : detectIsObjectConvertibleToBoolean(it)
-            currentStatus = configStructureErrorMsgWrapper(check, typeOk ? currentStatus : typeOk, 3,
+        Boolean typeOk = isString ? detectIsObjectConvertibleToString(map.get(it)) :
+                detectIsObjectConvertibleToBoolean(map.get(it))
+        if (map.containsKey(it) && !typeOk) {
+            currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 3,
                     String.format(warningTemplates[0] as String, it, index, isString ? 'string' : 'boolean'))
             println 'item: ' + it + ' class: ' + map.get(it)?.getClass() + ' status: ' + currentStatus
-        } else if (map.containsKey(it) && !map.get(it)) {
+        } else if (map.containsKey(it) && !map.get(it)?.toString()?.length()) {
             currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2,
                     String.format(warningTemplates[1] as String, it, index))
         }
