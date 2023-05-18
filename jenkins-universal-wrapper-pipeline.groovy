@@ -786,18 +786,18 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     Boolean actionLinkOk = true
     String actionDescription = ''
     Map nodeItem = [:]
-    String printableStageAndAction = String.format('%s | %s', stageName, actionIndex)
-    ArrayList warningTemplates = ["'%s' key in action #%s should be a %s.",
-                                  "'%s' key defined for action #%s, but it's empty. Remove a key or define it's value."]
+    String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
+    ArrayList warningTemplates = ["'%s' key in '#%s' should be a %s.",
+                                  "'%s' key defined for '#%s', but it's empty. Remove a key or define it's value."]
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
 
     // Check optional action keys are not empty and convertible to string.
     ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message']
     ArrayList booleanKeys = ['ignore_fail', 'stop_on_fail']
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
-            actionIndex.toString(), warningTemplates, actionStructureOk)
+            printableStageAndAction, warningTemplates, actionStructureOk)
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
-            actionIndex.toString(), warningTemplates, actionStructureOk)
+            printableStageAndAction, warningTemplates, actionStructureOk)
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
@@ -819,12 +819,11 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
 
         // Check when 'pattern' node sub-key defined and boolean.
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
-                actionIndex.toString(), warningTemplates, true)) {
+                printableStageAndAction, warningTemplates, true)) {
             nodeItem.pattern = actionItem.node.get('pattern')?.toBoolean()
         } else {
-            actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2,
-                    String.format(keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction,
-                            'Sub-key should be boolean.'))
+            actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format(
+                    keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction, 'Sub-key should be boolean.'))
             nodeItem.node.remove('pattern')
         }
     } else if (actionItem.containsKey('node') && !anyJenkinsNode && !(actionItem.get('node') instanceof Map)) {
@@ -833,7 +832,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     }
 
     // Check or execute current stage action when 'action' key is not empty and convertible to string.
-    if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, actionIndex.toString(),
+    if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, printableStageAndAction,
             warningTemplates, true)) {
         actionMessageOutputWrapper(check, actionItem, 'before')
         // TODO: release or not: 'requires: <stage_name> or <action_name>', 'success_only' and 'fail_only'?
@@ -842,9 +841,10 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         actionMessageOutputWrapper(check, actionItem, 'after')
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail')
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
+        println actionItem.get('ignore_fail')?.getClass()
         if (actionItem.get('stop_on_fail') && !check)
-            error String.format("Terminating current pipeline run due to an error in '%s' action %s.",
-                    printableStageAndAction, "('stop_on_fail' is enabled for current action)")
+            error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
+                    "('stop_on_fail' is enabled for current action)")
     } else if (!actionItem.containsKey('action')) {
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
