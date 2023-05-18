@@ -734,28 +734,21 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
  * @param map - map to check from.
  * @param isString - check is a string when true, check is a boolean when false.
  * @param index - just an index to print 'that map is a part of <index>' for ident.
- * @param warningTemplates - ArrayList of warning message templates to print an errors: [0] is for wrong type of key,
- *                              [1] is for empty key. E.g:
- *                              [
- *                               "'%s' key in action #%s should be a %s.",
- *                               "'%s' key defined for action #%s, but it's empty. Remove a key or define it's value."
- *                              ]
  * @param currentStatus - current status to change on error in check mode, or not to change on execution.
  * @return - true when all map items is not empty and correct type.
  */
 // TODO: Take a look at parameters and stages check and implement this function.
 Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList listOfKeys, Map map, Boolean isString,
-                                                      String index, ArrayList warningTemplates, Boolean currentStatus) {
+                                                      String index, Boolean currentStatus = true) {
     listOfKeys.each {
         Boolean typeOk = isString ? detectIsObjectConvertibleToString(map.get(it)) :
                 detectIsObjectConvertibleToBoolean(map.get(it))
         if (map.containsKey(it) && !typeOk) {
             currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 3,
-                    String.format(warningTemplates[0] as String, it, index, isString ? 'string' : 'boolean'))
-            println 'item: ' + it + ' class: ' + map.get(it)?.getClass() + ' status: ' + currentStatus
+                    String.format("'%s' key in '#%s' should be a %s.", it, index, isString ? 'string' : 'boolean'))
         } else if (map.containsKey(it) && !map.get(it)?.toString()?.length()) {
-            currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2,
-                    String.format(warningTemplates[1] as String, it, index))
+            currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2, String.format(
+                    "'%s' key defined for '#%s', but it's empty. Remove a key or define it's value.", it, index))
         }
     }
     return currentStatus
@@ -796,9 +789,9 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message']
     ArrayList booleanKeys = ['ignore_fail', 'stop_on_fail']
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
-            printableStageAndAction, warningTemplates, actionStructureOk)
+            printableStageAndAction, actionStructureOk)
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
-            printableStageAndAction, warningTemplates, actionStructureOk)
+            printableStageAndAction, actionStructureOk)
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
@@ -820,7 +813,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
 
         // Check when 'pattern' node sub-key defined and boolean.
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
-                printableStageAndAction, warningTemplates, true)) {
+                printableStageAndAction)) {
             nodeItem.pattern = actionItem.node.get('pattern')?.toBoolean()
         } else {
             actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format(
@@ -833,8 +826,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     }
 
     // Check or execute current stage action when 'action' key is not empty and convertible to string.
-    if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, printableStageAndAction,
-            warningTemplates, true)) {
+    if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, printableStageAndAction)) {
         actionMessageOutputWrapper(check, actionItem, 'before')
         // TODO: release or not: 'requires: <stage_name> or <action_name>', 'success_only' and 'fail_only'?
         (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action as String,
