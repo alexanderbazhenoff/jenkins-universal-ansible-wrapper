@@ -752,6 +752,7 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
             Boolean typeOk = isString ? detectIsObjectConvertibleToString(it) : detectIsObjectConvertibleToBoolean(it)
             currentStatus = configStructureErrorMsgWrapper(check && !typeOk, currentStatus, 3,
                     String.format(warningTemplates[0] as String, it, index, isString ? 'string' : 'boolean'))
+            println 'item: ' + it + 'class: ' + map.get(it)?.getClass() + 'status: ' + currentStatus
         } else if (map.containsKey(it) && !map.get(it)) {
             currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2,
                     String.format(warningTemplates[1] as String, it, index))
