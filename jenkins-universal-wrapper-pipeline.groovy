@@ -839,10 +839,19 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     }
 
     // Check or execute current action when 'action' key is correct and possible success_only/fail_only conditions met.
-    if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, printableStageAndAction)) {
+    Boolean actionIsCorrect = checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true,
+            printableStageAndAction)
+    actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect,
+            actionStructureOk, 3, String.format("Wrong format of 'action' key in '%s'.", printableStageAndAction))
+    Boolean successOnlyActionConditionMet = actionItem.get('success_only') && currentBuild.result != 'FAILURE'
+    Boolean failOnlyActionConditionMet = actionItem.get('fail_only') && currentBuild.result == 'FAILURE'
+    Boolean allActionConditionsAreMet = !check && (successOnlyActionConditionMet || failOnlyActionConditionMet) || check
+    String actionSkipMsgReason = successOnlyActionConditionMet ? 'success_only' : failOnlyActionConditionMet ?
+            'fail_only' : ''
+    configStructureErrorMsgWrapper(!check && !allActionConditionsAreMet, true, 0,
+            String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
+    if (actionIsCorrect && allActionConditionsAreMet) {
         actionMessageOutputWrapper(check, actionItem, 'before')
-        if (!check && ((actionItem.get('success_only') && currentBuild.result != 'FAILURE') ||
-                (actionItem.get('fail_only') && currentBuild.result == 'FAILURE')) || check)
             dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
                 currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
                         currentBuild.displayName
