@@ -845,7 +845,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         actionMessageOutputWrapper(check, actionItem, 'before')
         if (!check && ((actionItem.get('success_only') && currentBuild.result != 'FAILURE') ||
                 (actionItem.get('fail_only') && currentBuild.result == 'FAILURE')) || check)
-            dir(check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
+            dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
                 (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
                         as String, nodeItem, pipelineSettings, envVariables, check)
             }
