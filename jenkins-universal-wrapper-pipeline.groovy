@@ -795,7 +795,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
 
-    // Check keys are not empty and convertible to required type, check incompatible keys, set build name on execution.
+    // Check keys are not empty and convertible to required type and check incompatible keys.
     ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
     ArrayList booleanKeys = ['ignore_fail', 'stop_on_fail', 'success_only', 'fail_only']
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
@@ -804,8 +804,6 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             printableStageAndAction, actionStructureOk)
     actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
             .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper('success_only', 'fail_only'))
-    currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
-            currentBuild.displayName
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
@@ -846,6 +844,8 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         if (!check && ((actionItem.get('success_only') && currentBuild.result != 'FAILURE') ||
                 (actionItem.get('fail_only') && currentBuild.result == 'FAILURE')) || check)
             dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
+                currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
+                        currentBuild.displayName
                 (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
                         as String, nodeItem, pipelineSettings, envVariables, check)
             }
