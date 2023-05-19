@@ -91,7 +91,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  *                           will be replaced with empty line ''.
  * @return - resulting text.
  */
-static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
+static String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     regexItemsList.eachWithIndex { value, Integer index ->
         text = text.replaceAll(value as CharSequence, replaceItemsList.contains(index) ? replaceItemsList[index] as
                 String : '')
@@ -107,7 +107,8 @@ static applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
  * @param nameOnUndefined - printable value when key is absent or not convertible to string.
  * @return - printable key value.
  */
-static getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'name', String nameOnUndefined = '<undefined>') {
+static String getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'name',
+                                              String nameOnUndefined = '<undefined>') {
     return mapItem.containsKey(keyName) && detectIsObjectConvertibleToString(mapItem.get(keyName)) ?
             mapItem.get(keyName).toString() : nameOnUndefined
 }
@@ -174,7 +175,7 @@ ArrayList verifyPipelineParamsArePresents(ArrayList requiredParams, Object curre
  * @param paramItem - pipeline parameter item to detect.
  * @return - true when 'choice'.
  */
-static detectPipelineParameterItemIsProbablyChoice(Map paramItem) {
+static Boolean detectPipelineParameterItemIsProbablyChoice(Map paramItem) {
     return paramItem.containsKey('choices') && paramItem.get('choices') instanceof ArrayList
 }
 
@@ -184,7 +185,7 @@ static detectPipelineParameterItemIsProbablyChoice(Map paramItem) {
  * @param paramItem - pipeline parameter item to detect.
  * @return - true when 'boolean'.
  */
-static detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
+static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
     return paramItem.containsKey('default') && paramItem.get('default') instanceof Boolean
 }
 
@@ -256,7 +257,7 @@ Boolean configStructureErrorMsgWrapper(Boolean enableCheck, Boolean structureSta
  * @param name - variable name to check regex match.
  * @return - true when match.
  */
-static checkEnvironmentVariableNameCorrect(Object name) {
+static Boolean checkEnvironmentVariableNameCorrect(Object name) {
         return detectIsObjectConvertibleToString(name) && name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
 }
 
@@ -266,7 +267,7 @@ static checkEnvironmentVariableNameCorrect(Object name) {
  * @param obj - object to detect.
  * @return - true when object is convertible to human readable string.
  */
-static detectIsObjectConvertibleToString(Object obj) {
+static Boolean detectIsObjectConvertibleToString(Object obj) {
     return (obj instanceof String || obj instanceof Integer || obj instanceof Float || obj instanceof BigInteger)
 }
 
@@ -274,9 +275,9 @@ static detectIsObjectConvertibleToString(Object obj) {
  * Detect if an object will be correct after conversion to boolean.
  *
  * @param obj - object to detect.
- * @return - ttue when object will be correct.
+ * @return - true when object will be correct.
  */
-static detectIsObjectConvertibleToBoolean(Object obj) {
+static Boolean detectIsObjectConvertibleToBoolean(Object obj) {
     return (obj?.toBoolean()).toString() == obj?.toString()
 }
 
@@ -398,7 +399,7 @@ Boolean checkPipelineParamsFormat(ArrayList parameters) {
  * @return - arrayList of: printable parameter name (or '<undefined>' when name wasn't set);
  *                         return true when condition specified in 'isUndefined' method variable met.
  */
-static getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
+static ArrayList getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
                                            Boolean isUndefined = true) {
     return [getPrintableValueKeyFromMapItem(paramItem), (paramItem.get('name') && pipelineParameters
             .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
@@ -415,7 +416,7 @@ static getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParamet
  *                         true when needs to count an error when pipeline parameter undefined and can't be assigned;
  *                         true when needs to warn when pipeline parameter undefined and can't be assigned.
  */
-static handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
+static ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
     if (!settingsItem.get('on_empty'))
         return [false, '', true, false]
     Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').asBoolean() : true
@@ -477,7 +478,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
  * @param builtinPipelineParameters - additional built-in pipeline parameters arrayList.
  * @return - pipeline parameters arrayList.
  */
-static extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinPipelineParameters) {
+static ArrayList extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinPipelineParameters) {
     return (pipelineSettings.get('parameters')) ?
             (pipelineSettings.parameters.get('required') ? pipelineSettings.parameters.get('required') : []) +
                     (pipelineSettings.parameters.get('optional') ? pipelineSettings.parameters.get('optional') : []) +
@@ -755,6 +756,17 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
 }
 
 /**
+ * Incompatible keys in map found error message wrapper.
+ *
+ * @param key1 - First keyName.
+ * @param key2 - Second keyName.
+ * @return - formatted error message.
+ */
+static String incompatibleKeysMsgWrapper(String key1, String key2) {
+    return String.format("Node sub-keys '%s' and '%s' are incompatible. Please define only one of them.", key1, key2)
+}
+
+/**
  * Check action item defined properly or execute action item from stage.
  *
  * @param stageName - the name of the current stage from which to test or execute the action item (just for logging
@@ -778,20 +790,22 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                                            Object envVariables, Boolean check) {
     Boolean actionStructureOk = true
     Boolean actionLinkOk = true
-    String actionDescription = ''
+    String actionDescription = '<skipped>'
     Map nodeItem = [:]
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
-    ArrayList warningTemplates = ["'%s' key in '#%s' should be a %s.",
-                                  "'%s' key defined for '#%s', but it's empty. Remove a key or define it's value."]
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
 
-    // Check optional action keys are not empty and convertible to string.
-    ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message']
-    ArrayList booleanKeys = ['ignore_fail', 'stop_on_fail']
+    // Check keys are not empty and convertible to required type, check incompatible keys, set build name on execution.
+    ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
+    ArrayList booleanKeys = ['ignore_fail', 'stop_on_fail', 'success_only', 'fail_only']
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
             printableStageAndAction, actionStructureOk)
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
             printableStageAndAction, actionStructureOk)
+    actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
+            .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper('success_only', 'fail_only'))
+    currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
+            currentBuild.displayName
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
@@ -803,13 +817,14 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         nodeItem = actionItem.get('node') as Map
 
         // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
+        String incompatibleKeysMessage
         Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
         actionStructureOk = configStructureErrorMsgWrapper(check && !onlyNameOrLabelDefined, actionStructureOk, 2,
-                "Node sub-keys 'name' and 'label' are incompatible. Please define only one of them.")
-        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined,
-                actionStructureOk, actionItem, nodeItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
-        (nodeItem, actionStructureOk) = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined,
-                actionStructureOk, actionItem, nodeItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'label')
+                incompatibleKeysMsgWrapper('name', 'label'))
+        actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
+                actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
+        actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
+                actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'label')
 
         // Check when 'pattern' node sub-key defined and boolean.
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
@@ -825,12 +840,17 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction, 'Key will be ignored.'))
     }
 
-    // Check or execute current stage action when 'action' key is not empty and convertible to string.
+    // Check or execute current action when 'action' key is correct and possible success_only/fail_only conditions met.
     if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true, printableStageAndAction)) {
         actionMessageOutputWrapper(check, actionItem, 'before')
-        // TODO: release or not: 'success_only' and 'fail_only'?
-        (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action as String,
-                nodeItem, pipelineSettings, envVariables, check)
+        if (!check && ((actionItem.get('success_only') && currentBuild.result != 'FAILURE') ||
+                (actionItem.get('fail_only') && currentBuild.result == 'FAILURE')) || check)
+            dir(check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
+                (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
+                        as String, nodeItem, pipelineSettings, envVariables, check)
+            }
+
+        // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after')
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail')
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
@@ -867,21 +887,17 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
  * @param nodeNameOrLabelDefined - pass true when one of node 'name' or 'label' sub-keys defined.
  * @param actionStructureOk - state of action item structure check: true when ok.
  * @param actionItem - action item to check or execute.
- * @param nodeItem - node item as a part of actionItem.
  * @param printableStageAndAction - stage name and action name in printable format.
  * @param keyWarnOrErrorMsgTemplate - Template for warning on error message.
  * @param nodeSubKeyName - sub-key of node map to check (is convertible to string).
- * @return - arrayList of: modified nodeItem,
- *                         modified actionStructureOk (only when check = true, otherwise returns unchanged).
+ * @return - modified actionStructureOk (only when check = true, otherwise returns unchanged).
  */
-ArrayList detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLabelDefined, Boolean actionStructureOk,
-                                              Map actionItem, Map nodeItem, String printableStageAndAction,
-                                              String keyWarnOrErrorMsgTemplate, String nodeSubKeyName) {
-    if (nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubKeyName)))
-        actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
-                String.format(keyWarnOrErrorMsgTemplate, 'sub-', nodeSubKeyName, printableStageAndAction, ''))
-    //nodeItem.node.remove(nodeSubKeyName)
-    return [nodeItem, actionStructureOk]
+Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLabelDefined, Boolean actionStructureOk,
+                                            Map actionItem, String printableStageAndAction,
+                                            String keyWarnOrErrorMsgTemplate, String nodeSubKeyName) {
+    return nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubKeyName)) ?
+            configStructureErrorMsgWrapper(check, actionStructureOk, 3, String.format(keyWarnOrErrorMsgTemplate, 'sub-',
+                    nodeSubKeyName, printableStageAndAction, '')) : actionStructureOk
 }
 
 // TODO:
