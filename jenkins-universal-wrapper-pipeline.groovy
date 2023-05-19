@@ -851,6 +851,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     configStructureErrorMsgWrapper(!check && !allActionConditionsAreMet, true, 0,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
     if (actionIsCorrect && allActionConditionsAreMet) {
+        // TODO: Fix no messages
         actionMessageOutputWrapper(check, actionItem, 'before')
             dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
                 currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
