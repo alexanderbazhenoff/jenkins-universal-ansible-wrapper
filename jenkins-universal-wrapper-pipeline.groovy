@@ -952,6 +952,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
     ArrayList allPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
             wrapperPipelineParametersProcessing(allPipelineParams, pipelineParams)
+    println 'ololo' + pipelineFailedReasonText
 
     // Check pipeline parameters in the settings are correct, all of them was defined properly for current build.
     Boolean checkPipelineParametersPass = true
