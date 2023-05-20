@@ -854,6 +854,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         // TODO: Fix no messages
         actionMessageOutputWrapper(check, actionItem, 'before')
             dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
+                println 'kuku'
                 currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
                         currentBuild.displayName
                 (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
