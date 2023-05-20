@@ -1013,7 +1013,7 @@ node(jenkinsNodeToExecute) {
                     'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
                     'be emulated skipping the scripts, playbooks and pipeline runs.'))
             (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env)
-            pipelineFailedReasonText += allDone ? '' : 'Stages execution finished with fail.'
+            pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
         if (pipelineFailReasonText.trim())
             error String.format('%s\n%s.', pipelineFailReasonText, 'Please fix then re-build')
