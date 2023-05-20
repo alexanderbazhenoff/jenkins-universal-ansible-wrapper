@@ -354,9 +354,9 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
  */
 def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess, Object currentPipelineParams) {
     ArrayList newPipelineParams = []
-    Boolean dryRun = currentPipelineParams.get('DRY_RUN').asBoolean()
-    currentBuild.displayName = String.format('pipeline_parameters_update--#%s%s', env.BUILD_NUMBER,
-            dryRun ? '-dry_run' : '')
+    Boolean dryRun = getBooleanPipelineParamState(currentPipelineParams)
+    currentBuild.displayName = String.format('pipeline_parameters_update--#%s%s', env.BUILD_NUMBER, dryRun ?
+            '-dry_run' : '')
     requiredParams.each { newPipelineParams += pipelineSettingsItemToPipelineParam(it as Map) }
     if (!dryRun)
         properties([parameters(newPipelineParams)])
@@ -594,7 +594,7 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
         (updateParamsRequired, allPass) = verifyPipelineParamsArePresents(pipelineParams, currentPipelineParams)
         if (currentPipelineParams.get('UPDATE_PARAMETERS') || updateParamsRequired) {
             CF.outMsg(1, String.format('Current pipeline parameters requires an update from settings. Updating%s',
-                    currentPipelineParams.get('DRY_RUN').asBoolean() ? ' will be skipped in dry-run mode.' : '...'))
+                    getBooleanPipelineParamState(currentPipelineParams) ? ' will be skipped in dry-run mode.' : '...'))
             updatePipelineParams(pipelineParams, allPass, currentPipelineParams)
         }
     }
@@ -611,6 +611,18 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
  */
 static Boolean getBooleanVarStateFromEnv(Object envVariables, String variableName = 'DEBUG_MODE') {
     return envVariables.getEnvironment().get(variableName)?.toBoolean()
+}
+
+/**
+ * Get Boolean Pipeline parameter state from params object.
+ *
+ * @param pipelineParams - pipeline parameters for current job build (actually requires a pass of 'params' which is
+ *                         class java.util.Collections$UnmodifiableMap).
+ * @param parameterName - parameter name.
+ * @return - true when enabled.
+ */
+static Boolean getBooleanPipelineParamState(Object pipelineParams, String parameterName = 'DRY_RUN') {
+    return pipelineParams.get(parameterName)?.toBoolean()
 }
 
 /**
@@ -901,7 +913,6 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
     String messageKey = String.format('%s_message', messageType)
     String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format("%s %s: %s", messageType.capitalize(),
             'message', actionItem.get(messageKey)) : actionItem.get(messageKey)
-    println 'DEBG: ' + getBooleanVarStateFromEnv(envVariables)
     configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
             messageType == 'fail' ? 3 : 1, messageText)
 }
@@ -955,7 +966,7 @@ node(jenkinsNodeToExecute) {
             CF.outMsg(1, 'No pipeline parameters in the config.')
         } else if (!noPipelineParamsInTheConfig) {
             checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
-            if (checkPipelineParametersPass || params.get('DRY_RUN').asBoolean()) {
+            if (checkPipelineParametersPass || getBooleanPipelineParamState(params)) {
                 Boolean requiredPipelineParamsSet
                 Boolean regexCheckAllRequiredPipelineParamsOk
                 (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env))
@@ -977,7 +988,7 @@ node(jenkinsNodeToExecute) {
         pipelineFailedReasonText += !pipelineParametersProcessingPass ? '\nError(s) in pipeline yaml settings. ' : ''
         Boolean allDone
         Map pipelineStagesStates
-        if (!pipelineFailedReasonText.trim() || params.get('DRY_RUN').asBoolean()) {
+        if (!pipelineFailedReasonText.trim() || getBooleanPipelineParamState(params)) {
             CF.outMsg(2, String.format('%s %s.', 'Dry-run mode enabled. All pipeline and settings errors will be',
                     'ignored and pipeline stages will be emulated skipping the scripts, playbooks and pipeline runs.'))
             (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env)
