@@ -937,6 +937,43 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
                     nodeSubKeyName, printableStageAndAction, '')) : actionStructureOk
 }
 
+ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettingsGitBranch,
+                                          String settingsRelativePathPrefix, ArrayList pipelineNameRegexReplace,
+                                          ArrayList builtinPipelineParameters, Object envVariables,
+                                          Object pipelineParams) {
+    env = envVariables
+
+    // Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings.
+    String settingsRelativePath = String.format('%s/%s.yaml', settingsRelativePathPrefix,
+            applyReplaceRegexItems(env.JOB_NAME.toString(), pipelineNameRegexReplace))
+    Map pipelineSettings = loadPipelineSettings(settingsGitUrl, defaultSettingsGitBranch, settingsRelativePath,
+            getBooleanPipelineParamState(pipelineParams, 'DEBUG_MODE'))
+    String pipelineFailedReasonText = ''
+    ArrayList allPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
+    def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
+            wrapperPipelineParametersProcessing(allPipelineParams, pipelineParams)
+
+    // Check pipeline parameters in the settings are correct, all of them was defined properly for current build.
+    Boolean checkPipelineParametersPass
+    if (noPipelineParamsInTheConfig && pipelineParametersProcessingPass) {
+        CF.outMsg(1, 'No pipeline parameters in the config.')
+    } else if (!noPipelineParamsInTheConfig) {
+        checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
+        if (checkPipelineParametersPass || getBooleanPipelineParamState(pipelineParams)) {
+            Boolean requiredPipelineParamsSet
+            Boolean regexCheckAllRequiredPipelineParamsOk
+            (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, pipelineParams,
+                    pipelineParams))
+            (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
+                    pipelineParams, env)
+            pipelineFailedReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
+                    'Required pipeline parameter(s) was not specified or incorrect. '
+        }
+    }
+    return [pipelineFailedReasonText, pipelineParametersProcessingPass, checkPipelineParametersPass, pipelineSettings,
+            env]
+}
+
 // TODO:
 ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
                                            Object envVariables, Boolean check) {
@@ -949,54 +986,34 @@ def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, NodePipelineP
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
-
-        // Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings.
-        String settingsRelativePath = String.format('%s/%s.yaml', SettingsRelativePathPrefix,
-                applyReplaceRegexItems(env.JOB_NAME.toString(), PipelineNameRegexReplace))
-        Map pipelineSettings = loadPipelineSettings(SettingsGitUrl, DefaultSettingsGitBranch, settingsRelativePath,
-                (params.get('DEBUG_MODE')) as Boolean)
-        String pipelineFailedReasonText = ''
-        ArrayList allPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, BuiltinPipelineParameters)
-        def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
-                wrapperPipelineParametersProcessing(allPipelineParams, params)
-
-        // Check pipeline parameters in the settings are correct, all of them was defined properly for current build.
+        String pipelineFailReasonText
+        Boolean pipelineParamsProcessingPass
         Boolean checkPipelineParametersPass
-        if (noPipelineParamsInTheConfig && pipelineParametersProcessingPass) {
-            CF.outMsg(1, 'No pipeline parameters in the config.')
-        } else if (!noPipelineParamsInTheConfig) {
-            checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
-            if (checkPipelineParametersPass || getBooleanPipelineParamState(params)) {
-                Boolean requiredPipelineParamsSet
-                Boolean regexCheckAllRequiredPipelineParamsOk
-                (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, params, env))
-                (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
-                        params, env)
-                pipelineFailedReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
-                        'Required pipeline parameter(s) was not specified or incorrect. '
-            }
-        }
+        Map pipelineSettings
+        (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
+                pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
+                        PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
         Boolean pipelineSettingsCheckOk
         (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                 false)
-        pipelineFailedReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
+        pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
 
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
-        pipelineFailedReasonText += !pipelineParametersProcessingPass ? '\nError(s) in pipeline yaml settings. ' : ''
+        pipelineFailReasonText += !pipelineParamsProcessingPass ? '\nError(s) in pipeline yaml settings. ' : ''
         Boolean allDone
         Map pipelineStagesStates
-        if (!pipelineFailedReasonText.trim() || getBooleanPipelineParamState(params)) {
+        if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
             configStructureErrorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
                     'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
                     'be emulated skipping the scripts, playbooks and pipeline runs.'))
             (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env)
             pipelineFailedReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
-        if (pipelineFailedReasonText.trim())
-            error String.format('%s\n%s.', pipelineFailedReasonText, 'Please fix then re-build')
+        if (pipelineFailReasonText.trim())
+            error String.format('%s\n%s.', pipelineFailReasonText, 'Please fix then re-build')
 
     }
 }
