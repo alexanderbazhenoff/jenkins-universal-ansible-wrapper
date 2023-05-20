@@ -917,7 +917,7 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 // TODO:
 ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
                                            Object envVariables, Boolean check) {
-    return []
+    return [true, '', env]
 }
 
 
