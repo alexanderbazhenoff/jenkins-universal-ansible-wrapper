@@ -952,7 +952,6 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
     ArrayList allPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParametersProcessingPass) =
             wrapperPipelineParametersProcessing(allPipelineParams, pipelineParams)
-    println 'ololo' + pipelineFailedReasonText
 
     // Check pipeline parameters in the settings are correct, all of them was defined properly for current build.
     Boolean checkPipelineParametersPass = true
@@ -963,15 +962,17 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
         if (checkPipelineParametersPass || getBooleanPipelineParamState(pipelineParams)) {
             Boolean requiredPipelineParamsSet
             Boolean regexCheckAllRequiredPipelineParamsOk
+            println 'ololo' + pipelineFailedReasonText
             (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, pipelineParams,
                     pipelineParams))
+            println 'ololo1' + pipelineFailedReasonText
             (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
                     pipelineParams, env)
+            println 'ololo2' + pipelineFailedReasonText
             pipelineFailedReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
                     'Required pipeline parameter(s) was not specified or incorrect. '
         }
     }
-    println 'ololo' + pipelineFailedReasonText
     return [pipelineFailedReasonText, pipelineParametersProcessingPass, checkPipelineParametersPass, pipelineSettings,
             env]
 }
