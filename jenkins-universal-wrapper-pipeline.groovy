@@ -954,7 +954,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
             wrapperPipelineParametersProcessing(allPipelineParams, pipelineParams)
 
     // Check pipeline parameters in the settings are correct, all of them was defined properly for current build.
-    Boolean checkPipelineParametersPass
+    Boolean checkPipelineParametersPass = true
     if (noPipelineParamsInTheConfig && pipelineParametersProcessingPass) {
         CF.outMsg(1, 'No pipeline parameters in the config.')
     } else if (!noPipelineParamsInTheConfig) {
@@ -993,6 +993,7 @@ node(jenkinsNodeToExecute) {
         (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
                 pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
                         PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
+        println 'olol: ' + !pipelineFailReasonText
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
         Boolean pipelineSettingsCheckOk
@@ -1002,7 +1003,7 @@ node(jenkinsNodeToExecute) {
                 'Pipeline settings contains an error(s).'
 
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
-        pipelineFailReasonText += !pipelineParamsProcessingPass ? '\nError(s) in pipeline yaml settings. ' : ''
+        pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
         Boolean allDone
         Map pipelineStagesStates
         if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
