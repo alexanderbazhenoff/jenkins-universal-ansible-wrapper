@@ -964,7 +964,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
             Boolean regexCheckAllRequiredPipelineParamsOk
             println 'ololo' + pipelineFailedReasonText
             (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, pipelineParams,
-                    pipelineParams))
+                    env))
             println 'ololo1' + pipelineFailedReasonText
             (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
                     pipelineParams, env)
