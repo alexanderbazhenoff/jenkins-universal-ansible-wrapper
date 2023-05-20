@@ -609,8 +609,8 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
  * @param variableName - Environment variable to get.
  * @return - true when enabled.
  */
-Boolean getBooleanVarStateFromEnv(Object envVariables, String variableName = 'DEBUG_MODE') {
-    return envVariables.getEnvironment().get(variableName).asBoolean()
+static Boolean getBooleanVarStateFromEnv(Object envVariables, String variableName = 'DEBUG_MODE') {
+    return envVariables.getEnvironment().get(variableName)?.toBoolean()
 }
 
 /**
