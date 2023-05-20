@@ -899,8 +899,9 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
  */
 def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType, Object envVariables) {
     String messageKey = String.format('%s_message', messageType)
-    String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format("%s %s: %s", messageType, 'message',
-            actionItem.get(messageKey)) : actionItem.get(messageKey)
+    String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format("%s %s: %s", messageType.capitalize(),
+            'message', actionItem.get(messageKey)) : actionItem.get(messageKey)
+    println 'DEBG: ' + getBooleanVarStateFromEnv(envVariables)
     configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
             messageType == 'fail' ? 3 : 1, messageText)
 }
