@@ -970,6 +970,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
                     'Required pipeline parameter(s) was not specified or incorrect. '
         }
     }
+    println 'ololo' + pipelineFailedReasonText
     return [pipelineFailedReasonText, pipelineParametersProcessingPass, checkPipelineParametersPass, pipelineSettings,
             env]
 }
@@ -993,7 +994,6 @@ node(jenkinsNodeToExecute) {
         (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
                 pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
                         PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
-        println 'olol: ' + !pipelineFailReasonText
 
         // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
         Boolean pipelineSettingsCheckOk
