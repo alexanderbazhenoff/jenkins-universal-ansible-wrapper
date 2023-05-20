@@ -868,7 +868,6 @@ static String incompatibleKeysMsgWrapper(String key1, String key2) {
  *           - true when all stage actions execution successfully done;
  *           - environment variables ('env').
  */
-// TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map pipelineSettings, Integer actionIndex,
                                            Object envVariables, Boolean check) {
     Boolean actionStructureOk = true
@@ -996,7 +995,7 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
                     nodeSubKeyName, printableStageAndAction, '')) : actionStructureOk
 }
 
-// TODO:
+// TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
                                            Object envVariables, Boolean check) {
     return [true, '', env]
