@@ -989,8 +989,9 @@ node(jenkinsNodeToExecute) {
         Boolean allDone
         Map pipelineStagesStates
         if (!pipelineFailedReasonText.trim() || getBooleanPipelineParamState(params)) {
-            CF.outMsg(2, String.format('%s %s.', 'Dry-run mode enabled. All pipeline and settings errors will be',
-                    'ignored and pipeline stages will be emulated skipping the scripts, playbooks and pipeline runs.'))
+            configStructureErrorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
+                    'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
+                    'be emulated skipping the scripts, playbooks and pipeline runs.'))
             (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env)
             pipelineFailedReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
