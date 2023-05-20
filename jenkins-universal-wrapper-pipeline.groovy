@@ -954,6 +954,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                         check ? 'check in' : 'perform at', printableStageAndAction))
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
+    // TODO: not empty addPipelineStepsAndUrls
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
             actionStructureAndLinkOk, envVariables]
 }
@@ -996,9 +997,17 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 }
 
 // TODO: done the env pass inside other functions and return from this
-ArrayList checkOrExecutePipelineActionLink(String actionItemAction, Map nodeItem, Map pipelineSettings,
-                                           Object envVariables, Boolean check) {
-    return [true, '', env]
+ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
+                                           Boolean check) {
+    String actionDescription = '<undefined or incorrect>'
+    Boolean actionLinkIsDefinedProperly = (pipelineSettings.get('actions') &&
+            pipelineSettings.get('actions')?.get(nodeItem) instanceof Map)
+    Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefinedProperly, true, 3,
+            String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
+    if (actionOk) {
+
+    }
+    return [actionOk, actionDescription, envVariables]
 }
 
 
