@@ -602,6 +602,18 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
 }
 
 /**
+ * Get Boolean variable enabled state from environment variables.
+ *
+ * @param env - environment variables for current job build (actually requires a pass of 'env' which is
+ *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param variableName - Environment variable to get.
+ * @return - true when enabled.
+ */
+static Boolean getBooleanVarStateFromEnv(Object envVariables, String variableName = 'DEBUG_MODE') {
+    return envVariables.getEnvironment().get(variableName).asBoolean()
+}
+
+/**
  * Get jenkins node by node name or node tag defined in pipeline parameter(s).
  *
  * @param env - environment variables for current job build (actually requires a pass of 'env' which is
@@ -650,7 +662,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     Map stagesStates = [:]
     Boolean executeOk = true
     Boolean checkOk = configStructureErrorMsgWrapper(!pipelineSettings.get('stages') && ((check &&
-            envVariables.getEnvironment().get('DEBUG_MODE').asBoolean()) || execute), true, 0,
+            getBooleanVarStateFromEnv(envVariables)) || execute), true, 0,
             String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stageItem in pipelineSettings.stages) {
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
@@ -851,8 +863,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     configStructureErrorMsgWrapper(!check && !allActionConditionsAreMet, true, 0,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
     if (actionIsCorrect && allActionConditionsAreMet) {
-        // TODO: Fix no messages
-        actionMessageOutputWrapper(check, actionItem, 'before')
+        actionMessageOutputWrapper(check, actionItem, 'before', envVariables)
             dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
                 currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
                         currentBuild.displayName
@@ -861,8 +872,8 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             }
 
         // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
-        actionMessageOutputWrapper(check, actionItem, 'after')
-        actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail')
+        actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
+        actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
         if (actionItem.get('stop_on_fail') && !check)
             error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
@@ -883,15 +894,15 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
  * @param check - true on checking action item to skip message output.
  * @param actionItem action item to check or execute where the massage
  * @param messageType - message type (or action item key prefix): before, after, success, fail.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  */
-def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType) {
+def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType, Object envVariables) {
     String messageKey = String.format('%s_message', messageType)
-    println 'kuku: ' + actionItem.get(messageKey)
-    println 'get: ' + (actionItem.get(messageKey))
-    println '!check: ' + (!check)
-    println 'kuku2: ' + (actionItem.get(messageKey) && !check)
+    String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format("%s %s: %s", messageType, 'message',
+            actionItem.get(messageKey)) : actionItem.get(messageKey)
     configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
-            messageType == 'fail' ? 3 : 1, actionItem.get(messageKey) as String)
+            messageType == 'fail' ? 3 : 1, messageText)
 }
 
 /**
