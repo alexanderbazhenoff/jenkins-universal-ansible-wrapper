@@ -887,7 +887,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
 def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType) {
     String messageKey = String.format('%s_message', messageType)
     println 'kuku: ' + actionItem.get(messageKey)
-    println 'kuku2: ' + (actionItem.get(messageKey)) && !check)
+    println 'kuku2: ' + (actionItem.get(messageKey) && !check)
     configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
             messageType == 'fail' ? 3 : 1, actionItem.get(messageKey) as String)
 }
