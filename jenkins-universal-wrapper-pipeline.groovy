@@ -941,11 +941,9 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
                                           String settingsRelativePathPrefix, ArrayList pipelineNameRegexReplace,
                                           ArrayList builtinPipelineParameters, Object envVariables,
                                           Object pipelineParams) {
-    env = envVariables
-
     // Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings.
     String settingsRelativePath = String.format('%s/%s.yaml', settingsRelativePathPrefix,
-            applyReplaceRegexItems(env.JOB_NAME.toString(), pipelineNameRegexReplace))
+            applyReplaceRegexItems(envVariables.JOB_NAME.toString(), pipelineNameRegexReplace))
     Map pipelineSettings = loadPipelineSettings(settingsGitUrl, defaultSettingsGitBranch, settingsRelativePath,
             getBooleanPipelineParamState(pipelineParams, 'DEBUG_MODE'))
     String pipelineFailedReasonText = ''
@@ -962,13 +960,10 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
         if (checkPipelineParametersPass || getBooleanPipelineParamState(pipelineParams)) {
             Boolean requiredPipelineParamsSet
             Boolean regexCheckAllRequiredPipelineParamsOk
-            println 'ololo' + pipelineFailedReasonText
             (requiredPipelineParamsSet, env) = (checkAllRequiredPipelineParamsAreSet(pipelineSettings, pipelineParams,
-                    env))
-            println 'ololo1' + pipelineFailedReasonText
+                    envVariables))
             (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
                     pipelineParams, env)
-            println 'ololo2' + pipelineFailedReasonText
             pipelineFailedReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
                     'Required pipeline parameter(s) was not specified or incorrect. '
         }
