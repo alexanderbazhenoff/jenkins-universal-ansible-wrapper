@@ -31,12 +31,6 @@ final PipelineNameRegexReplace = ['^(admin|devops|qa)_'] as ArrayList
 // Set your ansible installation name from jenkins settings.
 final AnsibleInstallationName = 'home_local_bin_ansible' as String
 
-// Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on.
-final NodePipelineParameterName = 'NODE_NAME' as String
-
-// Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute on.
-final NodeTagPipelineParameterName = 'NODE_TAG' as String
-
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
 final BuiltinPipelineParameters = [
         [name       : 'UPDATE_PARAMETERS',
@@ -47,10 +41,10 @@ final BuiltinPipelineParameters = [
          type       : 'string',
          regex      : '(\\*)? +(.*?) +(.*?)? ((\\[(.*?)(: (.*?) (\\d+))?\\])? ?(.*$))?',
          description: 'Git branch of ansible-wrapper-settings project (to override defaults on development).'],
-        [name       : NodePipelineParameterName,
+        [name       : 'NODE_NAME',
          type       : 'string',
          description: 'Jenkins node name to run.'],
-        [name       : NodeTagPipelineParameterName,
+        [name       : 'NODE_TAG',
          type       : 'string',
          default    : 'ansible210',
          description: 'Jenkins node tag to run.'],
@@ -967,7 +961,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
                         currentBuild.displayName
                 (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
-                        as String, nodeItem, pipelineSettings, envVariables, check)
+                        as String, nodeItem?.get('node') as Map, pipelineSettings, envVariables, check)
             }
 
         // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
@@ -1027,8 +1021,8 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 
 // TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
-                                           Boolean check) {
-    String actionDescription = '<undefined or incorrect>'
+                                           Boolean check, String nodePipelineParameterName = 'NODE_NAME',
+                                           String nodeTagPipelineParameterName = 'NODE_TAG') {
     Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
             instanceof Map)
     Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
@@ -1043,25 +1037,49 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                         artifacts  : { println 'copy_artifacts' },
                         script     : { println 'run_script' },
                         report     : { println 'send_report' }]
+
+    // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
-    configStructureErrorMsgWrapper(check && keysFound.size() > 1, actionOk, 2, String.format("%s '%s' %s",
-            'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound*.key, '')))
-    actionOk = configStructureErrorMsgWrapper(keysFound.size() == 0, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
+    String actionDescription = (keysFound) ? keysFound*.key[0] : '<undefined or incorrect>'
+    configStructureErrorMsgWrapper(check && keysFound.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s.",
+            'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound*.key, ''), 'Only', actionDescription,
+            'will be used on action run.'))
+    actionOk = configStructureErrorMsgWrapper(!keysFound, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
             check ? "Can't" : "Nothing to execute due to can't", "determine any action in", actionLink,
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
-    // Handling node map items.
-    String nodeName =
+    // Handling node selection keys: if name key exists use value from them, otherwise use label key.
+    def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
+            nodeTagPipelineParameterName)
+    def changeNodeData = currentNodeData
+    if (nodeItem.containsKey('name')) {
+        ArrayList nodeNames = nodeItem.get('pattern') && nodeItem.get('name') ?
+                CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem.get('name')]
+        changeNodeData = !nodeItem.get('name') || nodeNames?.trim() ? null : nodeNames[0]
+    } else if (!nodeItem.containsKey('name') && nodeItem.get('label')) {
+        ArrayList nodeLabels = nodeItem.get('pattern') && nodeItem.get('label') ?
+                CF.getJenkinsNodes(nodeItem.get('label'), true) : [nodeItem.get('label')]
+        changeNodeData = [label: nodeLabels[0]]
+    }
 
-    if (keysFound.size()) {
-        println 'executing...'
+    // Executing determined action with possible node change or check without node change.
+    if (keysFound) {
+        if (!check && currentNodeData.toString() != changeNodeData.toString()) {
+            node(changeNodeData) {
+                String nodeSelectionPrintable = changeNodeData instanceof Map ? String.format("node with label '%s'",
+                        changeNodeData.label) : String.format('%s node', (changeNodeData) ? changeNodeData : 'any')
+                CF.outMsg(0, String.format("Executing '%s' action on %s...", actionLink, nodeSelectionPrintable))
+                keysFound[actionDescription].call()
+            }
+        } else {
+            keysFound[actionDescription].call()
+        }
     }
     return [actionOk, actionDescription, envVariables]
 }
 
 
-def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, NodePipelineParameterName,
-        NodeTagPipelineParameterName)
+def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
