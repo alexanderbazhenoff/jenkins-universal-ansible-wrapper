@@ -188,13 +188,28 @@ static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
 }
 
 /**
- * Convert map key names to string separated with comma.
+ * Array List to string separated with commas (optional last one by 'and').
+ *
+ * @param arrayListItems - arrayList to convert items from.
+ * @param splitLastByAnd - when true separated the last item with 'and' word.
+ * @return - string with arrayList items.
+ */
+static String arrayListToReadableString(ArrayList arrayListItems, Boolean splitLastByAnd = true) {
+    String byCommasStr = arrayListItems.toString().replaceAll(',\\s', "', '").replaceAll('[\\[\\]]', "'")
+    return splitLastByAnd ? String.format('%s and %s', byCommasStr.substring(0, byCommasStr.lastIndexOf(", '")),
+            byCommasStr.substring(byCommasStr.lastIndexOf(", '") + 2, byCommasStr.length())) : byCommasStr
+}
+
+/**
+ * Convert map items to string separated with commas (optional last one by 'and').
  *
  * @param map - map to convert key names from.
+ * @param keyNames - when true format key names from the map, otherwise format values.
+ * @param splitLastByAnd - when true separated the last item with 'and' word.
  * @return - string with key names.
  */
-static String mapKeysToStringSeparatedByCommas(Map map) {
-    return map*.key.toString().replaceAll('[\\[\\]]', '')
+static String mapItemsToReadableListString(Map map, Boolean keyNames = true, Boolean splitLastByAnd = true) {
+    return arrayListToReadableString(keyNames ? map*.key : map*.value, splitLastByAnd)
 }
 
 
@@ -852,12 +867,15 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
 /**
  * Incompatible keys in map found error message wrapper.
  *
- * @param key1 - First keyName.
- * @param key2 - Second keyName.
+ * @param keys - arrayList of: First keyName, second keyName, etc...
+ * @param keyDescriptionMessagePrefix - just a prefix for an error message what keys are incompatible.
+ * @param onlyOneOfThem - just a postfix message that means only one key required.
  * @return - formatted error message.
  */
-static String incompatibleKeysMsgWrapper(String key1, String key2) {
-    return String.format("Node sub-keys '%s' and '%s' are incompatible. Please define only one of them.", key1, key2)
+static String incompatibleKeysMsgWrapper(ArrayList keysForMessage, String keyDescriptionMessagePrefix = 'Keys',
+                                         Boolean onlyOneOfThem = true) {
+    return String.format("%s %s are incompatible.%s", keyDescriptionMessagePrefix,
+            arrayListToReadableString(keysForMessage), onlyOneOfThem ? ' Please define only one of them.' : '')
 }
 
 /**
@@ -896,7 +914,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
             printableStageAndAction, actionStructureOk)
     actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
-            .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper('success_only', 'fail_only'))
+            .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper(['success_only', 'fail_only']))
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
@@ -911,7 +929,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         String incompatibleKeysMessage
         Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
         actionStructureOk = configStructureErrorMsgWrapper(check && !onlyNameOrLabelDefined, actionStructureOk, 2,
-                incompatibleKeysMsgWrapper('name', 'label'))
+                incompatibleKeysMsgWrapper(['name', 'label'], 'Node sub-keys'))
         actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
                 actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
         actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
@@ -1026,9 +1044,18 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                         script     : { println 'run_script' },
                         report     : { println 'send_report' }]
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
-    configStructureErrorMsgWrapper(check && keysFound.size() > 1, actionOk, 2, String.format("%s '%s' %s: %s.",
-            'Action', actionLink, 'contains incompatible keys', mapKeysToStringSeparatedByCommas(keysFound)))
+    configStructureErrorMsgWrapper(check && keysFound.size() > 1, actionOk, 2, String.format("%s '%s' %s",
+            'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound*.key, '')))
+    actionOk = configStructureErrorMsgWrapper(keysFound.size() == 0, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
+            check ? "Can't" : "Nothing to execute due to can't", "determine any action in", actionLink,
+            'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
+    // Handling node map items.
+    String nodeName =
+
+    if (keysFound.size()) {
+        println 'executing...'
+    }
     return [actionOk, actionDescription, envVariables]
 }
 
