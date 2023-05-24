@@ -188,6 +188,17 @@ static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
 }
 
 /**
+ * Convert map key names to string separated with comma.
+ *
+ * @param map - map to convert key names from.
+ * @return - string with key names.
+ */
+static String mapKeysToStringSeparatedByCommas(Map map) {
+    return map*.key.toString().replaceAll('[\\[\\]]', '')
+}
+
+
+/**
  * Convert pipeline settings map item and add to jenkins pipeline parameters.
  *
  * @param item - pipeline settings map item to convert.
@@ -1000,13 +1011,24 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
                                            Boolean check) {
     String actionDescription = '<undefined or incorrect>'
-    Boolean actionLinkIsDefinedProperly = (pipelineSettings.get('actions') &&
-            pipelineSettings.get('actions')?.get(nodeItem) instanceof Map)
-    Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefinedProperly, true, 3,
+    Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
+            instanceof Map)
+    Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
+    Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
-    if (actionOk) {
+    Map detectByKeys = [repo_url   : { println 'gitlab' },
+                        collections: { println 'install_collections' },
+                        playbook   : { println 'run_playbook' },
+                        pipeline   : { println 'run_pipeline' },
+                        stash      : { println 'stash' },
+                        unstash    : { println 'unstash' },
+                        artifacts  : { println 'copy_artifacts' },
+                        script     : { println 'run_script' },
+                        report     : { println 'send_report' }]
+    Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
+    configStructureErrorMsgWrapper(check && keysFound.size() > 1, actionOk, 2, String.format("%s '%s' %s: %s.",
+            'Action', actionLink, 'contains incompatible keys', mapKeysToStringSeparatedByCommas(keysFound)))
 
-    }
     return [actionOk, actionDescription, envVariables]
 }
 
