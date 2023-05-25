@@ -1007,7 +1007,7 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
  * @param actionStructureOk - state of action item structure check: true when ok.
  * @param actionItem - action item to check or execute.
  * @param printableStageAndAction - stage name and action name in printable format.
- * @param keyWarnOrErrorMsgTemplate - Template for warning on error message.
+ * @param keyWarnOrErrorMsgTemplate - template for warning on error message.
  * @param nodeSubKeyName - sub-key of node map to check (is convertible to string).
  * @return - modified actionStructureOk (only when check = true, otherwise returns unchanged).
  */
@@ -1052,14 +1052,14 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
             nodeTagPipelineParameterName)
     def changeNodeData = currentNodeData
+    // TODO: simplify this
     if (nodeItem.containsKey('name')) {
         ArrayList nodeNames = nodeItem.get('pattern') && nodeItem.get('name') ?
                 CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem.get('name')]
         changeNodeData = !nodeItem.get('name') || nodeNames?.trim() ? null : nodeNames[0]
     } else if (!nodeItem.containsKey('name') && nodeItem.get('label')) {
-        ArrayList nodeLabels = nodeItem.get('pattern') && nodeItem.get('label') ?
-                CF.getJenkinsNodes(nodeItem.get('label'), true) : [nodeItem.get('label')]
-        changeNodeData = [label: nodeLabels[0]]
+        changeNodeData = [label: nodeItem.get('pattern') && nodeItem.get('label') ?
+                CF.getJenkinsNodes(nodeItem.get('label'), true)?.gatAt(0) : nodeItem.get('label')]
     }
 
     // Executing determined action with possible node change or check without node change.
