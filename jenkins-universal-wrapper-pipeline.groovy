@@ -204,7 +204,7 @@ static String arrayListToReadableString(ArrayList arrayListItems, Boolean splitL
  * @return - string with key names.
  */
 static String mapItemsToReadableListString(Map map, Boolean keyNames = true, Boolean splitLastByAnd = true) {
-    return arrayListToReadableString(keyNames ? map*.key : map*.value, splitLastByAnd)
+    return arrayListToReadableString(keyNames ? map.keySet() as ArrayList : map.values() as ArrayList, splitLastByAnd)
 }
 
 
