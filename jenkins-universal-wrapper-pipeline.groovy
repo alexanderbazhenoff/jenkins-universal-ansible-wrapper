@@ -1042,7 +1042,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
     String actionDescription = (keysFound) ? keysFound.keySet()[0] : '<undefined or incorrect>'
-    configStructureErrorMsgWrapper(check && keysFound.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s.",
+    configStructureErrorMsgWrapper(check && keysFound?.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s",
             'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound.keySet() as ArrayList, ''), 'Only',
             actionDescription, 'will be used on action run.'))
     actionOk = configStructureErrorMsgWrapper(!keysFound, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
@@ -1050,7 +1050,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
     // Handling node selection keys: if name key exists use value from them, otherwise use label key.
-    def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
+    def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(env, nodePipelineParameterName,
             nodeTagPipelineParameterName)
     def changeNodeData = currentNodeData
     // TODO: simplify this
