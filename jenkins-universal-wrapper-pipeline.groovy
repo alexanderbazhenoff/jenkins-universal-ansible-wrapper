@@ -190,7 +190,7 @@ static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
  */
 static String arrayListToReadableString(ArrayList arrayListItems, Boolean splitLastByAnd = true) {
     String strByCommas = arrayListItems.toString().replaceAll(',\\s', "', '").replaceAll('[\\[\\]]', "'")
-    return splitLastByAnd && arrayListItems.size() > 1 ? String.format('%s and %s',
+    return splitLastByAnd && arrayListItems?.size() > 1 ? String.format('%s and %s',
             strByCommas.substring(0, strByCommas.lastIndexOf(", '")),
             strByCommas.substring(strByCommas.lastIndexOf(", '") + 2, strByCommas.length())) : strByCommas
 }
