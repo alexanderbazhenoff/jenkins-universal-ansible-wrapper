@@ -466,6 +466,24 @@ static getAssignmentFromEnvVariable(String assignment, Object envVariables) {
 }
 
 /**
+ * Process assignment from environment variable wrapper.
+ *
+ * @param assignment - string that probably contains environment variable (e.g. $FOO).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param keyDescription - an error message prefix to describe what needs to be assigned.
+ * @return arrayList of:
+ *         - true when no errors: assignment completed or skipped;
+ *         - assigned value or just a string assignment return.
+ */
+ArrayList processAssignmentFromEnvVariable(String assignment, Object envVariables, String keyDescription = 'Key') {
+    def (Boolean assignmentIsPossible, String assignData) = getAssignmentFromEnvVariable(assignment, envVariables)
+    String assignmentOk = configStructureErrorMsgWrapper(assignmentIsPossible && !assignData?.trim(), true, 3,
+            String.format("%s '%s' is empty: specified variable is undefined.", keyDescription, assignment))
+    return [assignmentOk, assignData?.trim() ? assignData : assignment]
+}
+
+/**
  * Checking that all required pipeline parameters was specified for current build.
  *
  * @param pipelineSettings - 'universal-wrapper-pipeline-settings' converted to map. See
@@ -1040,10 +1058,12 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
                                            Boolean check, String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
+    Boolean actionOk
+    (actionOk, actionLink) = processAssignmentFromEnvVariable(actionLink, envVariables, 'Action link')
     Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
             instanceof Map)
     Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
-    Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
+    actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, actionOk, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [repo_url   : { println 'gitlab' },
                         collections: { println 'install_collections' },
