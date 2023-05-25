@@ -1050,16 +1050,15 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
     // Handling node selection keys: if name key exists use value from them, otherwise use label key.
-    def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(env, nodePipelineParameterName,
+    def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
             nodeTagPipelineParameterName)
-    println 'kuku'
     def changeNodeData = currentNodeData
     // TODO: simplify this
-    if (nodeItem.containsKey('name')) {
+    if (nodeItem?.containsKey('name')) {
         ArrayList nodeNames = nodeItem.get('pattern') && nodeItem.get('name') ?
                 CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem.get('name')]
         changeNodeData = !nodeItem.get('name') || nodeNames?.trim() ? null : nodeNames[0]
-    } else if (!nodeItem.containsKey('name') && nodeItem.get('label')) {
+    } else if (!nodeItem?.containsKey('name') && nodeItem.get('label')) {
         changeNodeData = [label: nodeItem.get('pattern') && nodeItem.get('label') ?
                 CF.getJenkinsNodes(nodeItem.get('label'), true)?.gatAt(0) : nodeItem.get('label')]
     }
