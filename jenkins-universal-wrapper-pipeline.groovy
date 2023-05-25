@@ -444,10 +444,25 @@ static ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Obje
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
     if (!settingsItem.on_empty.get('assign'))
         return [false, '', fail, warn]
-    Boolean assignment = settingsItem.on_empty.assign.toString().matches('\\$[^{].+') ?
-            envVariables[settingsItem.on_empty.assign.toString().replaceAll('\\$', '')] :
-            settingsItem.on_empty.assign.toString()
-    return [true, assignment, fail, warn]
+    def (Boolean assignmentIsPossible, String assignment) = getAssignmentFromEnvVariable(settingsItem.on_empty.
+            assign.toString(), envVariables)
+    return [assignmentIsPossible, assignment, fail, warn]
+}
+
+/**
+ * Get assignment from environment variable.
+ *
+ * @param assignment - string that probably contains environment variable (e.g. $FOO).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @return arrayList of:
+ *         - true when assignment contains variable;
+ *         - assigned value or just a string assignment return.
+ */
+static getAssignmentFromEnvVariable(String assignment, Object envVariables) {
+    Boolean assignmentContainsVariable = assignment.matches('\\$[^{].+')
+    return [assignmentContainsVariable, assignmentContainsVariable ? envVariables[assignment.replaceAll('\\$', '')] :
+            assignment]
 }
 
 /**
