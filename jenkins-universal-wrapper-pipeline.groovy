@@ -1052,6 +1052,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     // Handling node selection keys: if name key exists use value from them, otherwise use label key.
     def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(env, nodePipelineParameterName,
             nodeTagPipelineParameterName)
+    println 'kuku'
     def changeNodeData = currentNodeData
     // TODO: simplify this
     if (nodeItem.containsKey('name')) {
