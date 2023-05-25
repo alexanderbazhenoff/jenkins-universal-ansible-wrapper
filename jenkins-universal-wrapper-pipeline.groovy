@@ -189,9 +189,10 @@ static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
  * @return - string with arrayList items.
  */
 static String arrayListToReadableString(ArrayList arrayListItems, Boolean splitLastByAnd = true) {
-    String byCommasStr = arrayListItems.toString().replaceAll(',\\s', "', '").replaceAll('[\\[\\]]', "'")
-    return splitLastByAnd ? String.format('%s and %s', byCommasStr.substring(0, byCommasStr.lastIndexOf(", '")),
-            byCommasStr.substring(byCommasStr.lastIndexOf(", '") + 2, byCommasStr.length())) : byCommasStr
+    String strByCommas = arrayListItems.toString().replaceAll(',\\s', "', '").replaceAll('[\\[\\]]', "'")
+    return splitLastByAnd && arrayListItems.size() > 1 ? String.format('%s and %s',
+            strByCommas.substring(0, strByCommas.lastIndexOf(", '")),
+            strByCommas.substring(strByCommas.lastIndexOf(", '") + 2, strByCommas.length())) : strByCommas
 }
 
 /**
@@ -1040,12 +1041,10 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
-    println 'kuku: ' + keysFound
     String actionDescription = (keysFound) ? keysFound.keySet()[0] : '<undefined or incorrect>'
-    println 'kuku1: ' + actionDescription
     configStructureErrorMsgWrapper(check && keysFound.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s.",
-            'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound*.key, ''), 'Only', actionDescription,
-            'will be used on action run.'))
+            'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound.keySet() as ArrayList, ''), 'Only',
+            actionDescription, 'will be used on action run.'))
     actionOk = configStructureErrorMsgWrapper(!keysFound, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
             check ? "Can't" : "Nothing to execute due to can't", "determine any action in", actionLink,
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
