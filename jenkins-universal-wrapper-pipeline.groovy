@@ -1056,7 +1056,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     // TODO: simplify this
     if (nodeItem?.containsKey('name')) {
         println 'kukun'
-        ArrayList nodeNames = nodeItem.get('pattern') && nodeItem.get('name') ?
+        ArrayList nodeNames = nodeItem?.get('pattern') && nodeItem?.get('name') ?
                 CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem.get('name')]
         changeNodeData = !nodeItem.get('name') || nodeNames?.trim() ? null : nodeNames[0]
     } else if (!nodeItem?.containsKey('name') && nodeItem.get('label')) {
