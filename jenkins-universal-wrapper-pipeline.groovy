@@ -1040,7 +1040,9 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
+    println 'kuku'
     String actionDescription = (keysFound) ? keysFound*.key[0] : '<undefined or incorrect>'
+    println 'kuku1: ' + actionDescription
     configStructureErrorMsgWrapper(check && keysFound.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s.",
             'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound*.key, ''), 'Only', actionDescription,
             'will be used on action run.'))
