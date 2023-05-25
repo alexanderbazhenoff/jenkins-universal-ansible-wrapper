@@ -1062,6 +1062,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     (actionOk, actionLink) = processAssignmentFromEnvVariable(actionLink, envVariables, 'Action link')
     Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
             instanceof Map)
+    println 'actionOk: ' + actionOk
     Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
     actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, actionOk, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
