@@ -1054,6 +1054,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             nodeTagPipelineParameterName)
     def changeNodeData = currentNodeData
     // TODO: simplify this
+    println 'kuk'
     if (nodeItem?.containsKey('name')) {
         println 'kukun'
         ArrayList nodeNames = nodeItem?.get('pattern') && nodeItem?.get('name') ?
