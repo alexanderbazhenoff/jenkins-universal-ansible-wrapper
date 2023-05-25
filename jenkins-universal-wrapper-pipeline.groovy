@@ -444,8 +444,9 @@ static ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Obje
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
     if (!settingsItem.on_empty.get('assign'))
         return [false, '', fail, warn]
-    Boolean assignment = settingsItem.on_empty.toString().matches('\\$[^{].+') ? envVariables[settingsItem.on_empty
-            .assign.toString().replaceAll('\\$', '')] : settingsItem.on_empty.assign.toString()
+    Boolean assignment = settingsItem.on_empty.assign.toString().matches('\\$[^{].+') ?
+            envVariables[settingsItem.on_empty.assign.toString().replaceAll('\\$', '')] :
+            settingsItem.on_empty.assign.toString()
     return [true, assignment, fail, warn]
 }
 
