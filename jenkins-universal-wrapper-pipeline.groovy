@@ -444,8 +444,8 @@ static ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Obje
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
     if (!settingsItem.on_empty.get('assign'))
         return [false, '', fail, warn]
-    def (Boolean assignmentIsPossible, String assignment) = getAssignmentFromEnvVariable(settingsItem.on_empty.
-            assign.toString(), envVariables)
+    def (Boolean assignmentIsPossible, String assignment) = getAssignmentFromEnvVariable(settingsItem.on_empty.assign
+            .toString(), envVariables)
     return [assignmentIsPossible, assignment, fail, warn]
 }
 
