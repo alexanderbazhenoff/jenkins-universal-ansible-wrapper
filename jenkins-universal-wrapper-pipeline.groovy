@@ -1060,7 +1060,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
         changeNodeData = !nodeItem.get('name') || nodeNames?.trim() ? null : nodeNames[0]
     } else if (!nodeItem?.containsKey('name') && nodeItem.get('label')) {
         changeNodeData = [label: nodeItem.get('pattern') && nodeItem.get('label') ?
-                CF.getJenkinsNodes(nodeItem.get('label'), true)?.gatAt(0) : nodeItem.get('label')]
+                CF.getJenkinsNodes(nodeItem.get('label'), true)?.first() : nodeItem.get('label')]
     }
 
     // Executing determined action with possible node change or check without node change.
