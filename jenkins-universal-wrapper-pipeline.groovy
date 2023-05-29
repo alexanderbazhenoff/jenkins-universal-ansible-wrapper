@@ -801,6 +801,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
             }
         stagesStates = stagesStates + currentStageActionsStates
     }
+    println 'Check complete'
     return [stagesStates, checkOk && executeOk, envVariables]
 }
 
@@ -862,7 +863,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             it.value.call()
         }
     }
-    println 'stage end'
     return [actionsStates, allPass, envVariables]
 }
 
