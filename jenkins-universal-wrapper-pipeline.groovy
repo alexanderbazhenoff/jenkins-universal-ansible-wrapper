@@ -993,6 +993,9 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     Boolean allActionConditionsAreMet = !check && (successOnlyActionConditionMet || failOnlyActionConditionMet) || check
     String actionSkipMsgReason = successOnlyActionConditionMet ? 'success_only' : failOnlyActionConditionMet ?
             'fail_only' : ''
+    println 'successOnlyActionConditionMet: ' + successOnlyActionConditionMet
+    println 'successOnlyActionConditionMet: ' + failOnlyActionConditionMet
+    println 'allActionConditionsAreMet: ' + allActionConditionsAreMet
     configStructureErrorMsgWrapper(!check && !allActionConditionsAreMet, true, 0,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
     if (actionIsCorrect && allActionConditionsAreMet) {
