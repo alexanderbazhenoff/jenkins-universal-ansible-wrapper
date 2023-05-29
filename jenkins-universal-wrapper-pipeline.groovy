@@ -795,7 +795,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
                 envVariables, checkOk) : [[:], true, envVariables]
         Map currentStageActionsStates = [:]
         println 'Check complete'
-        println 'stage name' + stage(getPrintableValueKeyFromMapItem(stageItem as Map))
+        println 'stage name' + getPrintableValueKeyFromMapItem(stageItem as Map)
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (currentStageActionsStates, executeOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
