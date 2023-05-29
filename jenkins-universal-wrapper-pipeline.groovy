@@ -993,6 +993,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     Boolean allActionConditionsAreMet = !check && (successOnlyActionConditionMet || failOnlyActionConditionMet) || check
     String actionSkipMsgReason = successOnlyActionConditionMet ? 'success_only' : failOnlyActionConditionMet ?
             'fail_only' : ''
+    // TODO: fix conditions met
     println 'successOnlyActionConditionMet: ' + successOnlyActionConditionMet
     println 'successOnlyActionConditionMet: ' + failOnlyActionConditionMet
     println 'allActionConditionsAreMet: ' + allActionConditionsAreMet
@@ -1000,12 +1001,12 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
     if (actionIsCorrect && allActionConditionsAreMet) {
         actionMessageOutputWrapper(check, actionItem, 'before', envVariables)
-            dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
-                currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
-                        currentBuild.displayName
-                (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
-                        as String, nodeItem?.get('node') as Map, pipelineSettings, envVariables, check)
-            }
+        dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
+            currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
+                    currentBuild.displayName
+            (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
+                    as String, nodeItem?.get('node') as Map, pipelineSettings, envVariables, check)
+        }
 
         // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
