@@ -853,6 +853,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
                     stageItem.get('actions')[index] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             actionsStates = actionsStates + actionState
+            println index
         }
     }
     if (stageItem.get('parallel')?.toBoolean()) {
@@ -1032,7 +1033,7 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
     String messageKey = String.format('%s_message', messageType)
     String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format("%s %s: %s", messageType.capitalize(),
             'message', actionItem.get(messageKey)) : actionItem.get(messageKey)
-    configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem?.get(messageKey)) && !check, true,
+    configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
             messageType == 'fail' ? 3 : 1, messageText)
 }
 
