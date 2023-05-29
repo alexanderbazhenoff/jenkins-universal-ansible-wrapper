@@ -795,13 +795,13 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
                 envVariables, checkOk) : [[:], true, envVariables]
         Map currentStageActionsStates = [:]
         println 'Check complete'
-        println 'stage name' + getPrintableValueKeyFromMapItem(stageItem as Map)
+        println 'stage name: ' + getPrintableValueKeyFromMapItem(stageItem as Map)
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (currentStageActionsStates, executeOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
                         pipelineSettings, envVariables, executeOk, false)
             }
-        stagesStates = stagesStates + currentStageActionsStates
+        //stagesStates = stagesStates + currentStageActionsStates
     }
     println 'All stages complete'
     return [stagesStates, checkOk && executeOk, envVariables]
@@ -1007,8 +1007,8 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         println 'la1'
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
-        actionLinkOk = actionItem?.get('ignore_fail') && !check ? true : actionLinkOk
-        if (actionItem?.get('stop_on_fail') && !check)
+        actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
+        if (actionItem.get('stop_on_fail') && !check)
             error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                     "('stop_on_fail' is enabled for current action)")
         println 'la2'
