@@ -957,7 +957,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
                 "This stage will run on any free Jenkins node.", printableStageAndAction))
         nodeItem.node = [:]
-        nodeItem.node.name = actionItem.node?.get('name')
+        nodeItem.node.name = actionItem.get('node')?.get('name')
         println 'yeaha2'
     } else if (actionItem.get('node') instanceof Map) {
         println 'yeahb'
