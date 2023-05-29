@@ -1002,8 +1002,8 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
-        actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
-        if (actionItem.get('stop_on_fail') && !check)
+        actionLinkOk = actionItem?.get('ignore_fail') && !check ? true : actionLinkOk
+        if (actionItem?.get('stop_on_fail') && !check)
             error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                     "('stop_on_fail' is enabled for current action)")
     } else if (!actionItem.containsKey('action')) {
