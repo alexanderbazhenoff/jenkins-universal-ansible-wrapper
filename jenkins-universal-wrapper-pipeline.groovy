@@ -952,12 +952,13 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
     println 'anyJenkinsNode: ' + anyJenkinsNode
-    if (detectIsObjectConvertibleToString(actionItem.get('node')) || anyJenkinsNode) {
+    Boolean nodeIsStringConvertible = detectIsObjectConvertibleToString(actionItem.get('node'))
+    if (nodeIsStringConvertible || anyJenkinsNode) {
         println 'yeaha: ' + actionItem.get('node')
         configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
                 "This stage will run on any free Jenkins node.", printableStageAndAction))
         nodeItem.node = [:]
-        nodeItem.node.name = actionItem.get('node')?.get('name')
+        nodeItem.node.name = nodeIsStringConvertible ? actionItem.get('node')?.get('name') : actionItem.node.toString()
         println 'yeaha2'
     } else if (actionItem.get('node') instanceof Map) {
         println 'yeahb'
