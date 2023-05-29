@@ -1109,7 +1109,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
         println 'kukun'
         ArrayList nodeNames = nodeItem?.get('pattern') && nodeItem?.get('name') ?
                 CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem?.get('name')]
-        changeNodeData = !nodeItem.get('name') || nodeNames?.trim() ? null : nodeNames[0]
+        changeNodeData = !nodeItem.get('name') || !nodeNames ? null : nodeNames[0]
     } else if (!nodeItem?.containsKey('name') && nodeItem?.get('label')) {
         println 'kuku'
         changeNodeData = [label: nodeItem?.get('pattern') && nodeItem?.get('label') ?
