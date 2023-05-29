@@ -103,7 +103,7 @@ static String applyReplaceRegexItems(String text, ArrayList regexItemsList, Arra
  */
 static String getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'name',
                                               String nameOnUndefined = '<undefined>') {
-    return mapItem?.containsKey(keyName) && detectIsObjectConvertibleToString(mapItem?.get(keyName)) ?
+    return mapItem && mapItem.containsKey(keyName) && detectIsObjectConvertibleToString(mapItem.get(keyName)) ?
             mapItem.get(keyName).toString() : nameOnUndefined
 }
 
@@ -797,6 +797,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         println 'Check complete'
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
+                println 'stage name' + stage(getPrintableValueKeyFromMapItem(stageItem as Map))
                 (currentStageActionsStates, executeOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
                         pipelineSettings, envVariables, executeOk, false)
             }
