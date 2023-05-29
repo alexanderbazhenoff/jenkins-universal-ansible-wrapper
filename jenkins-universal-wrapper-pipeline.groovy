@@ -951,7 +951,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
-    println 'yeah0'
+    println 'anyJenkinsNode: ' + anyJenkinsNode
     if (detectIsObjectConvertibleToString(actionItem.get('node')) || anyJenkinsNode) {
         println 'yeaha: ' + actionItem.get('node')
         configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
