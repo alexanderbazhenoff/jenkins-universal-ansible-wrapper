@@ -1032,7 +1032,7 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
     String messageKey = String.format('%s_message', messageType)
     String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format("%s %s: %s", messageType.capitalize(),
             'message', actionItem.get(messageKey)) : actionItem.get(messageKey)
-    configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
+    configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem?.get(messageKey)) && !check, true,
             messageType == 'fail' ? 3 : 1, messageText)
 }
 
@@ -1084,7 +1084,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     configStructureErrorMsgWrapper(check && keysFound?.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s",
             'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound.keySet() as ArrayList, ''), 'Only',
             actionDescription, 'will be used on action run.'))
-    actionOk = configStructureErrorMsgWrapper(!keysFound, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
+    actionOk = configStructureErrorMsgWrapper(!keysFound && actionOk, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
             check ? "Can't" : "Nothing to execute due to can't", "determine any action in", actionLink,
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
@@ -1094,7 +1094,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     def changeNodeData = currentNodeData
     // TODO: simplify this
     println 'kuk'
-    /*if (nodeItem?.containsKey('name')) {
+    if (nodeItem?.containsKey('name')) {
         println 'kukun'
         ArrayList nodeNames = nodeItem?.get('pattern') && nodeItem?.get('name') ?
                 CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem?.get('name')]
@@ -1103,7 +1103,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
         println 'kuku'
         changeNodeData = [label: nodeItem?.get('pattern') && nodeItem?.get('label') ?
                 CF.getJenkinsNodes(nodeItem.get('label'), true)?.first() : nodeItem?.get('label')]
-    }*/
+    }
 
     // Executing determined action with possible node change or check without node change.
     if (keysFound) {
