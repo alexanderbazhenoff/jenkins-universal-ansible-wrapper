@@ -953,7 +953,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
     println 'yeah0'
     if (detectIsObjectConvertibleToString(actionItem.get('node')) || anyJenkinsNode) {
-        println 'yeaha'
+        println 'yeaha: ' + actionItem.get('node')
         configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
                 "This stage will run on any free Jenkins node.", printableStageAndAction))
         nodeItem.node = [:]
