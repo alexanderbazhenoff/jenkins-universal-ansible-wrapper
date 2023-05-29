@@ -951,12 +951,14 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
-    println 'yeah1'
+    println 'yeah0'
     if (detectIsObjectConvertibleToString(actionItem?.get('node')) || anyJenkinsNode) {
+        println 'yeaha'
         configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
                 "This stage will run on any free Jenkins node.", printableStageAndAction))
         nodeItem.node.name = actionItem.node.get('name')
     } else if (actionItem?.get('node') instanceof Map) {
+        println 'yeahb'
         nodeItem = actionItem.get('node') as Map
 
         // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
@@ -979,6 +981,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             nodeItem.node.remove('pattern')
         }
     } else if (actionItem.containsKey('node') && !anyJenkinsNode && !(actionItem.get('node') instanceof Map)) {
+        println 'yeahc'
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
                 String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction, 'Key will be ignored.'))
     }
