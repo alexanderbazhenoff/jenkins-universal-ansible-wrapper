@@ -794,16 +794,13 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
                 envVariables, checkOk) : [[:], true, envVariables]
         Map currentStageActionsStates = [:]
-        println 'Check complete'
-        println 'stage name: ' + getPrintableValueKeyFromMapItem(stageItem as Map)
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (currentStageActionsStates, executeOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
                         pipelineSettings, envVariables, executeOk, false)
             }
-        //stagesStates = stagesStates + currentStageActionsStates
+        stagesStates = stagesStates + currentStageActionsStates
     }
-    println 'All stages complete'
     return [stagesStates, checkOk && executeOk, envVariables]
 }
 
@@ -848,14 +845,17 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
     // Creating map and processing items from 'actions' key.
     stageItem.get('actions').eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
-            CF.outMsg(check ? 0 : 1, String.format("%s action number %s from '%s' stage", check ? 'Checking' :
-                    'Executing', index.toString(), stageItem.name))
+            String checkOrExecuteMsg = check ? 'Checking' : 'Executing'
+            String actionRunsMsg = String.format("action number %s from '%s' stage", index.toString(), stageItem.name)
+            CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
             Map actionState
             Boolean checkOrExecuteOk
             (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(printableStageName,
                     stageItem.get('actions')[index] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             actionsStates = actionsStates + actionState
+            CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
+                    CF.readableMap(actionsStates)))
         }
     }
     if (stageItem.get('parallel')?.toBoolean()) {
@@ -865,7 +865,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             it.value.call()
         }
     }
-    println 'stage item finished'
     return [actionsStates, allPass, envVariables]
 }
 
@@ -951,17 +950,13 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
-    println 'anyJenkinsNode: ' + anyJenkinsNode
     Boolean nodeIsStringConvertible = detectIsObjectConvertibleToString(actionItem.get('node'))
     if (nodeIsStringConvertible || anyJenkinsNode) {
-        println 'yeaha: ' + actionItem.get('node') + ' : ' + nodeIsStringConvertible
         configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
                 "This stage will run on any free Jenkins node.", printableStageAndAction))
         nodeItem.node = [:]
         nodeItem.node.name = nodeIsStringConvertible ? actionItem.node.toString() : actionItem.get('node')?.get('name')
-        println 'yeaha2'
     } else if (actionItem.get('node') instanceof Map) {
-        println 'yeahb'
         nodeItem = actionItem.get('node') as Map
 
         // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
@@ -984,7 +979,6 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             nodeItem.node.remove('pattern')
         }
     } else if (actionItem.containsKey('node') && !anyJenkinsNode && !(actionItem.get('node') instanceof Map)) {
-        println 'yeahc'
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
                 String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction, 'Key will be ignored.'))
     }
@@ -1011,14 +1005,12 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             }
 
         // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
-        println 'la1'
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
         if (actionItem.get('stop_on_fail') && !check)
             error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                     "('stop_on_fail' is enabled for current action)")
-        println 'la2'
     } else if (!actionItem.containsKey('action')) {
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
@@ -1075,7 +1067,6 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     (actionOk, actionLink) = processAssignmentFromEnvVariable(actionLink, envVariables, 'Action link')
     Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
             instanceof Map)
-    println 'actionOk: ' + actionOk
     Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
     actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, actionOk, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
@@ -1103,15 +1094,11 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
             nodeTagPipelineParameterName)
     def changeNodeData = currentNodeData
-    // TODO: simplify this
-    println 'kuk'
     if (nodeItem?.containsKey('name')) {
-        println 'kukun'
         ArrayList nodeNames = nodeItem?.get('pattern') && nodeItem?.get('name') ?
                 CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem?.get('name')]
         changeNodeData = !nodeItem.get('name') || !nodeNames ? null : nodeNames[0]
     } else if (!nodeItem?.containsKey('name') && nodeItem?.get('label')) {
-        println 'kuku'
         changeNodeData = [label: nodeItem?.get('pattern') && nodeItem?.get('label') ?
                 CF.getJenkinsNodes(nodeItem.get('label'), true)?.first() : nodeItem?.get('label')]
     }
@@ -1149,7 +1136,6 @@ node(jenkinsNodeToExecute) {
         Boolean pipelineSettingsCheckOk
         (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                 false)
-        println 'yesyes: ' + pipelineFailReasonText
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
 
