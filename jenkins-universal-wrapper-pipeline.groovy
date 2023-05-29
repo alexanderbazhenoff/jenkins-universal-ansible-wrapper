@@ -1092,7 +1092,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     def changeNodeData = currentNodeData
     // TODO: simplify this
     println 'kuk'
-    if (nodeItem?.containsKey('name')) {
+    /*if (nodeItem?.containsKey('name')) {
         println 'kukun'
         ArrayList nodeNames = nodeItem?.get('pattern') && nodeItem?.get('name') ?
                 CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem?.get('name')]
@@ -1101,7 +1101,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
         println 'kuku'
         changeNodeData = [label: nodeItem?.get('pattern') && nodeItem?.get('label') ?
                 CF.getJenkinsNodes(nodeItem.get('label'), true)?.first() : nodeItem?.get('label')]
-    }
+    }*/
 
     // Executing determined action with possible node change or check without node change.
     if (keysFound) {
