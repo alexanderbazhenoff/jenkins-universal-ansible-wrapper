@@ -1142,6 +1142,7 @@ node(jenkinsNodeToExecute) {
         Boolean pipelineSettingsCheckOk
         (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                 false)
+        println 'yesyes: ' + pipelineFailReasonText
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
 
@@ -1149,7 +1150,6 @@ node(jenkinsNodeToExecute) {
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
         Boolean allDone
         Map pipelineStagesStates
-        println 'yesyes'
         if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
             configStructureErrorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
                     'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
