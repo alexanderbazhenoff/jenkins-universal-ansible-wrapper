@@ -853,7 +853,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
                     stageItem.get('actions')[index] as Map, pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             actionsStates = actionsStates + actionState
-            println index
         }
     }
     if (stageItem.get('parallel')?.toBoolean()) {
@@ -863,6 +862,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             it.value.call()
         }
     }
+    println 'stage end'
     return [actionsStates, allPass, envVariables]
 }
 
