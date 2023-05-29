@@ -958,6 +958,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 "This stage will run on any free Jenkins node.", printableStageAndAction))
         nodeItem.node = [:]
         nodeItem.node.name = actionItem.node?.get('name')
+        println 'yeaha2'
     } else if (actionItem.get('node') instanceof Map) {
         println 'yeahb'
         nodeItem = actionItem.get('node') as Map
