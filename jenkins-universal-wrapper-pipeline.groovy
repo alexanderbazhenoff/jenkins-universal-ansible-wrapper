@@ -863,6 +863,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             it.value.call()
         }
     }
+    println 'stage item finished'
     return [actionsStates, allPass, envVariables]
 }
 
