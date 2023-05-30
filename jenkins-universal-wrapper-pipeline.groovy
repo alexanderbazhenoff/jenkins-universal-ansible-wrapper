@@ -1006,7 +1006,6 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
                     as String, nodeItem?.get('node') as Map, pipelineSettings, envVariables, check)
         }
-        println 'checkb'
 
         // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
@@ -1022,6 +1021,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     currentBuild.result = !check && !actionStructureAndLinkOk ? 'FAILURE' : currentBuild.result
+    println 'checkb'
     // TODO: not empty addPipelineStepsAndUrls
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
             actionStructureAndLinkOk, envVariables]
