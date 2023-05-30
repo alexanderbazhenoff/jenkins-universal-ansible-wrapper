@@ -947,16 +947,13 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             printableStageAndAction, actionStructureOk)
     actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
             .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper(['success_only', 'fail_only']))
-    println 'kuku'
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
     Boolean nodeIsStringConvertible = detectIsObjectConvertibleToString(actionItem.get('node'))
     if (nodeIsStringConvertible || anyJenkinsNode) {
-        println 'kuku1'
         configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
                 "This stage will run on any free Jenkins node.", printableStageAndAction))
-        println 'kuku1b'
         nodeItem.node = [:]
         nodeItem.node.name = nodeIsStringConvertible ? actionItem.node.toString() : actionItem.get('node')?.get('name')
     } else if (actionItem.get('node') instanceof Map) {
@@ -964,7 +961,6 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
 
         // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
         String incompatibleKeysMessage
-        println 'kuku2'
         Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
         actionStructureOk = configStructureErrorMsgWrapper(check && !onlyNameOrLabelDefined, actionStructureOk, 2,
                 incompatibleKeysMsgWrapper(['name', 'label'], 'Node sub-keys'))
@@ -972,33 +968,26 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                 actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
         actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
                 actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'label')
-        println 'kuku2b'
 
         // Check when 'pattern' node sub-key defined and boolean.
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
                 printableStageAndAction)) {
             nodeItem.pattern = actionItem.node.get('pattern')?.toBoolean()
         } else {
-            println 'kuku3'
             actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format(
                     keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction, 'Sub-key should be boolean.'))
-            println 'kuku3a'
             nodeItem.node.remove('pattern')
         }
     } else if (actionItem.containsKey('node') && !anyJenkinsNode && !(actionItem.get('node') instanceof Map)) {
-        println 'kuku4'
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
                 String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction, 'Key will be ignored.'))
-        println 'kuku4a'
     }
 
     // Check or execute current action when 'action' key is correct and possible success_only/fail_only conditions met.
     Boolean actionIsCorrect = checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true,
             printableStageAndAction)
-    println 'kuku5'
     actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect,
             actionStructureOk, 3, String.format("Wrong format of 'action' key in '%s'.", printableStageAndAction))
-    println 'kuku6'
     Boolean successOnlyActionConditionNotMet = actionItem.get('success_only') && currentBuild.result == 'FAILURE'
     Boolean failOnlyActionConditionNotMet = actionItem.get('fail_only') && currentBuild.result != 'FAILURE'
     Boolean allActionConditionsMet = !check && !successOnlyActionConditionNotMet && !failOnlyActionConditionNotMet
@@ -1006,10 +995,8 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             'success_only' : ''
     actionSkipMsgReason += !check && failOnlyActionConditionNotMet && !actionItem.containsKey('success_only') ?
             'fail_only' : ''
-    println 'kuku7'
     configStructureErrorMsgWrapper(actionSkipMsgReason.trim() as Boolean, true, 0,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
-    println 'checka: ' +  check
     if (actionIsCorrect && (check || allActionConditionsMet)) {
         actionMessageOutputWrapper(check, actionItem, 'before', envVariables)
         dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
@@ -1023,21 +1010,16 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
-        println 'checkb'
         if (actionItem.get('stop_on_fail') && !check)
             error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                     "('stop_on_fail' is enabled for current action)")
     } else if (!actionItem.containsKey('action')) {
-        println 'checkb1'
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
                         check ? 'check in' : 'perform at', printableStageAndAction))
-        println 'checkb2'
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
-    println 'checkc'
     if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
-    println 'checkd'
     // TODO: not empty addPipelineStepsAndUrls
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
             actionStructureAndLinkOk, envVariables]
