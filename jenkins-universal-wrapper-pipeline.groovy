@@ -1020,10 +1020,10 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
-    universalPipelineWrapperBuiltIns.multilineReportMap = [:]
-    universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(
-            universalPipelineWrapperBuiltIns.multilineReportMap, printableStageAndAction, actionStructureAndLinkOk,
-            actionDescription)
+    Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
+            universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
+    universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
+            printableStageAndAction, actionStructureAndLinkOk, actionDescription)
     // TODO: not empty addPipelineStepsAndUrls
     return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
 }
