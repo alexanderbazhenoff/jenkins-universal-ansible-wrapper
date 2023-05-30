@@ -1006,6 +1006,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
                     as String, nodeItem?.get('node') as Map, pipelineSettings, envVariables, check)
         }
+        println 'checkb'
 
         // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
