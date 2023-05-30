@@ -997,7 +997,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             'fail_only' : ''
     configStructureErrorMsgWrapper(!check && actionSkipMsgReason.trim(), true, 0,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
-    println 'checka: ' + check
+    println 'checka: ' +  check
     if (actionIsCorrect && (check || allActionConditionsMet)) {
         actionMessageOutputWrapper(check, actionItem, 'before', envVariables)
         dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
