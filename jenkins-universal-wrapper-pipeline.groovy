@@ -988,18 +988,16 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
             printableStageAndAction)
     actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect,
             actionStructureOk, 3, String.format("Wrong format of 'action' key in '%s'.", printableStageAndAction))
-    Boolean successOnlyActionConditionMet = actionItem.get('success_only') && currentBuild.result != 'FAILURE'
-    Boolean failOnlyActionConditionMet = actionItem.get('fail_only') && currentBuild.result == 'FAILURE'
-    Boolean allActionConditionsAreMet = !check && (successOnlyActionConditionMet || failOnlyActionConditionMet) || check
-    String actionSkipMsgReason = successOnlyActionConditionMet ? 'success_only' : failOnlyActionConditionMet ?
+    Boolean successOnlyActionConditionNotMet = actionItem.get('success_only') && currentBuild.result == 'FAILURE'
+    Boolean failOnlyActionConditionNotMet = actionItem.get('fail_only') && currentBuild.result != 'FAILURE'
+    Boolean allActionConditionsMet = !check && !successOnlyActionConditionNotMet && !failOnlyActionConditionNotMet
+    String actionSkipMsgReason = !check && successOnlyActionConditionNotMet && !actionItem.containsKey('fail_only') ?
+            'success_only' : ''
+    actionSkipMsgReason += !check && failOnlyActionConditionNotMet && !actionItem.containsKey('success_only') ?
             'fail_only' : ''
-    // TODO: fix conditions met
-    println 'successOnlyActionConditionMet: ' + successOnlyActionConditionMet
-    println 'successOnlyActionConditionMet: ' + failOnlyActionConditionMet
-    println 'allActionConditionsAreMet: ' + allActionConditionsAreMet
-    configStructureErrorMsgWrapper(!check && !allActionConditionsAreMet, true, 0,
+    configStructureErrorMsgWrapper(!check && actionSkipMsgReason.trim(), true, 0,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
-    if (actionIsCorrect && allActionConditionsAreMet) {
+    if (actionIsCorrect && (check || allActionConditionsMet)) {
         actionMessageOutputWrapper(check, actionItem, 'before', envVariables)
         dir(!check && actionItem.get('dir') ? actionItem.get('dir').toString() : '') {
             currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
@@ -1021,6 +1019,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
                         check ? 'check in' : 'perform at', printableStageAndAction))
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
+    currentBuild.result = !check && !actionStructureAndLinkOk ? 'FAILURE' : currentBuild.result
     // TODO: not empty addPipelineStepsAndUrls
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
             actionStructureAndLinkOk, envVariables]
