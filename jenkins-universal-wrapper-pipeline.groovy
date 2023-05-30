@@ -1011,17 +1011,21 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
+        println 'checkb'
         if (actionItem.get('stop_on_fail') && !check)
             error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                     "('stop_on_fail' is enabled for current action)")
     } else if (!actionItem.containsKey('action')) {
+        println 'checkb1'
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
                         check ? 'check in' : 'perform at', printableStageAndAction))
+        println 'checkb2'
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
+    println 'checkc'
     currentBuild.result = !check && !actionStructureAndLinkOk ? 'FAILURE' : currentBuild.result
-    println 'checkb'
+    println 'checkd'
     // TODO: not empty addPipelineStepsAndUrls
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
             actionStructureAndLinkOk, envVariables]
