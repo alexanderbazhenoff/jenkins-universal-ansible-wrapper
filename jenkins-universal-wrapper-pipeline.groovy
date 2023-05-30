@@ -778,30 +778,29 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
  *                  2. You can also set envVariables.DEBUG_MODE to verbose output and/or envVariables.DRY_RUN to
  *                  perform dry run.
  * @return - arrayList of:
- *           - pipeline stages status map (the structure of this map should be: key is the name with spaces cut, value
- *             should be a map of: [name: name, state: state, url: url]);
+ *           - pipeline stages status map (format described in settings documentation:
+ *             https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings);
  *           - true when checking and execution pass (or skipped), false on checking or execution errors;
  *           - return of environment variables ('env') that pass to function in 'envVariables'.
  */
 ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                                     Boolean execute = true) {
-    Map stagesStates = [:]
+    Map universalPipelineWrapperBuiltIns = [:]
     Boolean executeOk = true
     Boolean checkOk = configStructureErrorMsgWrapper(!pipelineSettings.get('stages') && ((check &&
             getBooleanVarStateFromEnv(envVariables)) || execute), true, 0,
             String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stageItem in pipelineSettings.stages) {
-        (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem(stageItem as Map, pipelineSettings,
+        (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem([:], stageItem as Map, pipelineSettings,
                 envVariables, checkOk) : [[:], true, envVariables]
-        Map currentStageActionsStates = [:]
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
-                (currentStageActionsStates, executeOk, envVariables) = checkOrExecuteStageSettingsItem(stageItem as Map,
-                        pipelineSettings, envVariables, executeOk, false)
+                (universalPipelineWrapperBuiltIns, executeOk, envVariables) = checkOrExecuteStageSettingsItem(
+                        universalPipelineWrapperBuiltIns, stageItem as Map, pipelineSettings, envVariables, executeOk,
+                        false)
             }
-        stagesStates = stagesStates + currentStageActionsStates
     }
-    return [stagesStates, checkOk && executeOk, envVariables]
+    return [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
 }
 
 /**
@@ -810,6 +809,8 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
  * (Check actions in the stage, all ansible playbooks, ansible inventories, jobs, scripts or another action according to
  * requirements described here: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  *
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
+ *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  * @param stageItem - stage settings item to check/execute actions in it.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
@@ -820,15 +821,13 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
  *                  unchanged.
  * @param check - set false to execute action item, true to check.
  * @return - arrayList of:
- *           - all actions in the stage status map (the structure of this map should be: key is the name with spaces
- *             cut, value should be a map of: [name: stage name and action, state: state, url: info and/or job url]);
+ *           - pipeline wrapper built-ins variable;
  *           - true when all stage actions execution/checking successfully done;
  *           - return of environment variables for current job build.
  */
-ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, Object envVariables,
-                                          Boolean allPass = true, Boolean check = true) {
+ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, Map stageItem, Map pipelineSettings,
+                                          Object envVariables, Boolean allPass = true, Boolean check = true) {
     Map actionsRuns = [:]
-    Map actionsStates = [:]
 
     // Handling 'name', 'actions' and 'parallel' stage keys.
     allPass = configStructureErrorMsgWrapper(check && (!stageItem.containsKey('name') ||
@@ -848,14 +847,13 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             String checkOrExecuteMsg = check ? 'Checking' : 'Executing'
             String actionRunsMsg = String.format("action number %s from '%s' stage", index.toString(), stageItem.name)
             CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
-            Map actionState
             Boolean checkOrExecuteOk
-            (actionState, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(printableStageName,
-                    stageItem.get('actions')[index] as Map, pipelineSettings, index, envVariables, check)
+            (universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
+                    universalPipelineWrapperBuiltIns, printableStageName, stageItem.get('actions')[index] as Map,
+                    pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
-            actionsStates = actionsStates + actionState
             CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
-                    CF.readableMap(actionsStates)))
+                    CF.readableMap(universalPipelineWrapperBuiltIns)))
         }
     }
     if (stageItem.get('parallel')?.toBoolean()) {
@@ -865,7 +863,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map stageItem, Map pipelineSettings, O
             it.value.call()
         }
     }
-    return [actionsStates, allPass, envVariables]
+    return [universalPipelineWrapperBuiltIns, allPass, envVariables]
 }
 
 /**
@@ -913,6 +911,8 @@ static String incompatibleKeysMsgWrapper(ArrayList keysForMessage, String keyDes
 /**
  * Check action item defined properly or execute action item from stage.
  *
+ * @param universalPipelineWrapperBuiltIns - pipeline settings built-ins variable with report in various formats (see:
+ *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  * @param stageName - the name of the current stage from which to test or execute the action item (just for logging
  *                    in all action status map - see @return of this function).
  * @param actionItem - action item to check or execute.
@@ -924,13 +924,13 @@ static String incompatibleKeysMsgWrapper(ArrayList keysForMessage, String keyDes
  *                       Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
  * @param check - set false to execute action item, true to check.
  * @return - arrayList of:
- *           - all actions in the stage status map (the structure of this map should be: key is the name with spaces
- *             cut, value should be a map of: [name: stage name and action, state: state, url: info and/or job url]);
+ *           - pipeline settings built-ins variable;
  *           - true when all stage actions execution successfully done;
  *           - environment variables ('env').
  */
-ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map pipelineSettings, Integer actionIndex,
-                                           Object envVariables, Boolean check) {
+ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, String stageName, Map actionItem,
+                                           Map pipelineSettings, Integer actionIndex, Object envVariables,
+                                           Boolean check) {
     Boolean actionStructureOk = true
     Boolean actionLinkOk = true
     String actionDescription = '<skipped>'
@@ -1020,9 +1020,11 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
+    universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(
+            universalPipelineWrapperBuiltIns.multilineReportMap, printableStageAndAction, actionStructureAndLinkOk,
+            actionDescription)
     // TODO: not empty addPipelineStepsAndUrls
-    return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
-            actionStructureAndLinkOk, envVariables]
+    return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
 }
 
 /**
@@ -1145,12 +1147,13 @@ node(jenkinsNodeToExecute) {
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
         Boolean allDone
-        Map pipelineStagesStates
+        Map universalPipelineWrapperBuiltIns
         if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
             configStructureErrorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
                     'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
                     'be emulated skipping the scripts, playbooks and pipeline runs.'))
-            (pipelineStagesStates, allDone, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env)
+            (universalPipelineWrapperBuiltIns, allDone, env) = checkOrExecutePipelineWrapperFromSettings(
+                    pipelineSettings, env)
             pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
         if (pipelineFailReasonText.trim())
