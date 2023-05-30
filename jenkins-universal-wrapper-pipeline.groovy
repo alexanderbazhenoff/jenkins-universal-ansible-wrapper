@@ -1024,7 +1024,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
             printableStageAndAction, actionStructureAndLinkOk, actionDescription)
-    // TODO: not empty addPipelineStepsAndUrls
+    // TODO: formatted results from addPipelineStepsAndUrls
     return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
 }
 
