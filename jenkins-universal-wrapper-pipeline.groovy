@@ -1007,7 +1007,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     actionSkipMsgReason += !check && failOnlyActionConditionNotMet && !actionItem.containsKey('success_only') ?
             'fail_only' : ''
     println 'kuku7'
-    configStructureErrorMsgWrapper(!check && actionSkipMsgReason.trim(), true, 0,
+    configStructureErrorMsgWrapper(actionSkipMsgReason.trim() as Boolean, true, 0,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
     println 'checka: ' +  check
     if (actionIsCorrect && (check || allActionConditionsMet)) {
