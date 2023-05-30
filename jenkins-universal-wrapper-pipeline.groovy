@@ -1024,7 +1024,7 @@ ArrayList checkOrExecutePipelineActionItem(String stageName, Map actionItem, Map
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     println 'checkc'
-    currentBuild.result = !check && !actionStructureAndLinkOk ? 'FAILURE' : currentBuild.result
+    if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
     println 'checkd'
     // TODO: not empty addPipelineStepsAndUrls
     return [CF.addPipelineStepsAndUrls([:], printableStageAndAction, actionStructureAndLinkOk, actionDescription),
