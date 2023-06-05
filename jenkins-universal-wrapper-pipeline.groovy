@@ -845,7 +845,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     stageItem.get('actions').eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
             String checkOrExecuteMsg = check ? 'Checking' : 'Executing'
-            String actionRunsMsg = String.format("action number %s from '%s' stage", index.toString(), stageItem.name)
+            String actionRunsMsg = String.format("action#%s from '%s' stage", index.toString(), printableStageName)
             CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
             Boolean checkOrExecuteOk
             (universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
@@ -863,6 +863,13 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             it.value.call()
         }
     }
+    Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineStagesReportMap') ?
+            universalPipelineWrapperBuiltIns.multilineStagesReportMap as Map : [:]
+    String currentStageStatusDescription = stageItem.actions?.size() ? String.format('%s action%s%s.', stageItem
+            .actions?.size() > 1 ? 's' : '', stageItem.get('parallel') ? ' in parallel' : '') : '<no actions>'
+    universalPipelineWrapperBuiltIns.multilineStagesReportMap = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
+            printableStageName, allPass, currentStageStatusDescription)
+    // TODO: formatted results from addPipelineStepsAndUrls
     return [universalPipelineWrapperBuiltIns, allPass, envVariables]
 }
 
