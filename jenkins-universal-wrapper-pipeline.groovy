@@ -1031,8 +1031,13 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
             printableStageAndAction, actionStructureAndLinkOk, actionDescription)
-    // TODO: formatted results from addPipelineStepsAndUrls
+    universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns)
     return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
+}
+
+static Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyNamePrefix = 'multilineReport') {
+    // TODO: formatted results from addPipelineStepsAndUrls
+    return pipelineWrapperBuiltIns
 }
 
 /**
