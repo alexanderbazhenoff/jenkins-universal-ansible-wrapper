@@ -729,7 +729,7 @@ static ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = 
     String formattedStringTable = ''
     sourceMap.each { entry ->
         entry.value.each { k, v ->
-            String tableEntry = replaceKeyName?.trim() && k == replaceKeyName ?
+            String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
                     applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
             if (createTable) {
                 Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
@@ -1217,9 +1217,10 @@ node(jenkinsNodeToExecute) {
                     pipelineSettings, env)
             pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
+        // TODO: fix colors
         String overallResults = universalPipelineWrapperBuiltIns.get('multilineReport') ?
-                universalPipelineWrapperBuiltIns.multilineReport.replace("[PASS]", "\033[0;32m[PASS]\033[0m")
-                        .replace("[FAIL]", "\033[0;31m[FAIL]\033[0m") : 'n/a'
+                universalPipelineWrapperBuiltIns.multilineReport.replaceAll('\\[PASS\\]', "\033[0;32m[PASS]\033[0m")
+                        .replaceAll('\\[FAIL\\]', "\033[0;31m[FAIL]\033[0m") : 'n/a'
         CF.outMsg(allDone ? 1 : 3, String.format('%s\nOVERALL:\n\n%s\n%s', '-' * 80, overallResults, '-' * 80))
         if (pipelineFailReasonText.trim())
             error String.format('%s\n%s.', pipelineFailReasonText, 'Please fix then re-build')
