@@ -1187,7 +1187,7 @@ node(jenkinsNodeToExecute) {
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
         Boolean allDone
-        Map universalPipelineWrapperBuiltIns
+        Map universalPipelineWrapperBuiltIns = [:]
         if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
             configStructureErrorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
                     'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
@@ -1196,6 +1196,9 @@ node(jenkinsNodeToExecute) {
                     pipelineSettings, env)
             pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
+        String overallResults = universalPipelineWrapperBuiltIns.get('multilineReport') ?
+                universalPipelineWrapperBuiltIns.multilineReport : 'n/a'
+        CF.outMsg(1, String.format('%s\nOVERALL:\n\n/%s\n%s', '-' * 80, overallResults, '-' * 80))
         if (pipelineFailReasonText.trim())
             error String.format('%s\n%s.', pipelineFailReasonText, 'Please fix then re-build')
 
