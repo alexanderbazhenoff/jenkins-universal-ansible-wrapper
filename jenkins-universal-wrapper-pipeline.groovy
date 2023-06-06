@@ -707,22 +707,40 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
     return nodeToExecute
 }
 
-static String mapToFormattedStringTable(Map sourceMap) {
-    Map tableColumnSizes = [:]
-    sourceMap.each { entry ->
-        entry.value.each { k, v ->
-            tableColumnSizes[k] = [tableColumnSizes?.get(k), v.toString().length() + 2].max()
-        }
-    }
+/**
+ * Map to formatted string table with values replacement.
+ *
+ * @param sourceMap - source map to create text table from.
+ * @param createTable - when true create string table, or calculate table columns length when false. So the first
+ *                      function call with 'createTable = false' calculates columns length, while the second with
+ *                      'createTable = true' create a resulting table.
+ * @param tableColumnSizes - column length map for table creation with the structure: [key1: length1, key2, length2].
+ * @param replaceKeyName - key name in source map to perform value replacement.
+ * @param regexItemsList - list of regex items to apply for value replacement.
+ * @param replaceItemsList - list of items for value replacement to replace with. List must be the same length as a
+ *                           regexItemsList, otherwise will be replaced with empty line ''
+ * @return - arrayList of:
+ *           - table column sizes map on createTable = false;
+ *           - formatted string table results on createTable = true.
+ */
+static ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
+                                        String replaceKeyName = 'state', ArrayList regexItemsList = ['true', 'false'],
+                                        ArrayList replaceItemsList = ['[PASS]', '[FAIL]']) {
     String formattedStringTable = ''
     sourceMap.each { entry ->
         entry.value.each { k, v ->
-            Integer padSize = tableColumnSizes[k as String] - v.toString().length()
-            formattedStringTable += String.format('%s%s', v.toString(), ' ' * padSize)
+            String tableEntry = replaceKeyName?.trim() && k == replaceKeyName ?
+                    applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
+            if (createTable) {
+                Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
+                formattedStringTable += String.format('%s%s', tableEntry, ' ' * padSize)
+            } else {
+                tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
+            }
         }
         formattedStringTable += '\n'
     }
-    return formattedStringTable
+    return [tableColumnSizes, formattedStringTable]
 }
 
 /**
@@ -1062,8 +1080,10 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
  * @return - universal pipeline wrapper built-ins map.
  */
 static Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyNamePrefix = 'multilineReport') {
-    pipelineWrapperBuiltIns[keyNamePrefix] = mapToFormattedStringTable(pipelineWrapperBuiltIns[String.format('%sMap',
-            keyNamePrefix)] as Map)
+    Map wrapperBuiltInsStatusMap = pipelineWrapperBuiltIns[String.format('%sMap', keyNamePrefix)] as Map
+    def (Map tableColumnSizes, __) = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
+    (Map __, String pipelineWrapperBuiltIns[keyNamePrefix]) = mapToFormattedStringTable(wrapperBuiltInsStatusMap, true,
+            tableColumnSizes)
     return pipelineWrapperBuiltIns
 }
 
@@ -1186,7 +1206,7 @@ node(jenkinsNodeToExecute) {
 
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
-        Boolean allDone
+        Boolean allDone = true
         Map universalPipelineWrapperBuiltIns = [:]
         if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
             configStructureErrorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
@@ -1197,8 +1217,9 @@ node(jenkinsNodeToExecute) {
             pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
         String overallResults = universalPipelineWrapperBuiltIns.get('multilineReport') ?
-                universalPipelineWrapperBuiltIns.multilineReport : 'n/a'
-        CF.outMsg(1, String.format('%s\nOVERALL:\n\n/%s\n%s', '-' * 80, overallResults, '-' * 80))
+                universalPipelineWrapperBuiltIns.multilineReport.replace('[PASS]', '\033[0;31m[PASS]\033[0m')
+                        .replace("[FAIL]", "\033[0;31m[FAIL]\033[0m") : 'n/a'
+        CF.outMsg(allDone ? 1 : 3, String.format('%s\nOVERALL:\n\n%s\n%s', '-' * 80, overallResults, '-' * 80))
         if (pipelineFailReasonText.trim())
             error String.format('%s\n%s.', pipelineFailReasonText, 'Please fix then re-build')
 
