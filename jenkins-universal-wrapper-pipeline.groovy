@@ -1218,7 +1218,7 @@ node(jenkinsNodeToExecute) {
             pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
         String overallResults = universalPipelineWrapperBuiltIns.get('multilineReport') ?
-                universalPipelineWrapperBuiltIns.multilineReport.replace('[PASS]', '\033[0;31m[PASS]\033[0m')
+                universalPipelineWrapperBuiltIns.multilineReport.replace("[PASS]", "\033[0;32m[PASS]\033[0m")
                         .replace("[FAIL]", "\033[0;31m[FAIL]\033[0m") : 'n/a'
         CF.outMsg(allDone ? 1 : 3, String.format('%s\nOVERALL:\n\n%s\n%s', '-' * 80, overallResults, '-' * 80))
         if (pipelineFailReasonText.trim())
