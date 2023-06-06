@@ -717,8 +717,9 @@ static String mapToFormattedStringTable(Map sourceMap) {
     String formattedStringTable = ''
     sourceMap.each { entry ->
         entry.value.each { k, v ->
-            Integer padSize = tableColumnSizes[k as String] - v.toString().length()
-            formattedStringTable += (v.toString()).padRight(padSize)
+            String tableItem = v.toString()
+            Integer padSize = tableColumnSizes[k as String] - tableItem.length()
+            formattedStringTable += tableItem.padRight(padSize)
         }
         formattedStringTable += '\n'
     }
