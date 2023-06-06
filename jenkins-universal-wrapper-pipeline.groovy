@@ -707,6 +707,24 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
     return nodeToExecute
 }
 
+static String mapToFormattedStringTable(Map sourceMap) {
+    Map tableColumnSizes = [:]
+    sourceMap.each { entry ->
+        entry.value.each { k, v ->
+            tableColumnSizes[k] = [tableColumnSizes?.get(k), v.toString().length() + 2].max()
+        }
+    }
+    String formattedStringTable = ''
+    sourceMap.each { entry ->
+        entry.value.each { k, v ->
+            Integer padSize = tableColumnSizes[k as String] - v.toString().length()
+            formattedStringTable += v.toString().padRight(padSize)
+        }
+        formattedStringTable += '\n'
+    }
+    return formattedStringTable
+}
+
 /**
  * Pipeline parameters processing wrapper: git clone, load all pipeline settings, check all current pipeline
  * parameters are equal in the settings, check pipeline parameters in the settings are correct, check all pipeline
@@ -1035,8 +1053,17 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
 }
 
+/**
+ * Updates 'pipeline wrapper builtins' variable keys, that contains string tables for reports.
+ *
+ * @param pipelineWrapperBuiltIns - universal pipeline wrapper built-ins map.
+ * @param keyNamePrefix - key name prefix: key that will be created in pipelineWrapperBuiltIns, key name prefix plus
+ *                        'Map' string to take data from and key name prefix plus 'Failed' to write only failed items.
+ * @return - universal pipeline wrapper built-ins map.
+ */
 static Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyNamePrefix = 'multilineReport') {
-    // TODO: formatted results from addPipelineStepsAndUrls
+    pipelineWrapperBuiltIns[keyNamePrefix] = mapToFormattedStringTable(pipelineWrapperBuiltIns[String.format('%sMap',
+            keyNamePrefix)] as Map)
     return pipelineWrapperBuiltIns
 }
 
