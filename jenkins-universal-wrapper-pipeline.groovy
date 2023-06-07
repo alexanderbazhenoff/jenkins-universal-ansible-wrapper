@@ -89,8 +89,8 @@ String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
     regexItemsList.eachWithIndex { value, Integer index ->
         text = text.replaceAll(value as CharSequence, replaceItemsList.contains(index) ? replaceItemsList[index] as
                 String : '')
-        println String.format("performing replacement of '%s' regex '%s' with '%s'", text, value, replaceItemsList
-                .get(index))
+        println String.format("performing replacement of '%s' regex '%s' with '%s'", text, value,
+                replaceItemsList[index])
     }
     return text
 }
