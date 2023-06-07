@@ -724,8 +724,8 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *           - formatted string table results on createTable = true.
  */
 static ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
-                                        String replaceKeyName = 'state', ArrayList regexItemsList = ['true', 'false'],
-                                        ArrayList replaceItemsList = ['[PASS]', '[FAIL]']) {
+                                        String replaceKeyName = 'state', ArrayList regexItemsList = ['true'],
+                                        ArrayList replaceItemsList = ['[PASS]']) {
     String formattedStringTable = ''
     sourceMap.each { entry ->
         entry.value.each { k, v ->
