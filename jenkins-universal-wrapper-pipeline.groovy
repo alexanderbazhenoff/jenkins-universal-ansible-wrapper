@@ -88,10 +88,10 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
 // TODO: make a static method
 String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     regexItemsList.eachWithIndex { value, Integer index ->
+        println String.format("performing replacement of '%s' regex '%s' with '%s' element in '%s' which is '%s'",
+                text, value, index.toString(), replaceItemsList.toString(), replaceItemsList[index])
         text = text.replaceAll(value as CharSequence, replaceItemsList.contains(index) ? replaceItemsList[index] as
                 String : '')
-        println String.format("performing replacement of '%s' regex '%s' with '%s' element in '%s'", text, value,
-                index.toString(), replaceItemsList.toString())
     }
     return text
 }
