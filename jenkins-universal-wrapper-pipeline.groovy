@@ -92,8 +92,7 @@ String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
                 text, value, index.toString(), replaceItemsList.toString(), replaceItemsList[index], text
                 .replaceAll(value as CharSequence, replaceItemsList[index] ? replaceItemsList[index] as
                         String : ''))
-        text = text.replaceAll(value as CharSequence, replaceItemsList.contains(index) ? replaceItemsList[index] as
-                String : '')
+        text = text.replaceAll(value as CharSequence,  replaceItemsList[index] ? replaceItemsList[index] as String : '')
     }
     return text
 }
