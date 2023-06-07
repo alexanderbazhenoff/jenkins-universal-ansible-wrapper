@@ -92,7 +92,7 @@ String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
                 String : '')
         //println String.format("performing replacement of '%s' regex '%s' with '%s' element in '%s'", text, value,
         //        index.toString(), replaceItemsList.toString())
-        //println 'ky'
+        println 'ky'
     }
     return text
 }
@@ -728,7 +728,7 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *           - formatted string table results on createTable = true.
  */
 // TODO: make a static method
-static ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
+ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
                                         String replaceKeyName = 'state', ArrayList regexItemsList = ['true'],
                                         ArrayList replaceItemsList = ['[PASS]']) {
     String formattedStringTable = ''
