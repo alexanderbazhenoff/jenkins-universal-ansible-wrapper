@@ -85,6 +85,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  *                           will be replaced with empty line ''.
  * @return - resulting text.
  */
+// TODO: make a static method
 String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     regexItemsList.eachWithIndex { value, Integer index ->
         text = text.replaceAll(value as CharSequence, replaceItemsList.contains(index) ? replaceItemsList[index] as
@@ -726,6 +727,7 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *           - table column sizes map on createTable = false;
  *           - formatted string table results on createTable = true.
  */
+// TODO: make a static method
 static ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
                                         String replaceKeyName = 'state', ArrayList regexItemsList = ['true'],
                                         ArrayList replaceItemsList = ['[PASS]']) {
