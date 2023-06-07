@@ -903,9 +903,10 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             universalPipelineWrapperBuiltIns.multilineStagesReportMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', stageItem.actions?.size(),
             stageItem.actions?.size() > 1 ? 's' : '', stageItem.get('parallel') ? ' in parallel' : '') : '<no actions>'
-    universalPipelineWrapperBuiltIns.multilineStagesReportMap = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
+    universalPipelineWrapperBuiltIns.multilineReportMapStages = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
             printableStageName, allPass, stageStatusDetails)
-    // TODO: formatted results from addPipelineStepsAndUrls
+    universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns,
+            'multilineReportStages')
     return [universalPipelineWrapperBuiltIns, allPass, envVariables]
 }
 
@@ -1079,7 +1080,6 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
  *                        'Map' string to take data from and key name prefix plus 'Failed' to write only failed items.
  * @return - universal pipeline wrapper built-ins map.
  */
-// TODO: make a static method
 Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyNamePrefix = 'multilineReport') {
     String stringTableReport
     Map wrapperBuiltInsStatusMap = pipelineWrapperBuiltIns[String.format('%sMap', keyNamePrefix)] as Map
@@ -1220,7 +1220,6 @@ node(jenkinsNodeToExecute) {
                     pipelineSettings, env)
             pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
         }
-        // TODO: fix colors
         String overallResults = universalPipelineWrapperBuiltIns.get('multilineReport') ?
                 universalPipelineWrapperBuiltIns.multilineReport.replaceAll('\\[PASS\\]', "\033[0;32m[PASS]\033[0m")
                         .replaceAll('\\[FAIL\\]', "\033[0;31m[FAIL]\033[0m") : 'n/a'
