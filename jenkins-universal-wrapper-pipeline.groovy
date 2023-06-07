@@ -85,13 +85,8 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  *                           will be replaced with empty line ''.
  * @return - resulting text.
  */
-// TODO: make a static method
-String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
+static String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
     regexItemsList.eachWithIndex { value, Integer index ->
-        println String.format("Replace of '%s' by regex '%s' with '%s' element in '%s' which is '%s'. Result: '%s'",
-                text, value, index.toString(), replaceItemsList.toString(), replaceItemsList[index], text
-                .replaceAll(value as CharSequence, replaceItemsList[index] ? replaceItemsList[index] as
-                        String : ''))
         text = text.replaceAll(value as CharSequence,  replaceItemsList[index] ? replaceItemsList[index] as String : '')
     }
     return text
@@ -727,10 +722,10 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *           - table column sizes map on createTable = false;
  *           - formatted string table results on createTable = true.
  */
-// TODO: make a static method
-ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
-                                        String replaceKeyName = 'state', ArrayList regexItemsList = ['true'],
-                                        ArrayList replaceItemsList = ['[PASS]']) {
+static ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
+                                           String replaceKeyName = 'state',
+                                           ArrayList regexItemsList = ['true', 'false'],
+                                           ArrayList replaceItemsList = ['[PASS]', '[FAIL]']) {
     String formattedStringTable = ''
     sourceMap.each { entry ->
         entry.value.each { k, v ->
