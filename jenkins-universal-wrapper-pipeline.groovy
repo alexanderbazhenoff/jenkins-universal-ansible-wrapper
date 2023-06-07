@@ -91,7 +91,7 @@ String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList r
                 String : '')
         //println String.format("performing replacement of '%s' regex '%s' with '%s' element in '%s'", text, value,
         //        index.toString(), replaceItemsList.toString())
-        println 'ky'
+        //println 'ky'
     }
     return text
 }
