@@ -1086,6 +1086,8 @@ Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyN
     def (Map tableColumnSizes, __) = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
     (__, stringTableReport) = mapToFormattedStringTable(wrapperBuiltInsStatusMap, true, tableColumnSizes)
     pipelineWrapperBuiltIns[keyNamePrefix] = stringTableReport
+    pipelineWrapperBuiltIns[String.format('%sFailed', keyNamePrefix)] = CF.grepFailedStates(pipelineWrapperBuiltIns,
+            keyNamePrefix, '[FAIL]')
     return pipelineWrapperBuiltIns
 }
 
