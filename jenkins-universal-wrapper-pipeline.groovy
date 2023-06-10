@@ -455,7 +455,7 @@ static ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Obje
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @return arrayList of:
- *         - true when assignment contains variable;
+ *         - true when assignment contains only variable;
  *         - assigned value or just a string assignment return.
  */
 static getAssignmentFromEnvVariable(String assignment, Object envVariables) {
