@@ -459,9 +459,10 @@ static ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Obje
  *         - assigned value or just a string assignment return.
  */
 static getAssignmentFromEnvVariable(String assignment, Object envVariables) {
-    Boolean assignmentContainsVariable = assignment.matches('\\$[^{].+')
-    return [assignmentContainsVariable, assignmentContainsVariable ? envVariables[assignment.replaceAll('\\$', '')] :
-            assignment]
+    Boolean assignmentContainsOnlyVariable = assignment.matches('^\\$\\w*[^}\\s]$') &&
+            checkEnvironmentVariableNameCorrect(assignment.toString().replaceAll('\\$', ''))
+    return [assignmentContainsOnlyVariable, assignmentContainsOnlyVariable ?
+            envVariables[assignment.replaceAll('\\$', '')] : assignment]
 }
 
 /**
