@@ -4,6 +4,7 @@ import com.thoughtworks.xstream.mapper.Mapper
 @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
 import org.yaml.snakeyaml.*
 
+import groovy.text.StreamingTemplateEngine
 import java.util.regex.Pattern
 
 
@@ -432,55 +433,81 @@ static ArrayList getPipelineParamNameAndDefinedState(Map paramItem, Object pipel
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @return - arrayList of:
  *           - true when pipeline parameter needs an assignment;
- *           - string or value of assigned environment variable (when value starts with $);
+ *           - true when pipeline parameter assignment successfully done or skipped, otherwise false;
+ *           - string with assigned environment variable(s);
  *           - true when needs to count an error when pipeline parameter undefined and can't be assigned;
  *           - true when needs to warn when pipeline parameter undefined and can't be assigned.
  */
-static ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
+ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
     if (!settingsItem.get('on_empty'))
         return [false, '', true, false]
     Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').asBoolean() : true
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
     if (!settingsItem.on_empty.get('assign'))
         return [false, '', fail, warn]
-    def (Boolean assignmentIsPossible, String assignment) = getAssignmentFromEnvVariable(settingsItem.on_empty.assign
-            .toString(), envVariables)
-    return [assignmentIsPossible, assignment, fail, warn]
+    def (Boolean assignmentIsPossible, Boolean assignmentOk, String assignment) =
+            getTemplatingFromVariables(settingsItem.on_empty.assign.toString(), envVariables)
+    return [assignmentIsPossible, assignmentOk, assignment, fail, warn]
 }
 
 /**
- * Get assignment from environment variable.
+ * Template of assign variables inside string.
  *
- * @param assignment - string that probably contains environment variable (e.g. $FOO).
+ * @param assignment - string that probably contains environment variable(s) (e.g. '$FOO' or '$FOO somewhat $BAR text').
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @return arrayList of:
- *         - true when assignment contains only variable;
- *         - assigned value or just a string assignment return.
+ * @param additionalVariablesBinding - additional (or non-environment) variables for templating.
+ * @return - arrayList of:
+ *           - true when assignment is possible;
+ *           - true when assignment done without errors or skipped, otherwise false;
+ *           - templated string.
  */
-static getAssignmentFromEnvVariable(String assignment, Object envVariables) {
-    Boolean assignmentContainsOnlyVariable = assignment.matches('^\\$\\w*[^}\\s]$') &&
-            checkEnvironmentVariableNameCorrect(assignment.toString().replaceAll('\\$', ''))
-    return [assignmentContainsOnlyVariable, assignmentContainsOnlyVariable ?
-            envVariables[assignment.replaceAll('\\$', '')] : assignment]
+ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map additionalVariablesBinding = [:]) {
+    Boolean assignmentOk = true
+    ArrayList mentionedVariables = CF.getVariablesMentioningFromString(assignment)
+    if (!mentionedVariables[0])
+        return [false, assignmentOk, assignment]
+    Map bindingVariables = CF.envVarsToMap(envVariables) + additionalVariablesBinding
+    mentionedVariables.each { mentioned ->
+        Boolean variableNameIsIncorrect = !checkEnvironmentVariableNameCorrect(mentioned)
+        Boolean variableIsUndefined = !bindingVariables.containsKey(mentioned)
+        String errMsg = "The value of this variable will be templated with '' (empty string)."
+        assignmentOk = configStructureErrorMsgWrapper(variableNameIsIncorrect, assignmentOk, 3,
+                String.format("Incorrect variable name '%s' in '%s' value. %s", mentioned, assignment, errMsg))
+        assignmentOk = configStructureErrorMsgWrapper(variableIsUndefined, assignmentOk, 3,
+                String.format("Specified '%s' variable in '%s' value is undefined. %s", mentioned, assignment, errMsg))
+        bindingVariables[mentioned] = variableNameIsIncorrect || variableIsUndefined ? '' : bindingVariables[mentioned]
+    }
+    return [true, assignmentOk, new StreamingTemplateEngine().createTemplate(assignment).make(bindingVariables)]
 }
 
 /**
- * Process assignment from environment variable wrapper.
+ * Templating or assign map keys with variable(s).
  *
- * @param assignment - string that probably contains environment variable (e.g. $FOO).
+ * @param assignMap - map to assign keys from.
+ * @param assignmentKeysList - list of keys in assignMap needs to be assigned.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param keyDescription - an error message prefix to describe what needs to be assigned.
- * @return arrayList of:
- *         - true when no errors: assignment completed or skipped;
- *         - assigned value or just a string assignment return.
+ * @param additionalVariablesBinding - additional (or non-environment) variables for templating.
+ * @param keysDescription - Keys description for error output.
+ * @return - arrayList of:
+ *           - true when all keys was assigned without errors or assignment skipped, otherwise false;
+ *           - map with assigned keys.
  */
-ArrayList processAssignmentFromEnvVariable(String assignment, Object envVariables, String keyDescription = 'Key') {
-    def (Boolean assignmentIsPossible, String assignData) = getAssignmentFromEnvVariable(assignment, envVariables)
-    String assignmentOk = configStructureErrorMsgWrapper(assignmentIsPossible && !assignData?.trim(), true, 3,
-            String.format("%s '%s' is empty: specified variable is undefined.", keyDescription, assignment))
-    return [assignmentOk, assignData?.trim() ? assignData : assignment]
+ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeysList, Object envVariables,
+                                         Map additionalVariablesBinding = [:], String keysDescription = 'Key') {
+    Boolean allAssignmentsPass = true
+    assignmentKeysList.each { currentKey ->
+        if (assignMap.containsKey(currentKey)) {
+            def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
+                    envVariables, additionalVariablesBinding)
+            allAssignmentsPass = configStructureErrorMsgWrapper(!assignOk, allAssignmentsPass, 3,
+                    String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
+                            keysDescription, currentKey, assignMap[currentKey].toString()))
+            assignMap[currentKey] = assigned
+        }
+    }
+    return [allAssignmentsPass, assignMap]
 }
 
 /**
@@ -505,18 +532,15 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                     as Map, pipelineParameters, envVariables)
             if (parameterIsUndefined) {
                 String assignMessage = ''
-                Boolean assignmentComplete = false
-                def (Boolean paramNeedsToBeAssigned, String parameterAssignment, Boolean fail, Boolean warn) =
-                        handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
-                if (paramNeedsToBeAssigned && printableParameterName != '<undefined>' && parameterAssignment.trim()) {
+                def (Boolean paramNeedsToBeAssigned, Boolean assignmentOk, String parameterAssignment, Boolean fail,
+                        Boolean warn) = handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
+                if (assignmentOk && printableParameterName != '<undefined>' && parameterAssignment.trim()) {
                     envVariables[it.name.toString()] = parameterAssignment
-                    assignmentComplete = true
-                } else if (printableParameterName == '<undefined>' || (paramNeedsToBeAssigned &&
-                        !parameterAssignment.trim())) {
-                    assignMessage = paramNeedsToBeAssigned ? String.format("(can't be assigned with '%s' variable) ",
+                } else if (printableParameterName == '<undefined>' || (paramNeedsToBeAssigned && !assignmentOk)) {
+                    assignMessage = !assignmentOk ? String.format("(can't be correctly assigned with '%s' variable) ",
                             it.on_empty.get('assign').toString()) : ''
                 }
-                allSet = !assignmentComplete && fail ? false : allSet
+                allSet = !assignmentOk && fail ? false : allSet
                 if (warn || (fail && !allSet))
                     CF.outMsg(fail ? 3 : 2, String.format("'%s' pipeline parameter is required, but undefined %s%s. %s",
                             printableParameterName, assignMessage, 'for current job run',
@@ -1134,7 +1158,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            Boolean check, String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     Boolean actionOk
-    (actionOk, actionLink) = processAssignmentFromEnvVariable(actionLink, envVariables, 'Action link')
+    (__, actionOk, actionLink) = getTemplatingFromVariables(actionLink, envVariables)
     Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
             instanceof Map)
     Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
