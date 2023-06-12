@@ -59,8 +59,7 @@ final BuiltinPipelineParameters = [
 
 
 /**
- * Clone 'universal-wrapper-pipeline-settings' from git repository, load yaml pipeline settings and return them as a
- * map.
+ * Clone 'universal-wrapper-pipeline-settings' from git repository, load yaml pipeline settings and return them as map.
  *
  * @param settingsGitUrl - git repo URL to clone from.
  * @param settingsGitBranch - git branch.
@@ -1153,6 +1152,22 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
                     nodeSubKeyName, printableStageAndAction, '')) : actionStructureOk
 }
 
+/**
+ * Check or execute action link.
+ *
+ * @param actionLink - action link.
+ * @param nodeItem - map with node-related keys.
+ * @param pipelineSettings - all univrasl pipeline settings to take action from by action link.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param check - true when check, false when exectue.
+ * @param nodePipelineParameterName - jenkins pipeline parameter name of specified node name.
+ * @param nodeTagPipelineParameterName - jenkins pipeline parameter name of specified node tag.
+ * @return - arrayList of:
+ *           - true when action link is ok;
+ *           - action description for logging in reports;
+ *           - environment variables return.
+ */
 // TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
                                            Boolean check, String nodePipelineParameterName = 'NODE_NAME',
