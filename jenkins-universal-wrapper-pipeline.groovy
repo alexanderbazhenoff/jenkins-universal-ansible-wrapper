@@ -487,6 +487,7 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
  * @param assignmentKeysList - list of keys in assignMap needs to be assigned.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param allAssignmentsPass - set if you wish to pass previous structure check state.
  * @param additionalVariablesBinding - additional (or non-environment) variables for templating.
  * @param keysDescription - Keys description for error output.
  * @return - arrayList of:
@@ -494,10 +495,10 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
  *           - map with assigned keys.
  */
 ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeysList, Object envVariables,
-                                         Map additionalVariablesBinding = [:], String keysDescription = 'Key') {
-    Boolean allAssignmentsPass = true
+                                         Boolean allAssignmentsPass = true, Map additionalVariablesBinding = [:],
+                                         String keysDescription = 'Key') {
     assignmentKeysList.each { currentKey ->
-        if (assignMap.containsKey(currentKey)) {
+        if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
             allAssignmentsPass = configStructureErrorMsgWrapper(!assignOk, allAssignmentsPass, 3,
@@ -889,7 +890,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
                                           Object envVariables, Boolean allPass = true, Boolean check = true) {
     Map actionsRuns = [:]
 
-    // Handling 'name', 'actions' and 'parallel' stage keys.
+    // Handling 'name' (with possible assignment), 'actions' and 'parallel' stage keys.
     allPass = configStructureErrorMsgWrapper(check && (!stageItem.containsKey('name') ||
             !detectIsObjectConvertibleToString(stageItem.get('name'))), allPass, 3,
             "Unable to convert stage name to a string, probably it's undefined or empty.")
@@ -900,6 +901,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     allPass = configStructureErrorMsgWrapper(check && (stageItem.containsKey('parallel') &&
             !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))), allPass, 3, String.format(
             "Unable to determine 'parallel' value for '%s' stage. Remove them or set as boolean.", printableStageName))
+    (allPass, stageItem) = templatingMapKeysFromVariables(stageItem, ['name'], envVariables, allPass)
 
     // Creating map and processing items from 'actions' key.
     stageItem.get('actions').eachWithIndex { item, Integer index ->
@@ -1015,6 +1017,8 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             printableStageAndAction, actionStructureOk)
     actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
             .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper(['success_only', 'fail_only']))
+    (actionStructureOk, actionItem) = templatingMapKeysFromVariables(actionItem, stringKeys, envVariables,
+            actionStructureOk)
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
