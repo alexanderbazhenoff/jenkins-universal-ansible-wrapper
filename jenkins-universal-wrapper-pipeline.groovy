@@ -1268,10 +1268,10 @@ Boolean actionCloneGit(String actionLink, Map actionLinkItem, Object envVariable
     Boolean repoUrlIsDefined = actionLinkItem.containsKey('repo_url') && actionLinkItem?.get('repo_url')
     actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
             String.format("Unable to clone sources: 'repo_url' is not defined for %s.", actionLink))
-    String repoBranch = actionLinkItem.containsKey('repo_branch') ? actionLinkItem.containsKey('repo_branch') : 'main'
-    String repoCredentials = actionLinkItem.containsKey('credentials') ? actionLinkItem.containsKey('credentials') :
+    String repoBranch = actionLinkItem.containsKey('repo_branch') ? actionLinkItem.get('repo_branch') : 'main'
+    String repoCredentials = actionLinkItem.containsKey('credentials') ? actionLinkItem.get('credentials') :
             gitDefaultCredentialsId
-    String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.containsKey('directory') : ''
+    String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.get('directory') : ''
     try {
         if (!check && !CF.getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'))
             CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), repoBranch, cloneToDirectory, repoCredentials)
