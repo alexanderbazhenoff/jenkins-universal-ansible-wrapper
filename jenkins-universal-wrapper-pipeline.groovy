@@ -1017,8 +1017,8 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             printableStageAndAction, actionStructureOk)
     actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
             .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper(['success_only', 'fail_only']))
-    (actionStructureOk, actionItem) = templatingMapKeysFromVariables(actionItem, stringKeys, envVariables,
-            actionStructureOk)
+    (actionStructureOk, actionItem) = templatingMapKeysFromVariables(actionItem, stringKeys + ['action', 'node'] as
+            ArrayList, envVariables, actionStructureOk, [:], 'Action key')
 
     // Check node keys and sub-keys defined properly.
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
@@ -1033,9 +1033,10 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
 
         // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
         String incompatibleKeysMessage
+        ArrayList nodeSubKeyNames = ['name', 'label']
         Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
         actionStructureOk = configStructureErrorMsgWrapper(check && !onlyNameOrLabelDefined, actionStructureOk, 2,
-                incompatibleKeysMsgWrapper(['name', 'label'], 'Node sub-keys'))
+                incompatibleKeysMsgWrapper(nodeSubKeyNames, 'Node sub-keys'))
         actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
                 actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
         actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
@@ -1050,6 +1051,10 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                     keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction, 'Sub-key should be boolean.'))
             nodeItem.node.remove('pattern')
         }
+
+        // Templating node sub-keys.
+        (actionStructureOk, nodeItem) = templatingMapKeysFromVariables(nodeItem, nodeSubKeyNames, envVariables,
+                actionStructureOk, [:], 'Node (sub-keys of action key)')
     } else if (actionItem.containsKey('node') && !anyJenkinsNode && !(actionItem.get('node') instanceof Map)) {
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
                 String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction, 'Key will be ignored.'))
@@ -1176,12 +1181,10 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
                                            Boolean check, String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
-    Boolean actionOk
-    (__, actionOk, actionLink) = getTemplatingFromVariables(actionLink, envVariables)
     Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
             instanceof Map)
     Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
-    actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, actionOk, 3,
+    Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [repo_url   : { println 'gitlab' },
                         collections: { println 'install_collections' },
