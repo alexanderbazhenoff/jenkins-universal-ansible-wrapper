@@ -1258,7 +1258,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
  */
 Boolean actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                        Map universalPipelineWrapperBuiltIns,
-                       String gitDefaultCredentialsId = CF.OrgAlxGlobals.GitCredentialsID) {
+                       String gitDefaultCredentialsId = CF.GitCredentialsID) {
     ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
     String actionKeyMsg = String.format("'%s' action key", actionLink)
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionLinkItem, true, actionLink,
