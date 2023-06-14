@@ -955,10 +955,10 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
                 detectIsObjectConvertibleToBoolean(map.get(it))
         if (map.containsKey(it) && !typeOk) {
             currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 3,
-                    String.format("'%s' key in '#%s' should be a %s.", it, index, isString ? 'string' : 'boolean'))
+                    String.format("'%s' key in '%s' should be a %s.", it, index, isString ? 'string' : 'boolean'))
         } else if (map.containsKey(it) && !map.get(it)?.toString()?.length()) {
             currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2, String.format(
-                    "'%s' key defined for '#%s', but it's empty. Remove a key or define it's value.", it, index))
+                    "'%s' key defined for '%s', but it's empty. Remove a key or define it's value.", it, index))
         }
     }
     return currentStatus
@@ -1080,7 +1080,8 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
                     currentBuild.displayName
             (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
-                    as String, nodeItem?.get('node') as Map, pipelineSettings, envVariables, check)
+                    as String, nodeItem?.get('node') as Map, pipelineSettings, envVariables, check,
+                    universalPipelineWrapperBuiltIns)
         }
 
         // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
@@ -1097,6 +1098,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     }
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
+    universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
@@ -1170,6 +1172,8 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param check - true when check, false when exectue.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
+ *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  * @param nodePipelineParameterName - jenkins pipeline parameter name of specified node name.
  * @param nodeTagPipelineParameterName - jenkins pipeline parameter name of specified node tag.
  * @return - arrayList of:
@@ -1179,14 +1183,16 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
  */
 // TODO: done the env pass inside other functions and return from this
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
-                                           Boolean check, String nodePipelineParameterName = 'NODE_NAME',
+                                           Boolean check, Map universalPipelineWrapperBuiltIns,
+                                           String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
             instanceof Map)
     Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
     Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
-    Map detectByKeys = [repo_url   : { println 'gitlab' },
+    Map detectByKeys = [repo_url   : { actionOk = actionCloneGit(actionLink, actionLinkItem, envVariables, check,
+            actionOk, universalPipelineWrapperBuiltIns) },
                         collections: { println 'install_collections' },
                         playbook   : { println 'run_playbook' },
                         pipeline   : { println 'run_pipeline' },
@@ -1235,7 +1241,49 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     return [actionOk, actionDescription, envVariables]
 }
 
+/**
+ * Pipeline action: clone git sources from URL.
+ *
+ * @param actionLink - message prefix for possible errors.
+ * @param actionLinkItem - action link item to check or execute.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
+ *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on execution.
+ * @param check - set false to execute action item, true to check.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
+ *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ * @param gitDefaultCredentialsId - Git credentials ID for git authorisation to clone project.
+ * @return - true when success, false when failed.
+ */
+Boolean actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                       Map universalPipelineWrapperBuiltIns,
+                       String gitDefaultCredentialsId = CF.OrgAlxGlobals.GitCredentialsID) {
+    ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
+    String actionKeyMsg = String.format("'%s' action key", actionLink)
+    actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionLinkItem, true, actionLink,
+            actionOk)
+    (actionOk, actionLinkItem) = templatingMapKeysFromVariables(actionLinkItem, stringKeys, envVariables, actionOk,
+            universalPipelineWrapperBuiltIns, actionKeyMsg)
+    Boolean repoUrlIsDefined = actionLinkItem.containsKey('repo_url') && actionLinkItem?.get('repo_url')
+    actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
+            String.format("Unable to clone sources: 'repo_url' is not defined for %s.", actionLink))
+    String repoBranch = actionLinkItem.containsKey('repo_branch') ? actionLinkItem.containsKey('repo_branch') : 'main'
+    String repoCredentials = actionLinkItem.containsKey('credentials') ? actionLinkItem.containsKey('credentials') :
+            gitDefaultCredentialsId
+    String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.containsKey('directory') : ''
+    try {
+        if (!check && !CF.getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'))
+            CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), repoBranch, cloneToDirectory, repoCredentials)
+    } catch (Exception err) {
+        actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error cloning repo in '%s': %s",
+                actionLink, CF.readableError(err)))
+    }
+    return actionOk
+}
 
+
+// Pipeline entry point.
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
