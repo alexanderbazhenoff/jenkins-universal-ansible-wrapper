@@ -1,10 +1,9 @@
 #!/usr/bin/env groovy
 import com.thoughtworks.xstream.mapper.Mapper
-import org.codehaus.groovy.runtime.NullObject
 @NonCPS
 @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
 import org.yaml.snakeyaml.*
-
+import org.codehaus.groovy.runtime.NullObject
 import groovy.text.StreamingTemplateEngine
 import java.util.regex.Pattern
 
@@ -1300,14 +1299,15 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Map actionLinkItemToPrint = actionLinkItem + [credentials: actionLinkItem?.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
     Boolean dryRunAction = CF.getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
-    String actionMsg = String.format('%s%s: %s', dryRunAction ? 'dry-run of ' : '', actionName, actionLinkItemToPrint)
+    String actionMsg = String.format('%s%s: %s', dryRunAction ? 'dry-run of ' : '', actionName,
+            findMapItemsFromList(actionLinkItemToPrint, stringKeys))
     try {
         if (!check && !dryRunAction) {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
             CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), repoBranch, cloneToDirectory, repoCredentials)
         }
     } catch (Exception err) {
-        actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionName,
+        actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg,
                 actionLink, CF.readableError(err)))
     }
     return [actionOk, actionMsg]
