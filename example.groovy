@@ -5,7 +5,7 @@
 node('master') {
     CF = new org.alx.troubleShooting() as Object
     def myLib = library 'jenkins-shared-library-alx@devel'
-    def t = myLib.org.alx.OrgAlxGlob.new()
+    def t = myLib.org.alx.troubleShooting().new()
     wrap([$class: 'TimestamperBuildWrapper']) {
 
         println String.format('fn from src: %s', CF.TestFunctionInSrc())
