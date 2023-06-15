@@ -7,7 +7,7 @@ node('master') {
     wrap([$class: 'TimestamperBuildWrapper']) {
 
         println String.format('fn from src: %s', CF.TestFunctionInSrc())
-        def gitCred = library('jenkins-shared-library-alx@devel').org.alx.troubleShooting().OrgAlxGlob.GitCredentialsID
+        def gitCred = library('jenkins-shared-library-alx@devel').org.alx.OrgAlxGlob.GitCredentialsID
         println gitCred
 
 
