@@ -1273,7 +1273,7 @@ Boolean actionCloneGit(String actionLink, Map actionLinkItem, Object envVariable
             gitDefaultCredentialsId
     String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.get('directory') : ''
     try {
-        if (!check && !CF.getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'))
+        if (!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'))
             CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), repoBranch, cloneToDirectory, repoCredentials)
     } catch (Exception err) {
         actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error cloning repo in '%s': %s",
