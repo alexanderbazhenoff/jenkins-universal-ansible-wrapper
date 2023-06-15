@@ -1282,8 +1282,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
  *           - action details for logging.
  */
 ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
-                       Map universalPipelineWrapperBuiltIns,
-                       String gitDefaultCredentialsId = CF.OrgAlxGlobals.GitCredentialsID) {
+                         Map universalPipelineWrapperBuiltIns, String gitDefaultCredentialsId = GV.GitCredentialsID) {
     String actionName = 'git clone'
     ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
     String actionKeyMsg = String.format("'%s' action key", actionLink)
@@ -1319,6 +1318,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
+    GV = new org.alx.OrgAlxGlobals() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
         String pipelineFailReasonText
         Boolean pipelineParamsProcessingPass
