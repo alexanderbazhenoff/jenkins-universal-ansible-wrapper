@@ -1298,7 +1298,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.get('directory') : ''
     Map actionLinkItemToPrint = actionLinkItem + [credentials: actionLinkItem?.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
-    Boolean dryRunAction = CF.getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
+    Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
     String actionMsg = String.format('%s%s: %s', dryRunAction ? 'dry-run of ' : '', actionName,
             findMapItemsFromList(actionLinkItemToPrint, stringKeys))
     try {
