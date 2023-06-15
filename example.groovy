@@ -7,8 +7,7 @@ node('master') {
     wrap([$class: 'TimestamperBuildWrapper']) {
 
         println String.format('fn from src: %s', CF.TestFunctionInSrc())
-        println String.format('class from src: %s', CF.OrgAlxGlob.GitCredentialsID)
-        println String.format('fn from class from src: %s', CF.OrgAlxGlob.sayHi('aaa'))
+        println String.format('fn from class from src: %s', CF.OrgAlxGlob.sayHi())
 
     }
 }
