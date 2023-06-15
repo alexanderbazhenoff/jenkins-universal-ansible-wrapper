@@ -1,5 +1,6 @@
 #!/usr/bin/env groovy
 import com.thoughtworks.xstream.mapper.Mapper
+import org.codehaus.groovy.runtime.NullObject
 @NonCPS
 @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
 import org.yaml.snakeyaml.*
@@ -178,6 +179,27 @@ static Boolean detectPipelineParameterItemIsProbablyChoice(Map paramItem) {
  */
 static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
     return paramItem.containsKey('default') && paramItem.get('default') instanceof Boolean
+}
+
+/**
+ * Find non-empty (not null) map items from list.
+ *
+ * @param map - map to find items from.
+ * @param listOfKeysToCollect - list of keys that needs to be found.
+ * @return - only map items specified in listOfKeysToCollect.
+ */
+static Map findMapItemsFromList(Map map, ArrayList listOfKeysToCollect) {
+    return map.findAll { mapKey, mapValue -> listOfKeysToCollect.contains(mapKey) && !(mapValue instanceof NullObject) }
+}
+
+/**
+ * Hide password string.
+ *
+ * @param passwordString - password string to hide.
+ * @return - password with replaced symbols.
+ */
+static String hidePasswordString(String passwordString, String replaceSymbol = '*') {
+    return replaceSymbol * passwordString.length()
 }
 
 /**
@@ -1186,13 +1208,14 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            Boolean check, Map universalPipelineWrapperBuiltIns,
                                            String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
+    String actionDetails = ''
     Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
             instanceof Map)
     Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
     Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
-    Map detectByKeys = [repo_url   : { actionOk = actionCloneGit(actionLink, actionLinkItem, envVariables, check,
-            actionOk, universalPipelineWrapperBuiltIns) },
+    Map detectByKeys = [repo_url   : { (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem,
+            envVariables, check, actionOk, universalPipelineWrapperBuiltIns) },
                         collections: { println 'install_collections' },
                         playbook   : { println 'run_playbook' },
                         pipeline   : { println 'run_pipeline' },
@@ -1204,10 +1227,9 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
-    String actionDescription = (keysFound) ? keysFound.keySet()[0] : '<undefined or incorrect>'
     configStructureErrorMsgWrapper(check && keysFound?.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s",
             'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound.keySet() as ArrayList, ''), 'Only',
-            actionDescription, 'will be used on action run.'))
+            keysFound.keySet()[0], 'will be used on action run.'))
     actionOk = configStructureErrorMsgWrapper(!keysFound && actionOk, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
             check ? "Can't" : "Nothing to execute due to can't", "determine any action in", actionLink,
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
@@ -1232,13 +1254,14 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 String nodeSelectionPrintable = changeNodeData instanceof Map ? String.format("node with label '%s'",
                         changeNodeData.label) : String.format('%s node', (changeNodeData) ? changeNodeData : 'any')
                 CF.outMsg(0, String.format("Executing '%s' action on %s...", actionLink, nodeSelectionPrintable))
-                keysFound[actionDescription].call()
+                keysFound[keysFound.keySet()[0]].call()
             }
         } else {
-            keysFound[actionDescription].call()
+            keysFound[keysFound.keySet()[0]].call()
         }
     }
-    return [actionOk, actionDescription, envVariables]
+    actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
+    return [actionOk, actionDetails, envVariables]
 }
 
 /**
@@ -1254,32 +1277,41 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
  *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  * @param gitDefaultCredentialsId - Git credentials ID for git authorisation to clone project.
- * @return - true when success, false when failed.
+ * @return - arrayList of:
+ *           - true when success, false when failed.
+ *           - action details for logging.
  */
-Boolean actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                        Map universalPipelineWrapperBuiltIns,
-                       String gitDefaultCredentialsId = CF.GitCredentialsID) {
+                       String gitDefaultCredentialsId = CF.OrgAlxGlobals.GitCredentialsID) {
+    String actionName = 'git clone'
     ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
     String actionKeyMsg = String.format("'%s' action key", actionLink)
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionLinkItem, true, actionLink,
             actionOk)
     (actionOk, actionLinkItem) = templatingMapKeysFromVariables(actionLinkItem, stringKeys, envVariables, actionOk,
             universalPipelineWrapperBuiltIns, actionKeyMsg)
-    Boolean repoUrlIsDefined = actionLinkItem.containsKey('repo_url') && actionLinkItem?.get('repo_url')
+    Boolean repoUrlIsDefined = actionLinkItem?.get('repo_url')
     actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
-            String.format("Unable to clone sources: 'repo_url' is not defined for %s.", actionLink))
+            String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
     String repoBranch = actionLinkItem.containsKey('repo_branch') ? actionLinkItem.get('repo_branch') : 'main'
-    String repoCredentials = actionLinkItem.containsKey('credentials') ? actionLinkItem.get('credentials') :
-            gitDefaultCredentialsId
+    Boolean customCredentialsSpecified = actionLinkItem.containsKey('credentials')
+    String repoCredentials = customCredentialsSpecified ? actionLinkItem.get('credentials') : gitDefaultCredentialsId
     String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.get('directory') : ''
+    Map actionLinkItemToPrint = actionLinkItem + [credentials: actionLinkItem?.get('credentials') ?
+            hidePasswordString(actionLinkItem.credentials as String) : null]
+    Boolean dryRunAction = CF.getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
+    String actionMsg = String.format('%s%s: %s', dryRunAction ? 'dry-run of ' : '', actionName, actionLinkItemToPrint)
     try {
-        if (!check && !CF.getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'))
+        if (!check && !dryRunAction) {
+            CF.outMsg(0, String.format('Performing %s', actionMsg))
             CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), repoBranch, cloneToDirectory, repoCredentials)
+        }
     } catch (Exception err) {
-        actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error cloning repo in '%s': %s",
+        actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionName,
                 actionLink, CF.readableError(err)))
     }
-    return actionOk
+    return [actionOk, actionMsg]
 }
 
 
