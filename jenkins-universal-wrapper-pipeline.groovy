@@ -1184,6 +1184,25 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 }
 
 /**
+ * Get dry-run state and pipeline action message.
+ *
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param actionName - action name just to print.
+ * @param printableActionLinkItem - action link item.
+ * @param actionLinkItemKeysFilter - keys to filter from action link item (required keys for the action).
+ * @return - arrayList of:
+ *           - true when dry-run is enabled;
+ *           - action message to print before action run.
+ */
+static ArrayList getDryRunStateAndActionMsg(Object envVariables, String actionName, Map printableActionLinkItem,
+                                            ArrayList actionLinkItemKeysFilter) {
+    Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
+    return [dryRunAction, String.format('%s%s %s', dryRunAction ? 'dry-run of ' : '', actionName,
+            findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter).toString())]
+}
+
+/**
  * Check or execute action link.
  *
  * @param actionLink - action link.
@@ -1278,26 +1297,24 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
  *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  * @param gitDefaultCredentialsId - Git credentials ID for git authorisation to clone project.
  * @return - arrayList of:
- *           - true when success, false when failed.
+ *           - true when success, false when failed;
  *           - action details for logging.
  */
 ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                          Map universalPipelineWrapperBuiltIns, String gitDefaultCredentials = GV.GitCredentialsID) {
     String actionName = 'git clone'
     ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
-    String actionKeyMsg = String.format("'%s' action key", actionLink)
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionLinkItem, true, actionLink,
             actionOk)
     (actionOk, actionLinkItem) = templatingMapKeysFromVariables(actionLinkItem, stringKeys, envVariables, actionOk,
-            universalPipelineWrapperBuiltIns, actionKeyMsg)
+            universalPipelineWrapperBuiltIns, String.format("'%s' action key", actionLink))
     Boolean repoUrlIsDefined = actionLinkItem?.get('repo_url')
     actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
-    Map actionLinkItemToPrint = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
+    Map printableActionLinkItem = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
-    Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
-    String actionMsg = String.format('%s%s %s', dryRunAction ? 'dry-run of ' : '', actionName,
-            findMapItemsFromList(actionLinkItemToPrint, stringKeys).toString())
+    def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
+            printableActionLinkItem, stringKeys)
     try {
         if (!check && !dryRunAction) {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
@@ -1308,6 +1325,16 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
         actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg,
                 actionLink, CF.readableError(err)))
     }
+    return [actionOk, actionMsg]
+}
+
+ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+                                    Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+    String actionName = 'install ansible collection'
+    Boolean collectionsKeyIsCorrect = actionLinkItem?.get('collections') instanceof ArrayList ||
+            actionLinkItem?.get('collections') instanceof String
+    actionOk = configStructureErrorMsgWrapper(check && !collectionsKeyIsCorrect, actionOk, 3, String.format(
+            "Unable to %s in '%s' action: 'collections' key should be string or list.", actionName, actionLink))
     return [actionOk, actionMsg]
 }
 
