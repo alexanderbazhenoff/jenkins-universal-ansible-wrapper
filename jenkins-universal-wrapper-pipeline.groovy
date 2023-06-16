@@ -1314,18 +1314,20 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Map printableActionLinkItem = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
     String credentials = gitDefaultCredentials
-    Closure actionClosure = { CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?:
-            'main', actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: credentials) }
+    Closure actionClosure = {
+        CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?:
+                'main', actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: credentials)
+        println 'cred: ' + credentials
+    }
     String actionMsg
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
-            actionName, actionLinkItem, stringKeys, actionOk, printableActionLinkItem, credentials)
+            actionName, actionLinkItem, stringKeys, actionOk, printableActionLinkItem)
     return [actionOk, actionMsg]
 }
 
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map actionLinkItem, ArrayList actionKeysFilterLists,
-                                           Boolean actionOk, Map printableActionLinkItem = actionLinkItem,
-                                           String credentials = '') {
+                                           Boolean actionOk, Map printableActionLinkItem = actionLinkItem) {
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
     if (!check && !dryRunAction)
