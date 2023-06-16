@@ -1335,6 +1335,8 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
             actionLinkItem?.get('collections') instanceof String
     actionOk = configStructureErrorMsgWrapper(check && !collectionsKeyIsCorrect, actionOk, 3, String.format(
             "Unable to %s in '%s' action: 'collections' key should be string or list.", actionName, actionLink))
+    def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
+            actionLinkItem, ['collections'])
     return [actionOk, actionMsg]
 }
 
