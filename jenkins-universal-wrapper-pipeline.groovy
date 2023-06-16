@@ -3,7 +3,6 @@ import com.thoughtworks.xstream.mapper.Mapper
 @NonCPS
 @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
 import org.yaml.snakeyaml.*
-import org.codehaus.groovy.runtime.NullObject
 import groovy.text.StreamingTemplateEngine
 import java.util.regex.Pattern
 
@@ -181,14 +180,14 @@ static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
 }
 
 /**
- * Find non-empty (not null) map items from list.
+ * Find non-empty map items from list.
  *
  * @param map - map to find items from.
  * @param listOfKeysToCollect - list of keys that needs to be found.
  * @return - only map items specified in listOfKeysToCollect.
  */
 static Map findMapItemsFromList(Map map, ArrayList listOfKeysToCollect) {
-    return map.findAll { mapKey, mapValue -> listOfKeysToCollect.contains(mapKey) && !(mapValue instanceof NullObject) }
+    return map.findAll { mapKey, mapValue -> listOfKeysToCollect.contains(mapKey) && mapValue?.trim() }
 }
 
 /**
@@ -1296,10 +1295,10 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Boolean customCredentialsSpecified = actionLinkItem.containsKey('credentials')
     String repoCredentials = customCredentialsSpecified ? actionLinkItem.get('credentials') : gitDefaultCredentialsId
     String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.get('directory') : ''
-    Map actionLinkItemToPrint = actionLinkItem + [credentials: actionLinkItem?.get('credentials') ?
+    Map actionLinkItemToPrint = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
-    String actionMsg = String.format('%s%s: %s', dryRunAction ? 'dry-run of ' : '', actionName,
+    String actionMsg = String.format('%s%s %s', dryRunAction ? 'dry-run of ' : '', actionName,
             findMapItemsFromList(actionLinkItemToPrint, stringKeys))
     try {
         if (!check && !dryRunAction) {
