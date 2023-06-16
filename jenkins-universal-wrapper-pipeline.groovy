@@ -1293,16 +1293,14 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Boolean repoUrlIsDefined = actionLinkItem?.get('repo_url')
     actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
-    String repoBranch = actionLinkItem.containsKey('repo_branch') ? actionLinkItem.get('repo_branch') : 'main'
+    String repoBranch = actionLinkItem.get('repo_branch') ?: 'main'
     Boolean customCredentialsSpecified = actionLinkItem.containsKey('credentials')
     // TODO: try ?: 'default value'
     // https://stackoverflow.com/questions/9168518/how-can-i-determine-if-a-string-is-non-null-and-not-only-whitespace-in-groovy
     String repoCredentials = customCredentialsSpecified ? actionLinkItem.get('credentials') : gitDefaultCredentialsId
-    // TODO: fix 'credentials' null value
     String repoCredentialsPrintable = actionLinkItem.get('credentials') ? hidePasswordString(actionLinkItem.credentials
             as String) : null
-    println 'actionLinkItem.get: ' + actionLinkItem.get('credentials')
-    println 'hidePasswordString: ' + hidePasswordString(actionLinkItem.credentials as String)
+    println 'repoBranch: ' + repoBranch
     String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.get('directory') : ''
     Map actionLinkItemToPrint = actionLinkItem + [credentials: repoCredentialsPrintable]
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
