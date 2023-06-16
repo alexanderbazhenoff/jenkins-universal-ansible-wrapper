@@ -1294,9 +1294,10 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     String repoBranch = actionLinkItem.containsKey('repo_branch') ? actionLinkItem.get('repo_branch') : 'main'
     Boolean customCredentialsSpecified = actionLinkItem.containsKey('credentials')
     String repoCredentials = customCredentialsSpecified ? actionLinkItem.get('credentials') : gitDefaultCredentialsId
+    String repoCredentialsPrintable = actionLinkItem.get('credentials') ? hidePasswordString(actionLinkItem.credentials
+            as String) : null
     String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.get('directory') : ''
-    Map actionLinkItemToPrint = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
-            hidePasswordString(actionLinkItem.credentials as String) : null]
+    Map actionLinkItemToPrint = actionLinkItem + [credentials: repoCredentialsPrintable]
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
     String actionMsg = String.format('%s%s %s', dryRunAction ? 'dry-run of ' : '', actionName,
             findMapItemsFromList(actionLinkItemToPrint, stringKeys))
