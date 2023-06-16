@@ -197,7 +197,7 @@ static Map findMapItemsFromList(Map map, ArrayList listOfKeysToCollect) {
  * @return - password with replaced symbols.
  */
 static String hidePasswordString(String passwordString, String replaceSymbol = '*') {
-    return replaceSymbol * passwordString?.length()
+    return passwordString?.length() ? 0 ? replaceSymbol * passwordString?.length() : ''
 }
 
 /**
