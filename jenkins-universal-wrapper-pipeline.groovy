@@ -1282,7 +1282,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
  *           - action details for logging.
  */
 ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
-                         Map universalPipelineWrapperBuiltIns, String gitDefaultCredentialsId = GV.GitCredentialsID) {
+                         Map universalPipelineWrapperBuiltIns, String gitDefaultCredentials = GV.GitCredentialsID) {
     String actionName = 'git clone'
     ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
     String actionKeyMsg = String.format("'%s' action key", actionLink)
@@ -1293,9 +1293,8 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Boolean repoUrlIsDefined = actionLinkItem?.get('repo_url')
     actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
-    String repoCredentialsPrintable = actionLinkItem.get('credentials') ? hidePasswordString(actionLinkItem.credentials
-            as String) : null
-    Map actionLinkItemToPrint = actionLinkItem + [credentials: repoCredentialsPrintable]
+    Map actionLinkItemToPrint = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
+            hidePasswordString(actionLinkItem.credentials as String) : null]
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
     String actionMsg = String.format('%s%s %s', dryRunAction ? 'dry-run of ' : '', actionName,
             findMapItemsFromList(actionLinkItemToPrint, stringKeys).toString())
@@ -1303,8 +1302,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
         if (!check && !dryRunAction) {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
             CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?: 'main',
-                    actionLinkItem?.get('directory') ?: '',
-                    actionLinkItem?.get('credentials') ?: gitDefaultCredentialsId)
+                    actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: gitDefaultCredentials)
         }
     } catch (Exception err) {
         actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg,
