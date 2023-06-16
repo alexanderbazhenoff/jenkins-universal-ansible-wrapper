@@ -1313,22 +1313,33 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
     Map printableActionLinkItem = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
-    def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
-            printableActionLinkItem, stringKeys)
-    try {
-        if (!check && !dryRunAction) {
-            CF.outMsg(0, String.format('Performing %s', actionMsg))
-            CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?: 'main',
-                    actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: gitDefaultCredentials)
-        }
-    } catch (Exception err) {
-        actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg,
-                actionLink, CF.readableError(err)))
-    }
+    String credentials = gitDefaultCredentials
+    Closure actionClosure = { CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?:
+            'main', actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: credentials) }
+    String actionMsg
+    (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
+            actionName, actionLinkItem, stringKeys, actionOk, printableActionLinkItem, credentials)
     return [actionOk, actionMsg]
 }
 
-ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
+                                           String actionName, Map actionLinkItem, ArrayList actionKeysFilterLists,
+                                           Boolean actionOk, Map printableActionLinkItem = actionLinkItem,
+                                           String credentials = '') {
+    def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
+            printableActionLinkItem, actionKeysFilterLists)
+    if (!check && !dryRunAction)
+        try {
+            CF.outMsg(0, String.format('Performing %s', actionMsg))
+            actionClosure.call()
+        } catch (Exception err) {
+            actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s",
+                    actionMsg, actionLink, CF.readableError(err)))
+        }
+    return [actionOk, actionMsg]
+}
+
+/*ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
                                     Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
     String actionName = 'install ansible collection'
     Boolean collectionsKeyIsCorrect = actionLinkItem?.get('collections') instanceof ArrayList ||
@@ -1338,7 +1349,7 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             actionLinkItem, ['collections'])
     return [actionOk, actionMsg]
-}
+}*/
 
 
 // Pipeline entry point.
