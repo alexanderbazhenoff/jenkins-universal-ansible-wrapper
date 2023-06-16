@@ -1293,16 +1293,8 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Boolean repoUrlIsDefined = actionLinkItem?.get('repo_url')
     actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
-    String repoBranch = actionLinkItem.get('repo_branch') ?: 'main'
-    Boolean customCredentialsSpecified = actionLinkItem.containsKey('credentials')
-    // TODO: try ?: 'default value'
-    // https://stackoverflow.com/questions/9168518/how-can-i-determine-if-a-string-is-non-null-and-not-only-whitespace-in-groovy
-    String repoCredentials = customCredentialsSpecified ? actionLinkItem.get('credentials') : gitDefaultCredentialsId
     String repoCredentialsPrintable = actionLinkItem.get('credentials') ? hidePasswordString(actionLinkItem.credentials
             as String) : null
-    String cloneToDirectory = actionLinkItem?.get('directory') ?: ''
-    println 'repoBranch: ' + repoBranch
-    println 'directory: ' + cloneToDirectory
     Map actionLinkItemToPrint = actionLinkItem + [credentials: repoCredentialsPrintable]
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
     String actionMsg = String.format('%s%s %s', dryRunAction ? 'dry-run of ' : '', actionName,
@@ -1310,7 +1302,9 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     try {
         if (!check && !dryRunAction) {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
-            CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), repoBranch, cloneToDirectory, repoCredentials)
+            CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?: 'main',
+                    actionLinkItem?.get('directory') ?: '',
+                    actionLinkItem?.get('credentials') ?: gitDefaultCredentialsId)
         }
     } catch (Exception err) {
         actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg,
