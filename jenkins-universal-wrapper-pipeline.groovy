@@ -1307,7 +1307,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Map actionLinkItemToPrint = actionLinkItem + [credentials: repoCredentialsPrintable]
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
     String actionMsg = String.format('%s%s %s', dryRunAction ? 'dry-run of ' : '', actionName,
-            findMapItemsFromList(actionLinkItemToPrint, stringKeys))
+            findMapItemsFromList(actionLinkItemToPrint, stringKeys).toString())
     try {
         if (!check && !dryRunAction) {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
