@@ -1202,6 +1202,8 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
  *           - environment variables return.
  */
 // TODO: done the env pass inside other functions and return from this
+// TODO: make action vars
+// TODO: make stage vars
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
                                            Boolean check, Map universalPipelineWrapperBuiltIns,
                                            String nodePipelineParameterName = 'NODE_NAME',
@@ -1293,7 +1295,10 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
     String repoBranch = actionLinkItem.containsKey('repo_branch') ? actionLinkItem.get('repo_branch') : 'main'
     Boolean customCredentialsSpecified = actionLinkItem.containsKey('credentials')
+    // TODO: try ?: 'default value'
+    // https://stackoverflow.com/questions/9168518/how-can-i-determine-if-a-string-is-non-null-and-not-only-whitespace-in-groovy
     String repoCredentials = customCredentialsSpecified ? actionLinkItem.get('credentials') : gitDefaultCredentialsId
+    // TODO: fix 'credentials' null value
     String repoCredentialsPrintable = actionLinkItem.get('credentials') ? hidePasswordString(actionLinkItem.credentials
             as String) : null
     String cloneToDirectory = actionLinkItem.containsKey('directory') ? actionLinkItem.get('directory') : ''
