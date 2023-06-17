@@ -1234,8 +1234,11 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [repo_url   : { (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem,
-            envVariables, check, actionOk, universalPipelineWrapperBuiltIns) },
-                        collections: { println 'install_collections' },
+                                            envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
+                        },
+                        collections: { (actionOk, actionDetails) = installAnsibleCollections(actionLink, actionLinkItem,
+                                            envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
+                        },
                         playbook   : { println 'run_playbook' },
                         pipeline   : { println 'run_pipeline' },
                         stash      : { println 'stash' },
@@ -1302,6 +1305,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
  */
 ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                          Map universalPipelineWrapperBuiltIns, String gitDefaultCredentials = GV.GitCredentialsID) {
+    String actionMsg
     String actionName = 'git clone'
     ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionLinkItem, true, actionLink,
@@ -1313,18 +1317,34 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
     Map printableActionLinkItem = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
-    String credentials = gitDefaultCredentials
     Closure actionClosure = {
-        CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?:
-                'main', actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: credentials)
-        println 'cred: ' + credentials
+        CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?: 'main',
+                actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: gitDefaultCredentials)
     }
-    String actionMsg
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
             actionName, actionLinkItem, stringKeys, actionOk, printableActionLinkItem)
     return [actionOk, actionMsg]
 }
 
+/**
+ * Pipeline action closure wrapper.
+ *
+ * @param check - set false to execute action item, true to check.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
+ *                       (or pipeline parameter) as an element of envVariables to true for execution skip.
+ * @param actionClosure - pipeline action closure to execute.
+ * @param actionLink - message prefix for possible errors.
+ * @param actionName - type of the current action to output messages and logging.
+ * @param actionLinkItem - action link item to check or execute.
+ * @param actionKeysFilterLists - list of keys that is required for current action.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param printableActionLinkItem - just a printable version of actionLinkItem when you need to hide or replace some
+ *                                  key values.
+ * @return - arrayList of:
+ *           - true when success, false when failed;
+ *           - action details for logging.
+ */
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map actionLinkItem, ArrayList actionKeysFilterLists,
                                            Boolean actionOk, Map printableActionLinkItem = actionLinkItem) {
@@ -1341,17 +1361,56 @@ ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, C
     return [actionOk, actionMsg]
 }
 
-/*ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+/**
+ * Pipeline action: install ansible collections from ansible galaxy.
+ *
+ * @param actionLink - message prefix for possible errors.
+ * @param actionLinkItem - action link item to check or execute.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
+ *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on execution.
+ * @param check - set false to execute action item, true to check.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
+ *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ * @return - arrayList of:
+ *           - true when success, false when failed;
+ *           - action details for logging.
+ */
+ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
                                     Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+    String actionMsg
     String actionName = 'install ansible collection'
     Boolean collectionsKeyIsCorrect = actionLinkItem?.get('collections') instanceof ArrayList ||
             actionLinkItem?.get('collections') instanceof String
     actionOk = configStructureErrorMsgWrapper(check && !collectionsKeyIsCorrect, actionOk, 3, String.format(
             "Unable to %s in '%s' action: 'collections' key should be string or list.", actionName, actionLink))
-    def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
-            actionLinkItem, ['collections'])
+    ArrayList ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof String) ?
+            [actionLinkItem.collections] : []
+    ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof ArrayList) ?
+            actionLinkItem.collections as ArrayList : []
+    ansibleCollections.eachWithIndex { ansibleEntry, Integer ansibleCollectionsListIndex ->
+        Boolean ansibleEntryIsString = ansibleEntry instanceof String
+        if (ansibleEntryIsString) {
+            def (__, Boolean assignOk, String assignment) = getTemplatingFromVariables(ansibleEntry as String,
+                    envVariables, universalPipelineWrapperBuiltIns)
+            ansibleCollections[ansibleCollectionsListIndex] = assignment
+            actionOk = configStructureErrorMsgWrapper(check && !assignOk, assignOk, 3, String.format(
+                    "'%s' %s item in '%s' action wasn't set properly due to undefined variable(s).", ansibleEntry,
+                    actionName, actionLink))
+        }
+        actionOk = configStructureErrorMsgWrapper(check && !ansibleEntryIsString, actionOk, 3, String.format(
+                "'%s' %s item in '%s' should be string.", ansibleEntry.toString(), actionName, actionLink))
+    }
+    Closure actionClosure = {
+        ansibleCollections.each { ansibleCollectionsItem ->
+            sh String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem)
+        }
+    }
+    (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
+            actionName, actionLinkItem, ['collections'], actionOk)
     return [actionOk, actionMsg]
-}*/
+}
 
 
 // Pipeline entry point.
