@@ -947,11 +947,11 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             it.value.call()
         }
     }
-    Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineStagesReportMap') ?
-            universalPipelineWrapperBuiltIns.multilineStagesReportMap as Map : [:]
+    Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
+            universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', stageItem.actions?.size(),
             stageItem.actions?.size() > 1 ? 's' : '', stageItem.get('parallel') ? ' in parallel' : '') : '<no actions>'
-    universalPipelineWrapperBuiltIns.multilineReportMapStages = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
+    universalPipelineWrapperBuiltIns.multilineReportStagesMap = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
             printableStageName, allPass, stageStatusDetails)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns,
             'multilineReportStages')
