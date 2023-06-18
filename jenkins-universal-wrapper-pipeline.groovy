@@ -872,13 +872,15 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
             getBooleanVarStateFromEnv(envVariables)) || execute), true, 0,
             String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stageItem in pipelineSettings.stages) {
-        (__, checkOk, envVariables) = check ? checkOrExecuteStageSettingsItem([:], stageItem as Map, pipelineSettings,
-                envVariables, checkOk) : [[:], true, envVariables]
+        Boolean stageOk
+        (__, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem([:], stageItem as Map, pipelineSettings,
+                envVariables) : [[:], true, envVariables]
+        checkOk = stageOk ? checkOk : false
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
-                (universalPipelineWrapperBuiltIns, executeOk, envVariables) = checkOrExecuteStageSettingsItem(
-                        universalPipelineWrapperBuiltIns, stageItem as Map, pipelineSettings, envVariables, executeOk,
-                        false)
+                (universalPipelineWrapperBuiltIns, stageOk, envVariables) = checkOrExecuteStageSettingsItem(
+                        universalPipelineWrapperBuiltIns, stageItem as Map, pipelineSettings, envVariables, true, false)
+                executeOk = stageOk ? executeOk : false
             }
     }
     return [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
