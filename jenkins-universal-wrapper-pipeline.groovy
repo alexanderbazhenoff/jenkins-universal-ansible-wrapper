@@ -1323,7 +1323,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
                 actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: gitDefaultCredentials)
     }
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
-            actionName, actionLinkItem, stringKeys, actionOk, printableActionLinkItem)
+            actionName, printableActionLinkItem, stringKeys, actionOk)
     return [actionOk, actionMsg]
 }
 
