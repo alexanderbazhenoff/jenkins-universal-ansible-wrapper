@@ -1106,18 +1106,17 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                     universalPipelineWrapperBuiltIns)
         }
 
-        // Processing post-messages, 'stop_on_fail' or 'ignore_fail' keys.
+        // Processing post-messages and/or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
-        if (actionItem.get('stop_on_fail') && !check)
-            error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
-                    "('stop_on_fail' is enabled for current action)")
     } else if (!actionItem.containsKey('action')) {
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
                         check ? 'check in' : 'perform at', printableStageAndAction))
     }
+
+    // Processing action link state, updating results of current build and actions report, stop on fail handle.
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
     universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result
@@ -1126,6 +1125,9 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
             printableStageAndAction, actionStructureAndLinkOk, actionDescription)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns)
+    if (actionItem.get('stop_on_fail') && !check && !actionLinkOk)
+        error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
+                "('stop_on_fail' is enabled for current action)")
     return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
 }
 
