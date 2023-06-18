@@ -1348,6 +1348,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map actionLinkItem, ArrayList actionKeysFilterLists,
                                            Boolean actionOk, Map printableActionLinkItem = actionLinkItem) {
+    println 'olo3?'
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
     println 'olo3a'
