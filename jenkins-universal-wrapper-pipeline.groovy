@@ -1401,7 +1401,7 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
                     "'%s' %s item in '%s' action wasn't set properly due to undefined variable(s).", ansibleEntry,
                     actionName, actionLink))
         }
-        actionOk = configStructureErrorMsgWrapper(check && !ansibleEntryIsString, actionOk, 3, String.format(
+        actionOk = configStructureErrorMsgWrapper(!ansibleEntryIsString, actionOk, 3, String.format(
                 "'%s' %s item in '%s' should be string.", ansibleEntry.toString(), actionName, actionLink))
     }
     Closure actionClosure = {
