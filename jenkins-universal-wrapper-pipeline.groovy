@@ -1350,6 +1350,7 @@ ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, C
                                            Boolean actionOk, Map printableActionLinkItem = actionLinkItem) {
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
+    println 'olo3a'
     if (!check && !dryRunAction)
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
@@ -1358,6 +1359,7 @@ ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, C
             actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s",
                     actionMsg, actionLink, CF.readableError(err)))
         }
+    println 'olo3b'
     return [actionOk, actionMsg]
 }
 
