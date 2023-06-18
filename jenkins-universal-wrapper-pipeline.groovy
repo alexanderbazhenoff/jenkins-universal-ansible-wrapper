@@ -1415,6 +1415,11 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
     return [actionOk, actionMsg]
 }
 
+ArrayList actionRunAnsiblePlaybook(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+                                   Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+    return [actionOk, actionMsg]
+}
+
 
 // Pipeline entry point.
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
