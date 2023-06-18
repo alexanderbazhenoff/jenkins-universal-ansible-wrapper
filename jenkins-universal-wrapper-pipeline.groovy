@@ -1389,6 +1389,7 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
             [actionLinkItem.collections] : []
     ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof ArrayList) ?
             actionLinkItem.collections as ArrayList : []
+    println 'actionLinkItem.collections: ' + actionLinkItem.collections
     ansibleCollections.eachWithIndex { ansibleEntry, Integer ansibleCollectionsListIndex ->
         Boolean ansibleEntryIsString = ansibleEntry instanceof String
         if (ansibleEntryIsString) {
