@@ -1395,6 +1395,7 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
         if (ansibleEntryIsString) {
             def (__, Boolean assignOk, String assignment) = getTemplatingFromVariables(ansibleEntry as String,
                     envVariables, universalPipelineWrapperBuiltIns)
+            println 'olo 1'
             ansibleCollections[ansibleCollectionsListIndex] = assignment
             actionOk = configStructureErrorMsgWrapper(check && !assignOk, assignOk, 3, String.format(
                     "'%s' %s item in '%s' action wasn't set properly due to undefined variable(s).", ansibleEntry,
