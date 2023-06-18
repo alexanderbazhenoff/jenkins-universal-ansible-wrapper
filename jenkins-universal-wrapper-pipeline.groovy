@@ -1409,8 +1409,10 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
             sh String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem)
         }
     }
+    println 'olo 2'
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
             actionName, actionLinkItem, ['collections'], actionOk)
+    println 'olo 3'
     return [actionOk, actionMsg]
 }
 
