@@ -183,12 +183,11 @@ static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
  * Find non-empty map items from list.
  *
  * @param map - map to find items from.
- * @param listOfKeysToCollect - list of keys that needs to be found.
+ * @param keysToCollect - list of keys that needs to be found.
  * @return - only map items specified in listOfKeysToCollect.
  */
-static Map findMapItemsFromList(Map map, ArrayList listOfKeysToCollect) {
-    return map.findAll { mapKey, mapValue -> listOfKeysToCollect.contains(mapKey) && mapValue && mapValue?.toString()
-            ?.trim() }
+static Map findMapItemsFromList(Map map, ArrayList keysToCollect) {
+    return map.findAll { mapKey, mapVal -> keysToCollect.contains(mapKey) && mapVal && mapVal?.toString()?.trim() }
 }
 
 /**
@@ -1349,10 +1348,8 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map printableActionLinkItem,
                                            ArrayList actionKeysFilterLists, Boolean actionOk) {
-    println 'olo3?'
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
-    println 'olo3a'
     if (!check && !dryRunAction)
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
@@ -1361,7 +1358,6 @@ ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, C
             actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s",
                     actionMsg, actionLink, CF.readableError(err)))
         }
-    println 'olo3b'
     return [actionOk, actionMsg]
 }
 
@@ -1393,13 +1389,11 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
             [actionLinkItem.collections] : []
     ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof ArrayList) ?
             actionLinkItem.collections as ArrayList : []
-    println 'actionLinkItem.collections: ' + actionLinkItem.collections
     ansibleCollections.eachWithIndex { ansibleEntry, Integer ansibleCollectionsListIndex ->
         Boolean ansibleEntryIsString = ansibleEntry instanceof String
         if (ansibleEntryIsString) {
             def (__, Boolean assignOk, String assignment) = getTemplatingFromVariables(ansibleEntry as String,
                     envVariables, universalPipelineWrapperBuiltIns)
-            println 'olo 1'
             ansibleCollections[ansibleCollectionsListIndex] = assignment
             actionOk = configStructureErrorMsgWrapper(check && !assignOk, assignOk, 3, String.format(
                     "'%s' %s item in '%s' action wasn't set properly due to undefined variable(s).", ansibleEntry,
@@ -1413,10 +1407,8 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
             sh String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem)
         }
     }
-    println 'olo 2'
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
             actionName, actionLinkItem, ['collections'], actionOk)
-    println 'olo 3'
     return [actionOk, actionMsg]
 }
 
