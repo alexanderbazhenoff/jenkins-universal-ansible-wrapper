@@ -1238,11 +1238,10 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [repo_url   : { (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem,
-                                            envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                        },
-                        collections: { (actionOk, actionDetails) = installAnsibleCollections(actionLink, actionLinkItem,
-                                            envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                        },
+                                            envVariables, check, actionOk, universalPipelineWrapperBuiltIns) },
+                        collections: { (actionOk, actionDetails) = actionInstallAnsibleCollections(actionLink,
+                                            actionLinkItem, envVariables, check, actionOk,
+                                            universalPipelineWrapperBuiltIns) },
                         playbook   : { println 'run_playbook' },
                         pipeline   : { println 'run_pipeline' },
                         stash      : { println 'stash' },
@@ -1381,8 +1380,8 @@ ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, C
  *           - true when success, false when failed;
  *           - action details for logging.
  */
-ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
-                                    Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+                                          Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
     String actionMsg
     String actionName = 'install ansible collection'
     Boolean collectionsKeyIsCorrect = actionLinkItem?.get('collections') instanceof ArrayList ||
