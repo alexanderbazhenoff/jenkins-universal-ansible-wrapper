@@ -187,7 +187,8 @@ static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
  * @return - only map items specified in listOfKeysToCollect.
  */
 static Map findMapItemsFromList(Map map, ArrayList listOfKeysToCollect) {
-    return map.findAll { mapKey, mapValue -> listOfKeysToCollect.contains(mapKey) && mapValue?.trim() }
+    return map.findAll { mapKey, mapValue -> listOfKeysToCollect.contains(mapKey) && mapValue && mapValue?.toString()
+            ?.trim() }
 }
 
 /**
@@ -1336,7 +1337,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
  * @param actionClosure - pipeline action closure to execute.
  * @param actionLink - message prefix for possible errors.
  * @param actionName - type of the current action to output messages and logging.
- * @param actionLinkItem - action link item to check or execute.
+ * @param actionLinkItem - a printable version of action link item when you need to hide or replace some key values.
  * @param actionKeysFilterLists - list of keys that is required for current action.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param printableActionLinkItem - just a printable version of actionLinkItem when you need to hide or replace some
@@ -1346,8 +1347,8 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
  *           - action details for logging.
  */
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
-                                           String actionName, Map actionLinkItem, ArrayList actionKeysFilterLists,
-                                           Boolean actionOk, Map printableActionLinkItem = actionLinkItem) {
+                                           String actionName, Map printableActionLinkItem,
+                                           ArrayList actionKeysFilterLists, Boolean actionOk) {
     println 'olo3?'
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
