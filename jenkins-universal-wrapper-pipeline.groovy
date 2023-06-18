@@ -1385,7 +1385,7 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
     String actionName = 'install ansible collection'
     Boolean collectionsKeyIsCorrect = actionLinkItem?.get('collections') instanceof ArrayList ||
             actionLinkItem?.get('collections') instanceof String
-    actionOk = configStructureErrorMsgWrapper(check && !collectionsKeyIsCorrect, actionOk, 3, String.format(
+    actionOk = configStructureErrorMsgWrapper(!collectionsKeyIsCorrect, actionOk, 3, String.format(
             "Unable to %s in '%s' action: 'collections' key should be string or list.", actionName, actionLink))
     ArrayList ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof String) ?
             [actionLinkItem.collections] : []
@@ -1397,7 +1397,7 @@ ArrayList installAnsibleCollections(String actionLink, Map actionLinkItem, Objec
             def (__, Boolean assignOk, String assignment) = getTemplatingFromVariables(ansibleEntry as String,
                     envVariables, universalPipelineWrapperBuiltIns)
             ansibleCollections[ansibleCollectionsListIndex] = assignment
-            actionOk = configStructureErrorMsgWrapper(check && !assignOk, assignOk, 3, String.format(
+            actionOk = configStructureErrorMsgWrapper(!assignOk, assignOk, 3, String.format(
                     "'%s' %s item in '%s' action wasn't set properly due to undefined variable(s).", ansibleEntry,
                     actionName, actionLink))
         }
