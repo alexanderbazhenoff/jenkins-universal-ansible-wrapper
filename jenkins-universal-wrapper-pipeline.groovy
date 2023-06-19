@@ -1211,7 +1211,7 @@ static ArrayList getDryRunStateAndActionMsg(Object envVariables, String actionNa
  *
  * @param actionLink - action link.
  * @param nodeItem - map with node-related keys.
- * @param pipelineSettings - all univrasl pipeline settings to take action from by action link.
+ * @param pipelineSettings - all universal pipeline settings to take action from by action link.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param check - true when check, false when exectue.
@@ -1232,9 +1232,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
-    Boolean actionLinkIsDefined = (pipelineSettings.get('actions') && pipelineSettings.get('actions')?.get(actionLink)
-            instanceof Map)
-    Map actionLinkItem = actionLinkIsDefined ? pipelineSettings.get('actions')?.get(actionLink) : [:]
+    def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [repo_url   : { (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem,
@@ -1444,14 +1442,36 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
     return [actionOk, actionLinkItem]
 }
 
-ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+/**
+ * Get map sub-key wrapper.
+ *
+ * @param subKeyNameToGet - sub-key name to get (e.g. action link to get item from 'action' key of pipeline settings).
+ * @param map - map to get sub-key from (e.g. pipeline settings).
+ * @param keyNameToGetFrom - key name to get sub-key from (e.g. 'action').
+ * @return - arrayList of:
+ *           - true getting sub-key successfully done;
+ *           - sub-key item data (e.g. action link item).
+ */
+static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String keyNameToGetFrom = 'actions') {
+    Boolean subKeyDefined = (mapToGetFrom.get(keyNameToGetFrom) && mapToGetFrom.get(keyNameToGetFrom)
+            ?.get(subKeyNameToGet) instanceof Map)
+    Map subKeyItem = subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]
+    return [subKeyDefined, subKeyItem]
+}
+
+ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun) {
     String actionMsg
+    Map checkOrExecuteData = [:]
     String actionName = String.format("%s run", scriptRun ? 'script' : 'ansible playbook')
     ArrayList stringKeys = scriptRun ? ['script'] : ['playbook', 'inventory']
     ArrayList pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
+    def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
+    stringKeys..eachWithIndex { actionLinkKeyName, Integer actionLinkKeysIndex ->
+
+    }
     return [actionOk, actionMsg]
 }
 
