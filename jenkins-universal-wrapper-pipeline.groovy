@@ -1311,10 +1311,8 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     String actionMsg
     String actionName = 'git clone'
     ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
-    actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionLinkItem, true, actionLink,
-            actionOk)
-    (actionOk, actionLinkItem) = templatingMapKeysFromVariables(actionLinkItem, stringKeys, envVariables, actionOk,
-            universalPipelineWrapperBuiltIns, String.format("'%s' action key", actionLink))
+    (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, actionOk, actionLink, actionLinkItem, stringKeys)
     Boolean repoUrlIsDefined = actionLinkItem?.get('repo_url')
     actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
@@ -1415,8 +1413,45 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
     return [actionOk, actionMsg]
 }
 
-ArrayList actionRunAnsiblePlaybook(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
-                                   Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+/**
+ * Check type for list of keys from map and template map keys pipeline action wrapper.
+ *
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
+ *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ * @param check - set false to execute action item, true to check.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param actionLink - message prefix for possible errors.
+ * @param actionLinkItem - action link item to check or execute.
+ * @param keyInfo - action key description for error message.
+ * @param stringKeys - list of action item keys which should be strings.
+ * @param booleanKeys - list of action item keys which should be booleans.
+ * @return - arrayList of:
+ *           - true when checking keys type and templating done without errors;
+ *           - templated action link item.
+ */
+ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPipelineWrapperBuiltIns, Boolean check,
+                                            Boolean actionOk, String actionLink, Map actionLinkItem,
+                                            ArrayList stringKeys, String keyDescription = 'action key',
+                                            ArrayList booleanKeys = []) {
+    actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && stringKeys, stringKeys, actionLinkItem, true,
+            actionLink, actionOk)
+    actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys, booleanKeys, actionLinkItem, false,
+            actionLink, actionOk)
+    (actionOk, actionLinkItem) = templatingMapKeysFromVariables(actionLinkItem, stringKeys, envVariables, actionOk,
+            universalPipelineWrapperBuiltIns, String.format("'%s' %s", actionLink, keyDescription))
+    return [actionOk, actionLinkItem]
+}
+
+ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+                                           Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun) {
+    String actionMsg
+    String actionName = String.format("%s run", scriptRun ? 'script' : 'ansible playbook')
+    ArrayList stringKeys = scriptRun ? ['script'] : ['playbook', 'inventory']
+    ArrayList pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
+    (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, actionOk, actionLink, actionLinkItem, stringKeys)
     return [actionOk, actionMsg]
 }
 
