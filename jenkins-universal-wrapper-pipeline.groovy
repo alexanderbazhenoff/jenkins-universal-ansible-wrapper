@@ -1458,7 +1458,7 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
  */
 static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String keyNameToGetFrom = 'actions') {
     Boolean subKeyDefined = (subKeyNameToGet && mapToGetFrom?.get(keyNameToGetFrom) &&
-            mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) instanceof Map)
+            mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet))
     return [subKeyDefined, subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]]
 }
 
