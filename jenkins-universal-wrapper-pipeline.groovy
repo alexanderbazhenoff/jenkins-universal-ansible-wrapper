@@ -1481,6 +1481,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 String.format("'%s' %s item in '%s' should be string.", executionLinkName, stringKeyName, actionLink))
         def (Boolean subKeyIsDefined, Map subKeyValue) = getMapSubKey(executionLinkName, pipelineSettings,
                 pipelineConfigKeys[actionLinkKeysIndex] as String)
+        println 'stringKeyName: ' + stringKeyName + 'subKeyValue: ' + subKeyValue
         actionOk = configStructureErrorMsgWrapper(check && !subKeyIsDefined, actionOk, 3,
                 String.format("%s '%s' wasn't found in '%s' section of pipeline config file.", stringKeyName,
                         executionLinkName, pipelineConfigKeys[actionLinkKeysIndex] as String))
