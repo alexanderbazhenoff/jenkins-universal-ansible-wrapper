@@ -1469,7 +1469,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     String actionName = String.format("%s run", scriptRun ? 'script' : 'ansible playbook')
     ArrayList stringKeys = scriptRun ? ['script'] : ['playbook', 'inventory']
     ArrayList pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
-    def (__, Object actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
+    def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
     stringKeys.eachWithIndex { stringKeyName, Integer actionLinkKeysIndex ->
@@ -1481,7 +1481,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 String.format("'%s' %s item in '%s' should be string.", executionLinkName, stringKeyName, actionLink))
         println 'executionLinkName: ' + executionLinkName + ' pipelineConfigKeys[actionLinkKeysIndex]: ' +
                 pipelineConfigKeys[actionLinkKeysIndex]
-        def (Boolean subKeyIsDefined, Map subKeyValue) = getMapSubKey(executionLinkName, pipelineSettings,
+        def (Boolean subKeyIsDefined, Object subKeyValue) = getMapSubKey(executionLinkName, pipelineSettings,
                 pipelineConfigKeys[actionLinkKeysIndex] as String)
         println 'stringKeyName: ' + stringKeyName + ' subKeyValue: ' + subKeyValue
         actionOk = configStructureErrorMsgWrapper(check && !subKeyIsDefined, actionOk, 3,
