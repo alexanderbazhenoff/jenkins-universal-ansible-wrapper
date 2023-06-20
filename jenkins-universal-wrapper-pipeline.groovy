@@ -1470,7 +1470,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
                                            String ansibleInstallationName = '') {
     String actionMsg = ''
-    //Closure actionClosure = {}
+    Closure actionClosure = {}
     Map checkOrExecuteData = [:]
     Map executionLinkNames = [:]
     String printableExecutionLinkName = ''
@@ -1505,10 +1505,10 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                     universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames[stringKeyName] as String,
                     checkOrExecuteData, [stringKeyName], String.format('%s key', stringKeyName))
         }
-        /*actionClosure = {
+        actionClosure = {
             CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
                     ansibleInstallationName)
-        }*/
+        }
     }
     /*(actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
 actionName,
