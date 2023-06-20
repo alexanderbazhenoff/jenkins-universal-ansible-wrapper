@@ -1482,11 +1482,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                         executionLinkName, pipelineConfigKeys[actionLinkKeysIndex] as String))
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
     }
-    if (scriptRun) {
-
-    } else {
-
-    }
+    println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
     return [actionOk, actionMsg]
 }
 
