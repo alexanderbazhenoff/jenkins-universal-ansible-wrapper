@@ -1424,27 +1424,29 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
  *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
- * @param actionLink - message prefix for possible errors.
- * @param actionLinkItem - action link item to check or execute.
+ * @param messagePrefix - message prefix for possible errors.
+ * @param mapToCheckAndTemplate - map to check and templating keys in.
  * @param keyInfo - action key description for error message.
  * @param stringKeys - list of action item keys which should be strings.
  * @param booleanKeys - list of action item keys which should be booleans.
+ * @param templateKeys - true when templating keys is required.
  * @return - arrayList of:
  *           - true when checking keys type and templating done without errors;
  *           - templated action link item.
  */
-// TODO: rename action link to relevant name
 ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPipelineWrapperBuiltIns, Boolean check,
-                                            Boolean actionOk, String actionLink, Map actionLinkItem,
+                                            Boolean actionOk, String messagePrefix, Map mapToCheckAndTemplate,
                                             ArrayList stringKeys, String keyDescription = 'action key',
-                                            ArrayList booleanKeys = []) {
+                                            ArrayList booleanKeys = [], Boolean templateKeys = true) {
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && stringKeys.size() > 0, stringKeys,
-            actionLinkItem, true, actionLink, actionOk)
+            mapToCheckAndTemplate, true, messagePrefix, actionOk)
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys.size() > 0, booleanKeys,
-            actionLinkItem, false, actionLink, actionOk)
-    (actionOk, actionLinkItem) = templatingMapKeysFromVariables(actionLinkItem, stringKeys, envVariables, actionOk,
-            universalPipelineWrapperBuiltIns, String.format("'%s' %s", actionLink, keyDescription))
-    return [actionOk, actionLinkItem]
+            mapToCheckAndTemplate, false, messagePrefix, actionOk)
+    if (templateKeys)
+        (actionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
+                envVariables, actionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
+                keyDescription))
+    return [actionOk, mapToCheckAndTemplate]
 }
 
 /**
@@ -1464,9 +1466,13 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
 }
 
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
-                                           Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun) {
+                                           Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
+                                           String ansibleInstallationName = AnsibleInstallationName) {
     String actionMsg
+    Closure actionClosure = {}
     Map checkOrExecuteData = [:]
+    Map executionLinkNames = [:]
+    String printableExecutionLinkName = ''
     String actionName = String.format("%s run", scriptRun ? 'script' : 'ansible playbook')
     ArrayList stringKeys = scriptRun ? ['script'] : ['playbook', 'inventory']
     ArrayList pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
@@ -1486,14 +1492,25 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 String.format("%s '%s' wasn't found in '%s' section of pipeline config file.", stringKeyName,
                         executionLinkName, pipelineConfigKeys[actionLinkKeysIndex] as String))
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
+        executionLinkNames[stringKeyName] = executionLinkName
     }
     println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
     if (scriptRun) {
-
+        // TODO: run script
+        println 'run script'
     } else {
-        (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
-                check, actionOk, actionLink, checkOrExecuteData, stringKeys)
+        stringKeys.each { stringKeyName ->
+            (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables,
+                    universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames[stringKeyName] as String,
+                    checkOrExecuteData, [stringKeyName], String.format('%s key', stringKeyName))
+        }
+        actionClosure = {
+            CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
+                    ansibleInstallationName)
+        }
     }
+    (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink, actionName,
+            actionLinkItem, ['collections'], actionOk)
     return [actionOk, actionMsg]
 }
 
