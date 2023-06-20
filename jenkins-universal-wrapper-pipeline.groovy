@@ -1510,9 +1510,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                     ansibleInstallationName)
         }
     }
-    /*(actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
-actionName,
-            checkOrExecuteData, stringKeys, actionOk)*/
+    (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
+            actionName, checkOrExecuteData, stringKeys, actionOk)
     return [actionOk, actionMsg]
 }
 
