@@ -1510,6 +1510,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                     ansibleInstallationName)
         }
     }
+    // TODO: java.lang.IllegalArgumentException: multiply() should be called with a number of 0 or greater not: -457
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
             actionName, checkOrExecuteData, stringKeys, actionOk)
     return [actionOk, actionMsg]
