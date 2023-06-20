@@ -1453,10 +1453,9 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
  *           - sub-key item data (e.g. action link item).
  */
 static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String keyNameToGetFrom = 'actions') {
-    Boolean subKeyDefined = (mapToGetFrom.get(keyNameToGetFrom) && mapToGetFrom.get(keyNameToGetFrom)
-            ?.get(subKeyNameToGet) instanceof Map)
-    Map subKeyItem = subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]
-    return [subKeyDefined, subKeyItem]
+    Boolean subKeyDefined = (subKeyNameToGet && mapToGetFrom?.get(keyNameToGetFrom) &&
+            mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) instanceof Map)
+    return [subKeyDefined, subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]]
 }
 
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
@@ -1469,7 +1468,24 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
-    stringKeys..eachWithIndex { actionLinkKeyName, Integer actionLinkKeysIndex ->
+    stringKeys.eachWithIndex { stringKeyName, Integer actionLinkKeysIndex ->
+        Boolean actionLinkItemKeyIsDefined = actionLinkItem.containsKey(stringKeyName)
+        String executionLinkName = scriptRun && stringKeyName == 'inventory' && !actionLinkItemKeyIsDefined ?
+                'default' : actionLinkItem?.get(stringKeyName)
+        actionOk = configStructureErrorMsgWrapper(check && actionLinkItemKeyIsDefined &&
+                !(executionLinkName instanceof String), actionOk, 3,
+                String.format("'%s' %s item in '%s' should be string.", executionLinkName, stringKeyName, actionLink))
+        def (Boolean subKeyIsDefined, Map subKeyValue) = getMapSubKey(executionLinkName, pipelineSettings,
+                pipelineConfigKeys[actionLinkKeysIndex] as String)
+        actionOk = configStructureErrorMsgWrapper(check && !subKeyIsDefined, actionOk, 3,
+                String.format("%s '%s' wasn't found in '%s' section of pipeline config file.", stringKeyName,
+                        executionLinkName, pipelineConfigKeys[actionLinkKeysIndex] as String))
+        if (subKeyIsDefined)
+            checkOrExecuteData[stringKeyName] = subKeyValue
+    }
+    if (scriptRun) {
+
+    } else {
 
     }
     return [actionOk, actionMsg]
