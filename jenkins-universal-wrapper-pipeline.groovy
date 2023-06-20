@@ -1433,6 +1433,7 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
  *           - true when checking keys type and templating done without errors;
  *           - templated action link item.
  */
+// TODO: rename action link to relevant name
 ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPipelineWrapperBuiltIns, Boolean check,
                                             Boolean actionOk, String actionLink, Map actionLinkItem,
                                             ArrayList stringKeys, String keyDescription = 'action key',
@@ -1487,6 +1488,12 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
     }
     println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
+    if (scriptRun) {
+
+    } else {
+        (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+                check, actionOk, actionLink, checkOrExecuteData, stringKeys)
+    }
     return [actionOk, actionMsg]
 }
 
