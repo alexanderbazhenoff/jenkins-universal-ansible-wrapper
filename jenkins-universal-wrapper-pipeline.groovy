@@ -1469,7 +1469,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     String actionName = String.format("%s run", scriptRun ? 'script' : 'ansible playbook')
     ArrayList stringKeys = scriptRun ? ['script'] : ['playbook', 'inventory']
     ArrayList pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
-    def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
+    def (__, Object actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
     stringKeys.eachWithIndex { stringKeyName, Integer actionLinkKeysIndex ->
