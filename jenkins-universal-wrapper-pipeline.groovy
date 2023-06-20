@@ -1240,12 +1240,16 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                         collections: { (actionOk, actionDetails) = actionInstallAnsibleCollections(actionLink,
                                             actionLinkItem, envVariables, check, actionOk,
                                             universalPipelineWrapperBuiltIns) },
-                        playbook   : { println 'run_playbook' },
+                        playbook   : { (actionOk, actionDetails) = actionAnsiblePlaybookOrScriptRun(actionLink,
+                                            pipelineSettings, envVariables, check, actionOk,
+                                            universalPipelineWrapperBuiltIns, false) },
                         pipeline   : { println 'run_pipeline' },
                         stash      : { println 'stash' },
                         unstash    : { println 'unstash' },
                         artifacts  : { println 'copy_artifacts' },
-                        script     : { println 'run_script' },
+                        script     : { (actionOk, actionDetails) = actionAnsiblePlaybookOrScriptRun(actionLink,
+                                            pipelineSettings, envVariables, check, actionOk,
+                                            universalPipelineWrapperBuiltIns, true) },
                         report     : { println 'send_report' }]
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
