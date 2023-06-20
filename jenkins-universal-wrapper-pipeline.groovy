@@ -1500,11 +1500,11 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         // TODO: run script
         println 'run script'
     } else {
-        /*stringKeys.each { stringKeyName ->
+        stringKeys.each { stringKeyName ->
             (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables,
                     universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames[stringKeyName] as String,
                     checkOrExecuteData, [stringKeyName], String.format('%s key', stringKeyName))
-        }*/
+        }
         /*actionClosure = {
             CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
                     ansibleInstallationName)
