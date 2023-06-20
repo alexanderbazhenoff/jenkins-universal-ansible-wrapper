@@ -1477,6 +1477,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         println 'actionLinkItemKeyIsDefined: ' + actionLinkItemKeyIsDefined
         String executionLinkName = scriptRun && stringKeyName == 'inventory' && !actionLinkItemKeyIsDefined ?
                 'default' : actionLinkItem?.get(stringKeyName)
+        println 'executionLinkName: ' + executionLinkName
         actionOk = configStructureErrorMsgWrapper(check && actionLinkItemKeyIsDefined &&
                 !(executionLinkName instanceof String), actionOk, 3,
                 String.format("'%s' %s item in '%s' should be string.", executionLinkName, stringKeyName, actionLink))
