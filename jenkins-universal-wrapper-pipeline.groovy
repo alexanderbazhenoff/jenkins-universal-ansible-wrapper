@@ -1467,7 +1467,7 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
 
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
-                                           String ansibleInstallationName = AnsibleInstallationName) {
+                                           String ansibleInstallationName = '') {
     String actionMsg
     Closure actionClosure = {}
     Map checkOrExecuteData = [:]
@@ -1510,7 +1510,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         }
     }
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink, actionName,
-            actionLinkItem, ['collections'], actionOk)
+            checkOrExecuteData, stringKeys, actionOk)
     return [actionOk, actionMsg]
 }
 
