@@ -1442,10 +1442,11 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
             mapToCheckAndTemplate, true, messagePrefix, actionOk)
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys.size() > 0, booleanKeys,
             mapToCheckAndTemplate, false, messagePrefix, actionOk)
-    if (templateKeys)
+    if (templateKeys) {
         (actionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
                 envVariables, actionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
                 keyDescription))
+    }
     return [actionOk, mapToCheckAndTemplate]
 }
 
@@ -1468,7 +1469,7 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
                                            String ansibleInstallationName = '') {
-    String actionMsg
+    String actionMsg = ''
     //Closure actionClosure = {}
     Map checkOrExecuteData = [:]
     Map executionLinkNames = [:]
