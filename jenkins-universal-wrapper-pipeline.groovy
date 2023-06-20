@@ -1474,6 +1474,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
             check, actionOk, actionLink, actionLinkItem, stringKeys)
     stringKeys.eachWithIndex { stringKeyName, Integer actionLinkKeysIndex ->
         Boolean actionLinkItemKeyIsDefined = actionLinkItem.containsKey(stringKeyName)
+        println 'actionLinkItemKeyIsDefined: ' + actionLinkItemKeyIsDefined
         String executionLinkName = scriptRun && stringKeyName == 'inventory' && !actionLinkItemKeyIsDefined ?
                 'default' : actionLinkItem?.get(stringKeyName)
         actionOk = configStructureErrorMsgWrapper(check && actionLinkItemKeyIsDefined &&
