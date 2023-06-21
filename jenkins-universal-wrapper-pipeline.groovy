@@ -1351,8 +1351,10 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map printableActionLinkItem,
                                            ArrayList actionKeysFilterLists, Boolean actionOk) {
+    println 'olo1'
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
+    println 'olo2'
     if (!check && !dryRunAction)
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
