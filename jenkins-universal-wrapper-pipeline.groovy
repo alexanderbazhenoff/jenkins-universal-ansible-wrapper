@@ -1476,14 +1476,16 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
                                            String ansibleInstallationName = '') {
-    String actionMsg = ''
+    String actionMsg
     Closure actionClosure = {}
     Map checkOrExecuteData = [:]
+    Map checkOrExecuteDataHandled = [:]
     Map executionLinkNames = [:]
-    String printableExecutionLinkName = ''
     String actionName = String.format("%s run", scriptRun ? 'script' : 'ansible playbook')
     ArrayList stringKeys = scriptRun ? ['script'] : ['playbook', 'inventory']
     ArrayList pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
+    ArrayList stringSubKeys = ['script', 'jenkins']
+    ArrayList booleanSubKeys = ['pipeline']
     def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
@@ -1502,22 +1504,35 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
         executionLinkNames[stringKeyName] = executionLinkName
     }
-    println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
+    /**println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
     println 'executionLinkNames: ' + executionLinkNames.toString()
     checkOrExecuteData.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
     executionLinkNames.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
     if (checkOrExecuteData.containsKey('script'))
         println 'checkOrExecuteData.script: ' + checkOrExecuteData.script + ' class: ' + checkOrExecuteData.script
-                .getClass()
+                .getClass()*/
     if (scriptRun) {
         // TODO: run script
-        println 'run script'
+        checkOrExecuteData = checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
+                instanceof Map ? checkOrExecuteData.script as Map : [:]
+        (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
+                universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames?.get(stringKeys[0]) as String,
+                checkOrExecuteData, stringSubKeys, String.format('%s key', executionLinkNames?.get(stringKeys[0])),
+                booleanSubKeys, false)
+        Boolean requiredSubKeyNotDefined = checkOrExecuteData.get(booleanSubKeys[0]) &&
+                !(checkOrExecuteData.containsKey(stringSubKeys[0]) || checkOrExecuteData.containsKey(stringSubKeys[1]))
+        actionOk = configStructureErrorMsgWrapper(check && requiredSubKeyNotDefined, actionOk, 3,
+                String.format("'%s' defined as 'a part of pipeline', but no keys '%s' or '%s' defined.",
+                        executionLinkNames[0], stringSubKeys[0], stringSubKeys[1]))
     } else {
         stringKeys.each { stringKeyName ->
-            (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables,
+            Map checkOrExecuteDataTemplatedPart
+            (actionOk, checkOrExecuteDataTemplatedPart) = checkAndTemplateKeysActionWrapper(envVariables,
                     universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames[stringKeyName] as String,
                     checkOrExecuteData, [stringKeyName], String.format('%s key', stringKeyName))
+            checkOrExecuteDataHandled = checkOrExecuteDataHandled + checkOrExecuteDataTemplatedPart
         }
+        checkOrExecuteData = checkOrExecuteDataHandled
         actionClosure = {
             CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
                     ansibleInstallationName)
