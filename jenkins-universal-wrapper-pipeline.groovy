@@ -1110,6 +1110,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
+        println 'kuku1'
     } else if (!actionItem.containsKey('action')) {
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
@@ -1120,6 +1121,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
     universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result
+    println 'kuku2'
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
@@ -1290,7 +1292,6 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             keysFound[keysFound.keySet()[0]].call()
         }
     }
-    println 'kuku1: ' + detectByKeys
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
     return [actionOk, actionDetails, envVariables]
 }
