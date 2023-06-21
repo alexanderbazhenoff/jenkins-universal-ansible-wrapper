@@ -1499,6 +1499,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         executionLinkNames[stringKeyName] = executionLinkName
     }
     println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
+    println 'executionLinkNames: ' + executionLinkNames.toString()
     if (scriptRun) {
         // TODO: run script
         println 'run script'
