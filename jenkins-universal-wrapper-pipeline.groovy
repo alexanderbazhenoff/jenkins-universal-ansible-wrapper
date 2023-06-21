@@ -1476,7 +1476,7 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
                                            String ansibleInstallationName = '') {
-    String actionMsg
+    String actionMsg = ''
     Closure actionClosure = {}
     Map checkOrExecuteData = [:]
     Map executionLinkNames = [:]
