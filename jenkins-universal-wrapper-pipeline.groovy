@@ -1233,7 +1233,9 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
+    println 'actionLink: ' + actionLink
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
+    println 'actionLink: ' + actionLink + ' actionLinkItem: ' + actionLinkItem
     Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [repo_url   : { (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem,
