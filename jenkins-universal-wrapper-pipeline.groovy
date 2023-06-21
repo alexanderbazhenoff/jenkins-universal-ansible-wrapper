@@ -1202,8 +1202,9 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 static ArrayList getDryRunStateAndActionMsg(Object envVariables, String actionName, Map printableActionLinkItem,
                                             ArrayList actionLinkItemKeysFilter) {
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
-    return [dryRunAction, String.format('%s%s %s', dryRunAction ? 'dry-run of ' : '', actionName,
-            findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter).toString())]
+    String actionMsgDetails = String.format(' %s', printableActionLinkItem.size() > 0 ?
+            findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter).toString() : '')
+    return [dryRunAction, String.format('%s%s%s', dryRunAction ? 'dry-run of ' : '', actionName, actionMsgDetails)]
 }
 
 /**
