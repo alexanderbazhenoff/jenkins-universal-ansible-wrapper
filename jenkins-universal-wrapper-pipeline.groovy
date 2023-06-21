@@ -1252,7 +1252,9 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                         stash      : { println 'stash' },
                         unstash    : { println 'unstash' },
                         artifacts  : { println 'copy_artifacts' },
-                        script     : { println 'script' },
+                        script     : { (actionOk, actionDetails) = actionAnsiblePlaybookOrScriptRun(actionLink,
+                                            pipelineSettings, envVariables, check, actionOk,
+                                            universalPipelineWrapperBuiltIns, true) },
                         report     : { println 'send_report' }]
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
@@ -1504,6 +1506,9 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     println 'executionLinkNames: ' + executionLinkNames.toString()
     println 'checkOrExecuteData (Get class): ' + checkOrExecuteData.each {println it.getClass() }
     println 'executionLinkNames (Get class): ' + executionLinkNames.each {println it.getClass() }
+    if (checkOrExecuteData.containsKey('script'))
+        println 'checkOrExecuteData.script: ' + checkOrExecuteData.script + ' class: ' + checkOrExecuteData.script
+                .getClass()
     if (scriptRun) {
         // TODO: run script
         println 'run script'
