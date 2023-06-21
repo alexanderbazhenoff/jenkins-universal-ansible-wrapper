@@ -1290,6 +1290,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             keysFound[keysFound.keySet()[0]].call()
         }
     }
+    println 'kuku1: ' + detectByKeys
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
     return [actionOk, actionDetails, envVariables]
 }
