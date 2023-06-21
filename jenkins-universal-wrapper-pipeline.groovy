@@ -1504,8 +1504,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     }
     println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
     println 'executionLinkNames: ' + executionLinkNames.toString()
-    println 'checkOrExecuteData (Get class): ' + checkOrExecuteData.each {println it.getClass() }
-    println 'executionLinkNames (Get class): ' + executionLinkNames.each {println it.getClass() }
+    checkOrExecuteData.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
+    executionLinkNames.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
     if (checkOrExecuteData.containsKey('script'))
         println 'checkOrExecuteData.script: ' + checkOrExecuteData.script + ' class: ' + checkOrExecuteData.script
                 .getClass()
