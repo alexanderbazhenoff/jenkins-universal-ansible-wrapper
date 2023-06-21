@@ -1248,9 +1248,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                         stash      : { println 'stash' },
                         unstash    : { println 'unstash' },
                         artifacts  : { println 'copy_artifacts' },
-                        script     : { (actionOk, actionDetails) = actionAnsiblePlaybookOrScriptRun(actionLink,
-                                            pipelineSettings, envVariables, check, actionOk,
-                                            universalPipelineWrapperBuiltIns, true) },
+                        script     : { println 'script' },
                         report     : { println 'send_report' }]
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
@@ -1472,7 +1470,7 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
                                            String ansibleInstallationName = '') {
-    String actionMsg = ''
+    String actionMsg
     Closure actionClosure = {}
     Map checkOrExecuteData = [:]
     Map executionLinkNames = [:]
