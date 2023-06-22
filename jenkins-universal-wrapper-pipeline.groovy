@@ -1513,8 +1513,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 .getClass()*/
     if (scriptRun) {
         // TODO: run script
-        checkOrExecuteData = checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
-                instanceof Map ? checkOrExecuteData.script as Map : [:]
+        checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
+                instanceof Map) ? checkOrExecuteData.script as Map : [:]
         (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
                 universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames?.get(stringKeys[0]) as String,
                 checkOrExecuteData, stringSubKeys, String.format('%s key', executionLinkNames?.get(stringKeys[0])),
