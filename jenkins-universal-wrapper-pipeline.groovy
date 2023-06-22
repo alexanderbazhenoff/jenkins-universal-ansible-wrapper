@@ -1529,8 +1529,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 !checkOrExecuteData.containsKey(stringSubKeys[1])
         println 'wrongKeysForRunAsPartOfPipeline: ' + wrongKeysCheckForRunAsPartOfPipeline
         println '!checkOrExecuteData.containsKey: ' + !checkOrExecuteData.containsKey(stringSubKeys[1])
-        actionOk = configStructureErrorMsgWrapper(check && !checkOrExecuteData.get(booleanSubKeys[0]) &&
-                checkOrExecuteData.containsKey(stringSubKeys[0]), actionOk, 3, String.format(
+        actionOk = configStructureErrorMsgWrapper(wrongKeysCheckForRunAsPartOfPipeline, actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
         if (checkOrExecuteData.get(booleanSubKeys[0]) && checkOrExecuteData.containsKey(stringSubKeys[1])) {
             actionClosure = {
