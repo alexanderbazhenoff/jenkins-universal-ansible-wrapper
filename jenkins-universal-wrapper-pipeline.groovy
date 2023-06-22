@@ -1477,7 +1477,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
                                            String ansibleInstallationName = '') {
     String actionMsg
-    Closure actionClosure = {}
+    Closure actionClosure
     Map checkOrExecuteData = [:]
     Map checkOrExecuteDataHandled = [:]
     Map executionLinkNames = [:]
@@ -1504,15 +1504,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
         executionLinkNames[stringKeyName] = executionLinkName
     }
-    println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
-    println 'executionLinkNames: ' + executionLinkNames.toString()
-    /**checkOrExecuteData.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
-    executionLinkNames.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
-    if (checkOrExecuteData.containsKey('script'))
-        println 'checkOrExecuteData.script: ' + checkOrExecuteData.script + ' class: ' + checkOrExecuteData.script
-                .getClass()*/
+
     if (scriptRun) {
-        // TODO: run script
         checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
                 instanceof Map) ? checkOrExecuteData.script as Map : [:]
         (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
@@ -1528,17 +1521,11 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
         actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
-        if (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) {
-            println '1----'
-            actionClosure = {
-                println '============' + checkOrExecuteData.jenkins
-            }
-        } else if (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) {
-            println '2----'
-            actionClosure = {
-                sh checkOrExecuteData.script
-            }
-        }
+        actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
+            println '=====' + checkOrExecuteData.jenkins
+        } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
+            sh checkOrExecuteData?.get(stringSubKeys[0])
+        } : {}
     } else {
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
@@ -1553,7 +1540,6 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                     ansibleInstallationName)
         }
     }
-    // TODO: java.lang.IllegalArgumentException: multiply() should be called with a number of 0 or greater not: -457
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
             actionName, executionLinkNames, stringKeys, actionOk)
     return [actionOk, actionMsg]
