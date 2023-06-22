@@ -1515,21 +1515,21 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         // TODO: run script
         checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
                 instanceof Map) ? checkOrExecuteData.script as Map : [:]
-        println 'UPDATED checkOrExecuteData: ' + checkOrExecuteData.toString()
         (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
                 universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames?.get(stringKeys[0]) as String,
                 checkOrExecuteData, stringSubKeys, String.format('%s key', executionLinkNames?.get(stringKeys[0])),
                 booleanSubKeys, false)
-        Boolean wrongKeysCheckForRunAsPartOfPipeline = check && checkOrExecuteData?.get(booleanSubKeys[0]) &&
-                !checkOrExecuteData.containsKey(stringSubKeys[1])
-        actionOk = configStructureErrorMsgWrapper(wrongKeysCheckForRunAsPartOfPipeline, actionOk, 3,
-                String.format("'%s' defined as 'a part of pipeline', but key '%s' is undefined.",
-                        executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
-        wrongKeysCheckForRunAsPartOfPipeline = check && checkOrExecuteData?.get(booleanSubKeys[0]) &&
-                !checkOrExecuteData.containsKey(stringSubKeys[1])
-        println 'wrongKeysForRunAsPartOfPipeline: ' + wrongKeysCheckForRunAsPartOfPipeline
-        println '!checkOrExecuteData.containsKey: ' + !checkOrExecuteData.containsKey(stringSubKeys[1])
-        actionOk = configStructureErrorMsgWrapper(wrongKeysCheckForRunAsPartOfPipeline, actionOk, 3, String.format(
+        Boolean wrongScriptKeysSequence = checkOrExecuteData?.get(booleanSubKeys[0]) && !checkOrExecuteData
+                .containsKey(stringSubKeys[1])
+        println 'wrongScriptKeysSequence (1): ' + wrongScriptKeysSequence
+        actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3,
+                String.format("Key '%s' is undefined in '%s', but this script was set to run as 'a part of pipeline'.",
+                executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
+        wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !checkOrExecuteData
+                .containsKey(stringSubKeys[0])
+        println 'wrongScriptKeysSequence (2): ' + wrongScriptKeysSequence
+        println 'UPDATED checkOrExecuteData: ' + checkOrExecuteData.toString()
+        actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
         if (checkOrExecuteData.get(booleanSubKeys[0]) && checkOrExecuteData.containsKey(stringSubKeys[1])) {
             actionClosure = {
