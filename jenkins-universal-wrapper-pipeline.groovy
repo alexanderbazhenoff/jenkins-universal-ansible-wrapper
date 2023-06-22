@@ -1521,14 +1521,14 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 booleanSubKeys, false)
         actionOk = configStructureErrorMsgWrapper(check && checkOrExecuteData.get(booleanSubKeys[0]) &&
                 !checkOrExecuteData.containsKey(stringSubKeys[1]), actionOk, 3,
-                String.format("'%s' defined as 'a part of pipeline', but key '%s' is undefined.", executionLinkNames[0],
-                        stringSubKeys[1]))
+                String.format("'%s' defined as 'a part of pipeline', but key '%s' is undefined.",
+                        executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
         actionOk = configStructureErrorMsgWrapper(check && !checkOrExecuteData.get(booleanSubKeys[0]) &&
-                checkOrExecuteData.containsKey(stringSubKeys[0]), actionOk, 3,
-                String.format("Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames[0]))
+                checkOrExecuteData.containsKey(stringSubKeys[0]), actionOk, 3, String.format(
+                "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
         if (checkOrExecuteData.get(booleanSubKeys[0]) && checkOrExecuteData.containsKey(stringSubKeys[1])) {
             actionClosure = {
-                println checkOrExecuteData.jenkins
+                println '============' + checkOrExecuteData.jenkins
             }
         } else if (!checkOrExecuteData.get(booleanSubKeys[0]) && checkOrExecuteData.containsKey(stringSubKeys[0])) {
             actionClosure = {
