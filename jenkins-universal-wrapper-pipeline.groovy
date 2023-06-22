@@ -1521,12 +1521,15 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
         actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
+        // TODO: pass var in closure which is string and run as evaluate(string)
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             println '=====: ' + universalPipelineWrapperBuiltIns
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh checkOrExecuteData?.get(stringSubKeys[0])
         } : {}
     } else {
+        // TODO: /var/lib/jenkins/workspace/example-pipeline/ansible/roles, No such file or directory
+        // TODO: remove debug println(s)
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
             (actionOk, checkOrExecuteDataTemplatedPart) = checkAndTemplateKeysActionWrapper(envVariables,
