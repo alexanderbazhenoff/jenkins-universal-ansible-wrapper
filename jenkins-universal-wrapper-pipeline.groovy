@@ -1520,8 +1520,10 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames?.get(stringKeys[0]) as String,
                 checkOrExecuteData, stringSubKeys, String.format('%s key', executionLinkNames?.get(stringKeys[0])),
                 booleanSubKeys, false)
-        actionOk = configStructureErrorMsgWrapper(check && checkOrExecuteData?.get(booleanSubKeys[0]) &&
-                !checkOrExecuteData.containsKey(stringSubKeys[1]), actionOk, 3,
+        Boolean wrongKeysForRunAsPartOfPipeline = check && checkOrExecuteData?.get(booleanSubKeys[0]) &&
+                !checkOrExecuteData.containsKey(stringSubKeys[1])
+        println 'wrongKeysForRunAsPartOfPipeline: ' + wrongKeysForRunAsPartOfPipeline
+        actionOk = configStructureErrorMsgWrapper(wrongKeysForRunAsPartOfPipeline, actionOk, 3,
                 String.format("'%s' defined as 'a part of pipeline', but key '%s' is undefined.",
                         executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
         actionOk = configStructureErrorMsgWrapper(check && !checkOrExecuteData.get(booleanSubKeys[0]) &&
