@@ -1519,23 +1519,23 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames?.get(stringKeys[0]) as String,
                 checkOrExecuteData, stringSubKeys, String.format('%s key', executionLinkNames?.get(stringKeys[0])),
                 booleanSubKeys, false)
-        Boolean wrongScriptKeysSequence = checkOrExecuteData?.get(booleanSubKeys[0]) && !checkOrExecuteData
-                .containsKey(stringSubKeys[1])
+        Boolean asPartOfPipelineContentDefined = checkOrExecuteData.containsKey(stringSubKeys[1])
+        Boolean wrongScriptKeysSequence = checkOrExecuteData?.get(booleanSubKeys[0]) && !asPartOfPipelineContentDefined
         println 'wrongScriptKeysSequence (1): ' + wrongScriptKeysSequence
         actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3,
                 String.format("Key '%s' is undefined in '%s', but this script was set to run as 'a part of pipeline'.",
                 executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
-        wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !checkOrExecuteData
-                .containsKey(stringSubKeys[0])
+        Boolean scriptContentDefined = checkOrExecuteData.containsKey(stringSubKeys[0])
+        wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
         println 'wrongScriptKeysSequence (2): ' + wrongScriptKeysSequence
         println 'UPDATED checkOrExecuteData: ' + checkOrExecuteData.toString()
         actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
-        if (checkOrExecuteData.get(booleanSubKeys[0]) && checkOrExecuteData.containsKey(stringSubKeys[1])) {
+        if (checkOrExecuteData.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) {
             actionClosure = {
                 println '============' + checkOrExecuteData.jenkins
             }
-        } else if (!checkOrExecuteData.get(booleanSubKeys[0]) && checkOrExecuteData.containsKey(stringSubKeys[0])) {
+        } else if (!checkOrExecuteData.get(booleanSubKeys[0]) && scriptContentDefined) {
             actionClosure = {
                 sh checkOrExecuteData.script
             }
