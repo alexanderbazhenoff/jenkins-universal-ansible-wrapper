@@ -1521,21 +1521,20 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 booleanSubKeys, false)
         Boolean asPartOfPipelineContentDefined = checkOrExecuteData.containsKey(stringSubKeys[1])
         Boolean wrongScriptKeysSequence = checkOrExecuteData?.get(booleanSubKeys[0]) && !asPartOfPipelineContentDefined
-        println 'wrongScriptKeysSequence (1): ' + wrongScriptKeysSequence
         actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3,
                 String.format("Key '%s' is undefined in '%s', but this script was set to run as 'a part of pipeline'.",
                 executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
         Boolean scriptContentDefined = checkOrExecuteData.containsKey(stringSubKeys[0])
         wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
-        println 'wrongScriptKeysSequence (2): ' + wrongScriptKeysSequence
-        println 'UPDATED checkOrExecuteData: ' + checkOrExecuteData.toString()
         actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
-        if (checkOrExecuteData.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) {
+        if (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) {
+            println '1----'
             actionClosure = {
                 println '============' + checkOrExecuteData.jenkins
             }
-        } else if (!checkOrExecuteData.get(booleanSubKeys[0]) && scriptContentDefined) {
+        } else if (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) {
+            println '2----'
             actionClosure = {
                 sh checkOrExecuteData.script
             }
