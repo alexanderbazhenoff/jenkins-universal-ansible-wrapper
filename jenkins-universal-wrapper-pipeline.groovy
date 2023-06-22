@@ -1520,13 +1520,15 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames?.get(stringKeys[0]) as String,
                 checkOrExecuteData, stringSubKeys, String.format('%s key', executionLinkNames?.get(stringKeys[0])),
                 booleanSubKeys, false)
-        Boolean wrongKeysForRunAsPartOfPipeline = check && checkOrExecuteData?.get(booleanSubKeys[0]) &&
+        Boolean wrongKeysCheckForRunAsPartOfPipeline = check && checkOrExecuteData?.get(booleanSubKeys[0]) &&
                 !checkOrExecuteData.containsKey(stringSubKeys[1])
-        println 'wrongKeysForRunAsPartOfPipeline: ' + wrongKeysForRunAsPartOfPipeline
-        println '!checkOrExecuteData.containsKey: ' + !checkOrExecuteData.containsKey(stringSubKeys[1])
-        actionOk = configStructureErrorMsgWrapper(wrongKeysForRunAsPartOfPipeline, actionOk, 3,
+        actionOk = configStructureErrorMsgWrapper(wrongKeysCheckForRunAsPartOfPipeline, actionOk, 3,
                 String.format("'%s' defined as 'a part of pipeline', but key '%s' is undefined.",
                         executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
+        wrongKeysCheckForRunAsPartOfPipeline = check && checkOrExecuteData?.get(booleanSubKeys[0]) &&
+                !checkOrExecuteData.containsKey(stringSubKeys[1])
+        println 'wrongKeysForRunAsPartOfPipeline: ' + wrongKeysCheckForRunAsPartOfPipeline
+        println '!checkOrExecuteData.containsKey: ' + !checkOrExecuteData.containsKey(stringSubKeys[1])
         actionOk = configStructureErrorMsgWrapper(check && !checkOrExecuteData.get(booleanSubKeys[0]) &&
                 checkOrExecuteData.containsKey(stringSubKeys[0]), actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
