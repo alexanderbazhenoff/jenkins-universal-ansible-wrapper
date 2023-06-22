@@ -1504,9 +1504,9 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
         executionLinkNames[stringKeyName] = executionLinkName
     }
-    /**println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
+    println 'checkOrExecuteData: ' + checkOrExecuteData.toString()
     println 'executionLinkNames: ' + executionLinkNames.toString()
-    checkOrExecuteData.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
+    /**checkOrExecuteData.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
     executionLinkNames.each { k, v -> println String.format('%s (class): %s', k, v.getClass()) }
     if (checkOrExecuteData.containsKey('script'))
         println 'checkOrExecuteData.script: ' + checkOrExecuteData.script + ' class: ' + checkOrExecuteData.script
