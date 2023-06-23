@@ -1503,6 +1503,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
         executionLinkNames[stringKeyName] = executionLinkName
     }
+    env = envVariables
 
     if (scriptRun) {
         checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
@@ -1520,17 +1521,22 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
         actionOk = errorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format("Key '%s' is undefined in '%s'.",
                 stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
-        env = envVariables
+        def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
+                                                           checkOrExecuteData?.get(stringSubKeys[1])]
         // TODO: pass var in closure which is string and run as evaluate(string)
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             println '=====: ' + universalPipelineWrapperBuiltIns
             return [actionOk, universalPipelineWrapperBuiltIns]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
-            sh checkOrExecuteData?.get(stringSubKeys[0])
+            sh scriptText
             return [actionOk, universalPipelineWrapperBuiltIns]
         } : {}
     } else {
-        // TODO: fix no failed action when ansible run failed
+
+        // Templating playbook keys, setting up playbook execution closure
+        def (String ansiblePlaybookText, String ansibleInventoryText) = [checkOrExecuteData?.get(stringKeys[0]),
+                                                                         checkOrExecuteData?.get(stringKeys[1])]
+        String ansibleInstallationName = universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
             (actionOk, checkOrExecuteDataTemplatedPart) = checkAndTemplateKeysActionWrapper(envVariables,
@@ -1541,10 +1547,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData = checkOrExecuteDataHandled
         actionClosure = {
             Map universalPipelineWrapperBuiltInsSaved = universalPipelineWrapperBuiltIns
-            actionOk = CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
-                    universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName?.trim() ?
-                            universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName :
-                            GV.AnsibleInstallationName)
+            actionOk = CF.runAnsible(ansiblePlaybookText, ansibleInventoryText, '', '', '', [], ansibleInstallationName
+                    ?.trim() ? ansibleInstallationName : GV.AnsibleInstallationName)
             return [actionOk, universalPipelineWrapperBuiltInsSaved]
         }
     }
