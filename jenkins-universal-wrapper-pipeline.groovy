@@ -1529,6 +1529,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
             return [actionOk, universalPipelineWrapperBuiltIns]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh checkOrExecuteData?.get(stringSubKeys[0])
+            return [actionOk, universalPipelineWrapperBuiltIns]
         } : {}
     } else {
         // TODO: fix no failed action when ansible run failed
