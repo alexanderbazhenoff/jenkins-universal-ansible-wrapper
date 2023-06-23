@@ -149,8 +149,8 @@ ArrayList verifyPipelineParamsArePresents(ArrayList requiredParams, Object curre
             verifyPipelineParamsOk = false
         }
         if (!it.get('name') || !paramNameConvertibleToString || !paramNamingCorrect) {
-            verifyPipelineParamsOk = configStructureErrorMsgWrapper(true, true, 3, String.format("%s: '%s' %s%s",
-                    ignoreMsg, 'name', keyValueIncorrectMsg, paramNameConvertibleToString && !paramNamingCorrect ?
+            verifyPipelineParamsOk = errorMsgWrapper(true, true, 3, String.format("%s: '%s' %s%s", ignoreMsg, 'name',
+                    keyValueIncorrectMsg, paramNameConvertibleToString && !paramNamingCorrect ?
                     " (parameter name didn't met POSIX standards)." : '.'))
         } else if (it.get('name') && !currentPipelineParams.containsKey(it.get('name'))) {
             updateParamsRequired = true
@@ -268,25 +268,26 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
  */
 Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg, Boolean enableCheck = true,
                                   Boolean currentState = true) {
-    return configStructureErrorMsgWrapper(enableCheck, currentState, eventNum,
+    return errorMsgWrapper(enableCheck, currentState, eventNum,
             String.format("Wrong syntax in pipeline parameter '%s': %s.", itemName, errorMsg))
 }
 
 /**
- * Structure error or warning message wrapper.
+ * Structure or action execution error or warning message wrapper.
  *
  * @param enableCheck - true on check mode, false on execution to skip checking.
- * @param structureState - a state of a structure for the whole item: true when ok.
+ * @param state - current state to pass or change (true when ok), e.g: a state of a structure for the whole item, or
+ *                current state of item execution, etc...
  * @param eventNum - event number: 3 is an error, 2 is a warning.
  * @param msg - error or warning message.
- * @return - a state of a structure for the whole item: true when ok.
+ * @return - current state return.
  */
-Boolean configStructureErrorMsgWrapper(Boolean enableCheck, Boolean structureState, Integer eventNum, String msg) {
+Boolean errorMsgWrapper(Boolean enableCheck, Boolean state, Integer eventNum, String msg) {
     if (enableCheck) {
         CF.outMsg(eventNum, msg)
-        structureState = eventNum == 3 ? false : structureState
+        state = eventNum == 3 ? false : state
     }
-    return structureState
+    return state
 }
 
 /**
@@ -491,9 +492,9 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
         Boolean variableNameIsIncorrect = !checkEnvironmentVariableNameCorrect(mentioned)
         Boolean variableIsUndefined = !bindingVariables.containsKey(mentioned)
         String errMsg = "The value of this variable will be templated with '' (empty string)."
-        assignmentOk = configStructureErrorMsgWrapper(variableNameIsIncorrect, assignmentOk, 3,
+        assignmentOk = errorMsgWrapper(variableNameIsIncorrect, assignmentOk, 3,
                 String.format("Incorrect variable name '%s' in '%s' value. %s", mentioned, assignment, errMsg))
-        assignmentOk = configStructureErrorMsgWrapper(variableIsUndefined, assignmentOk, 3,
+        assignmentOk = errorMsgWrapper(variableIsUndefined, assignmentOk, 3,
                 String.format("Specified '%s' variable in '%s' value is undefined. %s", mentioned, assignment, errMsg))
         bindingVariables[mentioned] = variableNameIsIncorrect || variableIsUndefined ? '' : bindingVariables[mentioned]
     }
@@ -521,7 +522,7 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
         if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
-            allAssignmentsPass = configStructureErrorMsgWrapper(!assignOk, allAssignmentsPass, 3,
+            allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
             assignMap[currentKey] = assigned
@@ -617,9 +618,9 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 } else if (!(it.regex instanceof ArrayList) && it.regex?.trim()) {
                     regexPattern = it.regex.toString()
                 }
-                configStructureErrorMsgWrapper(regexPattern.trim() as Boolean, true, 0, String
-                        .format("Found '%s' regex for pipeline parameter '%s'.", regexPattern, printableParamName))
-                allCorrect = configStructureErrorMsgWrapper(paramIsDefined && regexPattern.trim() &&
+                errorMsgWrapper(regexPattern.trim() as Boolean, true, 0, String.format(
+                        "Found '%s' regex for pipeline parameter '%s'.", regexPattern, printableParamName))
+                allCorrect = errorMsgWrapper(paramIsDefined && regexPattern.trim() &&
                         !envVariables[it.name as String].matches(regexPattern), allCorrect, 3,
                         String.format('%s parameter is incorrect due to regex mismatch.', printableParamName))
             }
@@ -635,7 +636,7 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 // Handle 'to' sub-key of 'regex_replace' parameter item key.
                 String regexReplacement = it.regex_replace.get('to')
                 Boolean regexToKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('to'))
-                Boolean regexReplacementDone = configStructureErrorMsgWrapper(regexReplacement?.trim() &&
+                Boolean regexReplacementDone = errorMsgWrapper(regexReplacement?.trim() &&
                         !regexToKeyIsConvertibleToString, false, 3, String.format(msgTemplateWrongType, 'to',
                         printableParamName, msgRecommendation))
 
@@ -868,7 +869,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
                                                     Boolean execute = true) {
     Map universalPipelineWrapperBuiltIns = [:]
     Boolean executeOk = true
-    Boolean checkOk = configStructureErrorMsgWrapper(!pipelineSettings.get('stages') && ((check &&
+    Boolean checkOk = errorMsgWrapper(!pipelineSettings.get('stages') && ((check &&
             getBooleanVarStateFromEnv(envVariables)) || execute), true, 0,
             String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
     for (stageItem in pipelineSettings.stages) {
@@ -913,14 +914,14 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     Map actionsRuns = [:]
 
     // Handling 'name' (with possible assignment), 'actions' and 'parallel' stage keys.
-    allPass = configStructureErrorMsgWrapper(check && (!stageItem.containsKey('name') ||
+    allPass = errorMsgWrapper(check && (!stageItem.containsKey('name') ||
             !detectIsObjectConvertibleToString(stageItem.get('name'))), allPass, 3,
             "Unable to convert stage name to a string, probably it's undefined or empty.")
     String printableStageName = getPrintableValueKeyFromMapItem(stageItem)
     Boolean actionsIsNotList = stageItem.containsKey('actions') && !(stageItem.get('actions') instanceof ArrayList)
-    allPass = configStructureErrorMsgWrapper(check && (!stageItem.containsKey('actions') || actionsIsNotList),
-            allPass, 3, String.format("Incorrect or undefined actions for '%s' stage.", printableStageName))
-    allPass = configStructureErrorMsgWrapper(check && (stageItem.containsKey('parallel') &&
+    allPass = errorMsgWrapper(check && (!stageItem.containsKey('actions') || actionsIsNotList), allPass, 3,
+            String.format("Incorrect or undefined actions for '%s' stage.", printableStageName))
+    allPass = errorMsgWrapper(check && (stageItem.containsKey('parallel') &&
             !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))), allPass, 3, String.format(
             "Unable to determine 'parallel' value for '%s' stage. Remove them or set as boolean.", printableStageName))
     (allPass, stageItem) = templatingMapKeysFromVariables(stageItem, ['name'], envVariables, allPass)
@@ -976,10 +977,10 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList l
         Boolean typeOk = isString ? detectIsObjectConvertibleToString(map.get(it)) :
                 detectIsObjectConvertibleToBoolean(map.get(it))
         if (map.containsKey(it) && !typeOk) {
-            currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 3,
-                    String.format("'%s' key in '%s' should be a %s.", it, index, isString ? 'string' : 'boolean'))
+            currentStatus = errorMsgWrapper(check, currentStatus, 3, String.format("'%s' key in '%s' should be a %s.",
+                    it, index, isString ? 'string' : 'boolean'))
         } else if (map.containsKey(it) && !map.get(it)?.toString()?.length()) {
-            currentStatus = configStructureErrorMsgWrapper(check, currentStatus, 2, String.format(
+            currentStatus = errorMsgWrapper(check, currentStatus, 2, String.format(
                     "'%s' key defined for '%s', but it's empty. Remove a key or define it's value.", it, index))
         }
     }
@@ -1037,7 +1038,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             printableStageAndAction, actionStructureOk)
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
             printableStageAndAction, actionStructureOk)
-    actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
+    actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
             .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper(['success_only', 'fail_only']))
     (actionStructureOk, actionItem) = templatingMapKeysFromVariables(actionItem, stringKeys + ['action', 'node'] as
             ArrayList, envVariables, actionStructureOk, [:], 'Action key')
@@ -1046,7 +1047,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
     Boolean nodeIsStringConvertible = detectIsObjectConvertibleToString(actionItem.get('node'))
     if (nodeIsStringConvertible || anyJenkinsNode) {
-        configStructureErrorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
+        errorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
                 "This stage will run on any free Jenkins node.", printableStageAndAction))
         nodeItem.node = [:]
         nodeItem.node.name = nodeIsStringConvertible ? actionItem.node.toString() : actionItem.get('node')?.get('name')
@@ -1057,7 +1058,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         String incompatibleKeysMessage
         ArrayList nodeSubKeyNames = ['name', 'label']
         Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
-        actionStructureOk = configStructureErrorMsgWrapper(check && !onlyNameOrLabelDefined, actionStructureOk, 2,
+        actionStructureOk = errorMsgWrapper(check && !onlyNameOrLabelDefined, actionStructureOk, 2,
                 incompatibleKeysMsgWrapper(nodeSubKeyNames, 'Node sub-keys'))
         actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
                 actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
@@ -1069,8 +1070,8 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                 printableStageAndAction)) {
             nodeItem.pattern = actionItem.node.get('pattern')?.toBoolean()
         } else {
-            actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 2, String.format(
-                    keyWarnOrErrMsgTemplate, 'sub-', 'pattern', printableStageAndAction, 'Sub-key should be boolean.'))
+            actionStructureOk = errorMsgWrapper(check, actionStructureOk, 2, String.format(keyWarnOrErrMsgTemplate,
+                    'sub-', 'pattern', printableStageAndAction, 'Sub-key should be boolean.'))
             nodeItem.node.remove('pattern')
         }
 
@@ -1078,15 +1079,15 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         (actionStructureOk, nodeItem) = templatingMapKeysFromVariables(nodeItem, nodeSubKeyNames, envVariables,
                 actionStructureOk, [:], 'Node (sub-keys of action key)')
     } else if (actionItem.containsKey('node') && !anyJenkinsNode && !(actionItem.get('node') instanceof Map)) {
-        actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, 3,
-                String.format(keyWarnOrErrMsgTemplate, '', 'node', printableStageAndAction, 'Key will be ignored.'))
+        actionStructureOk = errorMsgWrapper(check, actionStructureOk, 3, String.format(keyWarnOrErrMsgTemplate, '',
+                'node', printableStageAndAction, 'Key will be ignored.'))
     }
 
     // Check or execute current action when 'action' key is correct and possible success_only/fail_only conditions met.
     Boolean actionIsCorrect = checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true,
             printableStageAndAction)
-    actionStructureOk = configStructureErrorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect,
-            actionStructureOk, 3, String.format("Wrong format of 'action' key in '%s'.", printableStageAndAction))
+    actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect, actionStructureOk,
+            3, String.format("Wrong format of 'action' key in '%s'.", printableStageAndAction))
     Boolean successOnlyActionConditionNotMet = actionItem.get('success_only') && currentBuild.result == 'FAILURE'
     Boolean failOnlyActionConditionNotMet = actionItem.get('fail_only') && currentBuild.result != 'FAILURE'
     Boolean allActionConditionsMet = !check && !successOnlyActionConditionNotMet && !failOnlyActionConditionNotMet
@@ -1094,7 +1095,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             'success_only' : ''
     actionSkipMsgReason += !check && failOnlyActionConditionNotMet && !actionItem.containsKey('success_only') ?
             'fail_only' : ''
-    configStructureErrorMsgWrapper(actionSkipMsgReason.trim() as Boolean, true, 0,
+    errorMsgWrapper(actionSkipMsgReason.trim() as Boolean, true, 0,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
     if (actionIsCorrect && (check || allActionConditionsMet)) {
         actionMessageOutputWrapper(check, actionItem, 'before', envVariables)
@@ -1111,7 +1112,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
     } else if (!actionItem.containsKey('action')) {
-        actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
+        actionStructureOk = errorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
                         check ? 'check in' : 'perform at', printableStageAndAction))
     }
@@ -1163,7 +1164,7 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
     String messageKey = String.format('%s_message', messageType)
     String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format("%s %s: %s", messageType.capitalize(),
             'message', actionItem.get(messageKey)) : actionItem.get(messageKey)
-    configStructureErrorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
+    errorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
             messageType == 'fail' ? 3 : 1, messageText)
 }
 
@@ -1183,7 +1184,7 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
                                             Map actionItem, String printableStageAndAction,
                                             String keyWarnOrErrorMsgTemplate, String nodeSubKeyName) {
     return nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubKeyName)) ?
-            configStructureErrorMsgWrapper(check, actionStructureOk, 3, String.format(keyWarnOrErrorMsgTemplate, 'sub-',
+            errorMsgWrapper(check, actionStructureOk, 3, String.format(keyWarnOrErrorMsgTemplate, 'sub-',
                     nodeSubKeyName, printableStageAndAction, '')) : actionStructureOk
 }
 
@@ -1234,7 +1235,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
-    Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
+    Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [repo_url   : { (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem,
                                             envVariables, check, actionOk, universalPipelineWrapperBuiltIns) },
@@ -1255,10 +1256,10 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
-    configStructureErrorMsgWrapper(check && keysFound?.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s",
-            'Keys in', actionLink, incompatibleKeysMsgWrapper(keysFound.keySet() as ArrayList, ''), 'Only',
-            keysFound.keySet()[0], 'will be used on action run.'))
-    actionOk = configStructureErrorMsgWrapper(!keysFound && actionOk, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
+    errorMsgWrapper(check && keysFound?.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s", 'Keys in',
+            actionLink, incompatibleKeysMsgWrapper(keysFound.keySet() as ArrayList, ''), 'Only', keysFound.keySet()[0],
+            'will be used on action run.'))
+    actionOk = errorMsgWrapper(!keysFound && actionOk, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
             check ? "Can't" : "Nothing to execute due to can't", "determine any action in", actionLink,
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
@@ -1317,7 +1318,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
     Boolean repoUrlIsDefined = actionLinkItem?.get('repo_url')
-    actionOk = configStructureErrorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
+    actionOk = errorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
     Map printableActionLinkItem = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
@@ -1364,8 +1365,8 @@ ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, C
             CF.outMsg(0, String.format('Performing %s', actionMsg))
             (actionOk, universalPipelineWrapperBuiltIns) = actionClosure.call()
         } catch (Exception err) {
-            actionOk = configStructureErrorMsgWrapper(true, false, 3, String.format("Error %s in '%s': %s", actionMsg,
-                    actionLink, CF.readableError(err)))
+            actionOk = errorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg, actionLink,
+                    CF.readableError(err)))
         }
     return [actionOk, actionMsg, universalPipelineWrapperBuiltIns]
 }
@@ -1392,7 +1393,7 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
     String actionName = 'install ansible collection'
     Boolean collectionsKeyIsCorrect = actionLinkItem?.get('collections') instanceof ArrayList ||
             actionLinkItem?.get('collections') instanceof String
-    actionOk = configStructureErrorMsgWrapper(!collectionsKeyIsCorrect, actionOk, 3, String.format(
+    actionOk = errorMsgWrapper(!collectionsKeyIsCorrect, actionOk, 3, String.format(
             "Unable to %s in '%s' action: 'collections' key should be string or list.", actionName, actionLink))
     ArrayList ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof String) ?
             [actionLinkItem.collections] : []
@@ -1404,18 +1405,18 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
             def (__, Boolean assignOk, String assignment) = getTemplatingFromVariables(ansibleEntry as String,
                     envVariables, universalPipelineWrapperBuiltIns)
             ansibleCollections[ansibleCollectionsListIndex] = assignment
-            actionOk = configStructureErrorMsgWrapper(!assignOk, assignOk, 3, String.format(
+            actionOk = errorMsgWrapper(!assignOk, assignOk, 3, String.format(
                     "'%s' %s item in '%s' action wasn't set properly due to undefined variable(s).", ansibleEntry,
                     actionName, actionLink))
         }
-        actionOk = configStructureErrorMsgWrapper(!ansibleEntryIsString, actionOk, 3, String.format(
+        actionOk = errorMsgWrapper(!ansibleEntryIsString, actionOk, 3, String.format(
                 "'%s' %s item in '%s' should be string.", ansibleEntry.toString(), actionName, actionLink))
     }
     Closure actionClosure = {
         ansibleCollections.each { ansibleCollectionsItem ->
-            return [(sh(script: String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem),
-                    returnStatus: true).toInteger() == 0), universalPipelineWrapperBuiltIns]
+            sh String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem)
         }
+        return [actionOk, universalPipelineWrapperBuiltIns]
     }
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, actionLinkItem, ['collections'], actionOk,
@@ -1493,12 +1494,12 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         Boolean actionLinkItemKeyIsDefined = actionLinkItem.containsKey(stringKeyName)
         String executionLinkName = stringKeyName == 'inventory' && !actionLinkItemKeyIsDefined ? 'default' :
                 actionLinkItem?.get(stringKeyName)
-        actionOk = configStructureErrorMsgWrapper(check && actionLinkItemKeyIsDefined &&
-                !(executionLinkName instanceof String), actionOk, 3,
-                String.format("'%s' %s item in '%s' should be string.", executionLinkName, stringKeyName, actionLink))
+        actionOk = errorMsgWrapper(check && actionLinkItemKeyIsDefined && !(executionLinkName instanceof String),
+                actionOk, 3, String.format("'%s' %s item in '%s' should be string.", executionLinkName, stringKeyName,
+                actionLink))
         def (Boolean subKeyIsDefined, Object subKeyValue) = getMapSubKey(executionLinkName, pipelineSettings,
                 pipelineConfigKeys[actionLinkKeysIndex] as String)
-        actionOk = configStructureErrorMsgWrapper(check && !subKeyIsDefined, actionOk, 3,
+        actionOk = errorMsgWrapper(check && !subKeyIsDefined, actionOk, 3,
                 String.format("%s '%s' wasn't found in '%s' section of pipeline config file.", stringKeyName,
                         executionLinkName, pipelineConfigKeys[actionLinkKeysIndex] as String))
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
@@ -1514,13 +1515,13 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 booleanSubKeys, false)
         Boolean asPartOfPipelineContentDefined = checkOrExecuteData.containsKey(stringSubKeys[1])
         Boolean wrongScriptKeysSequence = checkOrExecuteData?.get(booleanSubKeys[0]) && !asPartOfPipelineContentDefined
-        actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3,
+        actionOk = errorMsgWrapper(wrongScriptKeysSequence, actionOk, 3,
                 String.format("Key '%s' is undefined in '%s', but this script was set to run as 'a part of pipeline'.",
                 executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
         Boolean scriptContentDefined = checkOrExecuteData.containsKey(stringSubKeys[0])
         wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
-        actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format(
-                "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
+        actionOk = errorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format("Key '%s' is undefined in '%s'.",
+                stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
         env = envVariables
         // TODO: pass var in closure which is string and run as evaluate(string)
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
@@ -1583,7 +1584,7 @@ node(jenkinsNodeToExecute) {
         universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName = AnsibleInstallationName?.trim() ?
                 AnsibleInstallationName : ''
         if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
-            configStructureErrorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
+            errorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
                     'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
                     'be emulated skipping the scripts, playbooks and pipeline runs.'))
             (universalPipelineWrapperBuiltIns, allDone, env) = checkOrExecutePipelineWrapperFromSettings(
