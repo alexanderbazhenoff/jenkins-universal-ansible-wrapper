@@ -1529,6 +1529,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         } : {}
     } else {
         // TODO: /var/lib/jenkins/workspace/example-pipeline/ansible/roles, No such file or directory
+        // TODO: fix ansibleInstallationName making them as global variable in library
         // TODO: remove debug println(s)
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
@@ -1539,7 +1540,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         }
         checkOrExecuteData = checkOrExecuteDataHandled
         actionClosure = {
-            CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
+            actionOk = CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
                     ansibleInstallationName)
         }
     }
