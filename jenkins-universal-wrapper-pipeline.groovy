@@ -5,7 +5,6 @@
 import org.yaml.snakeyaml.*
 import groovy.text.StreamingTemplateEngine
 
-
 // TODO: change branch
 @Library('jenkins-shared-library-alx@devel') _
 
@@ -1353,8 +1352,6 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
  *           - action details for logging;
  *           - pipeline wrapper built-ins variable return.
  */
-
-@NonCPS
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map printableActionLinkItem,
                                            ArrayList actionKeysFilterLists, Boolean actionOk,
