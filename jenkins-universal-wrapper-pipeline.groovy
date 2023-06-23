@@ -1474,8 +1474,7 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
 }
 
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
-                                           Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun,
-                                           String ansibleInstallationName = AnsibleInstallationName) {
+                                           Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun) {
     String actionMsg
     Closure actionClosure
     Map checkOrExecuteData = [:]
@@ -1543,7 +1542,9 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData = checkOrExecuteDataHandled
         actionClosure = {
             actionOk = CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
-                    ansibleInstallationName)
+                    universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName?.trim() ?
+                            universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName :
+                            GV.AnsibleInstallationName)
             return actionOk
         }
     }
@@ -1578,6 +1579,8 @@ node(jenkinsNodeToExecute) {
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
         Boolean allDone = true
         Map universalPipelineWrapperBuiltIns = [:]
+        universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName = AnsibleInstallationName?.trim() ?
+                AnsibleInstallationName : ''
         if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
             configStructureErrorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
                     'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
