@@ -1542,8 +1542,9 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         }
         checkOrExecuteData = checkOrExecuteDataHandled
         actionClosure = {
-            actionOk = CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
-                    ansibleInstallationName)
+            Boolean ansibleRunOk = CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '',
+                    [], ansibleInstallationName)
+            return ansibleRunOk ? actionOk : false
         }
     }
     (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
