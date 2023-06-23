@@ -1531,6 +1531,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         // TODO: /var/lib/jenkins/workspace/example-pipeline/ansible/roles, No such file or directory
         // TODO: fix ansibleInstallationName making them as global variable in library
         // TODO: remove debug println(s)
+        // TODO: fix no failed action when ansible run failed
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
             (actionOk, checkOrExecuteDataTemplatedPart) = checkAndTemplateKeysActionWrapper(envVariables,
