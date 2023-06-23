@@ -28,7 +28,7 @@ final SettingsRelativePathPrefix = 'settings' as String
 // postfixes are useful to mark pipeline as a changed version of original.
 final PipelineNameRegexReplace = ['^(admin|devops|qa)_'] as ArrayList
 
-// Set your ansible installation name from jenkins settings.
+// Ansible installation name from jenkins Global Configuration Tool or empty for defaults from jenkins shared library.
 final AnsibleInstallationName = 'home_local_bin_ansible' as String
 
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
