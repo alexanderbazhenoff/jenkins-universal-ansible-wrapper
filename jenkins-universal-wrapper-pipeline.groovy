@@ -1,10 +1,9 @@
 #!/usr/bin/env groovy
-import com.thoughtworks.xstream.mapper.Mapper
+
 @NonCPS
 @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
 import org.yaml.snakeyaml.*
 import groovy.text.StreamingTemplateEngine
-import java.util.regex.Pattern
 
 
 // TODO: change branch
@@ -1363,6 +1362,7 @@ ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, C
     if (!check && !dryRunAction)
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
+            @NonCPS
             (actionOk, universalPipelineWrapperBuiltIns) = actionClosure.call()
         } catch (Exception err) {
             actionOk = errorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg, actionLink,
