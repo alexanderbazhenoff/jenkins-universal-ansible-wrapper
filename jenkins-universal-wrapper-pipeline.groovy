@@ -1522,6 +1522,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
         // TODO: pass var in closure which is string and run as evaluate(string)
+        // TODO: env assign and return
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             println '=====: ' + universalPipelineWrapperBuiltIns
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
