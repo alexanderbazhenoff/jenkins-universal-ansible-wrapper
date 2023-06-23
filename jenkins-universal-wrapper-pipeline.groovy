@@ -1506,6 +1506,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     env = envVariables
 
     if (scriptRun) {
+
+        // Check script keys. Avoiding of negative pointers in parallel run setting up code sub-keys. Choosing closure.
         checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
                 instanceof Map) ? checkOrExecuteData.script as Map : [:]
         (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
@@ -1533,7 +1535,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         } : {}
     } else {
 
-        // Templating playbook keys, setting up playbook execution closure
+        // Templating playbook keys. Setting up playbook, inventory and playbook execution closure.
         def (String ansiblePlaybookText, String ansibleInventoryText) = [checkOrExecuteData?.get(stringKeys[0]),
                                                                          checkOrExecuteData?.get(stringKeys[1])]
         String ansibleInstallationName = universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName
@@ -1552,6 +1554,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
             return [actionOk, universalPipelineWrapperBuiltInsSaved]
         }
     }
+
+    // Run action closure
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
