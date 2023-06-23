@@ -1353,16 +1353,17 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
  *           - action details for logging;
  *           - pipeline wrapper built-ins variable return.
  */
+
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map printableActionLinkItem,
                                            ArrayList actionKeysFilterLists, Boolean actionOk,
                                            Map universalPipelineWrapperBuiltIns) {
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
+    @NonCPS
     if (!check && !dryRunAction)
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
-            @NonCPS
             (actionOk, universalPipelineWrapperBuiltIns) = actionClosure.call()
         } catch (Exception err) {
             actionOk = errorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg, actionLink,
