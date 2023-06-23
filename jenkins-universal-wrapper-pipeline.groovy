@@ -71,7 +71,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
                          Boolean printYaml = true, String workspaceSubfolder = 'settings') {
     CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
     String pathToLoad = String.format('%s/%s', workspaceSubfolder, settingsRelativePath)
-    if (printYaml) CF.outMsg(1, String.format('Loading pipeline settings:\n%s', readFile(pathToLoad)))
+    if (printYaml) CF.outMsg(0, String.format('Loading pipeline settings:\n%s', readFile(pathToLoad)))
     return readYaml(file: pathToLoad)
 }
 
@@ -1110,7 +1110,6 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
-        println 'kuku1'
     } else if (!actionItem.containsKey('action')) {
         actionStructureOk = configStructureErrorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
@@ -1121,7 +1120,6 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
     universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result
-    println 'kuku2'
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
@@ -1235,9 +1233,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
-    println 'actionLink: ' + actionLink
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
-    println 'actionLink: ' + actionLink + ' actionLinkItem: ' + actionLinkItem
     Boolean actionOk = configStructureErrorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [repo_url   : { (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem,
@@ -1328,9 +1324,11 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Closure actionClosure = {
         CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?: 'main',
                 actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: gitDefaultCredentials)
+        return [actionOk, universalPipelineWrapperBuiltIns]
     }
-    (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
-            actionName, printableActionLinkItem, stringKeys, actionOk)
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, printableActionLinkItem, stringKeys, actionOk,
+            universalPipelineWrapperBuiltIns)
     return [actionOk, actionMsg]
 }
 
@@ -1344,31 +1342,32 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
  * @param actionClosure - pipeline action closure to execute.
  * @param actionLink - message prefix for possible errors.
  * @param actionName - type of the current action to output messages and logging.
- * @param actionLinkItem - a printable version of action link item when you need to hide or replace some key values.
- * @param actionKeysFilterLists - list of keys that is required for current action.
- * @param actionOk - just to pass previous action execution/checking state.
  * @param printableActionLinkItem - just a printable version of actionLinkItem when you need to hide or replace some
  *                                  key values.
+ * @param actionKeysFilterLists - list of keys that is required for current action.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable (see:
+ *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  * @return - arrayList of:
  *           - true when success, false when failed;
- *           - action details for logging.
+ *           - action details for logging;
+ *           - pipeline wrapper built-ins variable return.
  */
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map printableActionLinkItem,
-                                           ArrayList actionKeysFilterLists, Boolean actionOk) {
-    println 'olo1'
+                                           ArrayList actionKeysFilterLists, Boolean actionOk,
+                                           Map universalPipelineWrapperBuiltIns) {
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
-    println 'olo2'
     if (!check && !dryRunAction)
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
-            actionClosure.call()
+            (actionOk, universalPipelineWrapperBuiltIns) = actionClosure.call()
         } catch (Exception err) {
-            actionOk = configStructureErrorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s",
-                    actionMsg, actionLink, CF.readableError(err)))
+            actionOk = configStructureErrorMsgWrapper(true, false, 3, String.format("Error %s in '%s': %s", actionMsg,
+                    actionLink, CF.readableError(err)))
         }
-    return [actionOk, actionMsg]
+    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns]
 }
 
 /**
@@ -1414,11 +1413,13 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
     }
     Closure actionClosure = {
         ansibleCollections.each { ansibleCollectionsItem ->
-            sh String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem)
+            return [(sh(script: String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem),
+                    returnStatus: true).toInteger() == 0), universalPipelineWrapperBuiltIns]
         }
     }
-    (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
-            actionName, actionLinkItem, ['collections'], actionOk)
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, actionLinkItem, ['collections'], actionOk,
+            universalPipelineWrapperBuiltIns)
     return [actionOk, actionMsg]
 }
 
@@ -1520,17 +1521,15 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
         actionOk = configStructureErrorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format(
                 "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
+        env = envVariables
         // TODO: pass var in closure which is string and run as evaluate(string)
-        // TODO: env assign and return
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             println '=====: ' + universalPipelineWrapperBuiltIns
+            return [actionOk, universalPipelineWrapperBuiltIns]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh checkOrExecuteData?.get(stringSubKeys[0])
         } : {}
     } else {
-        // TODO: /var/lib/jenkins/workspace/example-pipeline/ansible/roles, No such file or directory
-        // TODO: fix ansibleInstallationName making them as global variable in library
-        // TODO: remove debug println(s)
         // TODO: fix no failed action when ansible run failed
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
@@ -1541,15 +1540,17 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         }
         checkOrExecuteData = checkOrExecuteDataHandled
         actionClosure = {
+            Map universalPipelineWrapperBuiltInsSaved = universalPipelineWrapperBuiltIns
             actionOk = CF.runAnsible(checkOrExecuteData.playbook, checkOrExecuteData.inventory, '', '', '', [],
                     universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName?.trim() ?
                             universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName :
                             GV.AnsibleInstallationName)
-            return actionOk
+            return [actionOk, universalPipelineWrapperBuiltInsSaved]
         }
     }
-    (actionOk, actionMsg) = actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink,
-            actionName, executionLinkNames, stringKeys, actionOk)
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
+            universalPipelineWrapperBuiltIns)
     return [actionOk, actionMsg]
 }
 
