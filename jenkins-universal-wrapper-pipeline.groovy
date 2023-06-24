@@ -1545,6 +1545,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
                 'return universalPipelineWrapperBuiltIns')
         // TODO: remove from doc 'Для внутренних нужд путем запуска скриптов "как часть pipeline'а"'
+        // TODO: fix ansible fatal: [$IP_ADDRESSES]: UNREACHABLE!
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             def universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
             return [actionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate]
