@@ -1546,7 +1546,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 'return universalPipelineWrapperBuiltIns')
         // TODO: remove from doc 'Для внутренних нужд путем запуска скриптов "как часть pipeline'а"'
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
-            Map universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText)
+            def universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
             return [actionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh scriptText
