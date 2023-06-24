@@ -1370,6 +1370,21 @@ ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, C
 }
 
 /**
+ * Update environment variables from map keys (e.g. universalPipelineWrapperBuiltIns).
+ *
+ * @param mapToUpdateFrom - map to update from.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @return - updated environment variables.
+ */
+static Object updateEnvFromMapKeys(Map mapToUpdateFrom, Object envVariables) {
+    mapToUpdateFrom.each { mapToUpdateFromKey, mapToUpdateFromValue ->
+        envVariables[mapToUpdateFromKey.toString()] = mapToUpdateFromValue.toString()
+    }
+    return envVariables
+}
+
+/**
  * Pipeline action: install ansible collections from ansible galaxy.
  *
  * @param actionLink - message prefix for possible errors.
@@ -1485,6 +1500,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     ArrayList pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
     ArrayList stringSubKeys = ['script', 'jenkins']
     ArrayList booleanSubKeys = ['pipeline']
+
+    // Checking required script or playbook keys. Setting up execution data and printable link names.
     def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
@@ -1503,7 +1520,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
         executionLinkNames[stringKeyName] = executionLinkName
     }
-    env = envVariables
+    env = updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
 
     if (scriptRun) {
 
@@ -1525,10 +1542,12 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
         def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
                                                            checkOrExecuteData?.get(stringSubKeys[1])]
-        // TODO: pass var in closure which is string and run as evaluate(string)
+        pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
+                'return universalPipelineWrapperBuiltIns')
+        // TODO: remove from doc 'Для внутренних нужд путем запуска скриптов "как часть pipeline'а"'
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
-            println '=====: ' + universalPipelineWrapperBuiltIns
-            return [actionOk, universalPipelineWrapperBuiltIns]
+            Map universalPipelineWrapperBuiltInsUpdate = pipelineCodeText.call()
+            return [actionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh scriptText
             return [actionOk, universalPipelineWrapperBuiltIns]
@@ -1555,10 +1574,11 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         }
     }
 
-    // Run action closure
+    // Run action closure and finally update env from changed universalPipelineWrapperBuiltIns keys.
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
+    env = updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
     return [actionOk, actionMsg]
 }
 
