@@ -586,7 +586,7 @@ static ArrayList extractParamsListFromSettingsMap(Map pipelineSettings, ArrayLis
 }
 
 /**
- * Perform regex check and regex replacement of current job build pipeline parameters.
+ * Perform regex check and regex replacement of pipeline parameters for current job build.
  *
  * (Check match when current build pipeline parameter is not empty and a key 'regex' is defined in pipeline settings.
  * Also perform regex replacement of parameter value when 'regex_replace' key is defined).
@@ -604,6 +604,7 @@ static ArrayList extractParamsListFromSettingsMap(Map pipelineSettings, ArrayLis
 Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object pipelineParameters,
                                             Object envVariables) {
     Boolean allCorrect = true
+    CF.outMsg(0, "Starting regex check and regex replacement of pipeline parameters for current build.")
     if (allPipelineParams[0]) {
         allPipelineParams.each {
             def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndDefinedState(it as Map,
@@ -831,6 +832,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
     if (noPipelineParamsInTheConfig && pipelineParamsProcessingPass) {
         CF.outMsg(1, 'No pipeline parameters in the config.')
     } else if (!noPipelineParamsInTheConfig) {
+        CF.outMsg(0, "Checking all pipeline parameters format in the settings.")
         checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
         if (checkPipelineParametersPass || getBooleanPipelineParamState(pipelineParams)) {
             Boolean requiredPipelineParamsSet
@@ -869,24 +871,30 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
                                                     Boolean execute = true) {
     Map universalPipelineWrapperBuiltIns = [:]
     Boolean executeOk = true
-    Boolean checkOk = errorMsgWrapper(!pipelineSettings.get('stages') && ((check &&
-            getBooleanVarStateFromEnv(envVariables)) || execute), true, 0,
-            String.format('No stages to %s in pipeline config.', execute ? 'execute' : 'check'))
+    String currentSubjectMsg = 'in pipeline config'
+    String functionCallTypes = String.format('%s%s%s', check ? 'check' : '', check & execute ? ' and ' : '',
+            execute ? 'execute' : '')
+    Boolean pipelineSettingsContainsStages = (pipelineSettings?.get('stages'))
+    Boolean checkOk = errorMsgWrapper(!pipelineSettingsContainsStages && ((check &&
+            getBooleanVarStateFromEnv(envVariables)) || execute), true, 0, String.format('No stages %s to %s.',
+            functionCallTypes, currentSubjectMsg))
+
+    // When pipeline stages are in the config starting iterate of it's items for check and/or execute.
+    errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
+            currentSubjectMsg))
     for (stageItem in pipelineSettings.stages) {
         Boolean stageOk
         (__, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem([:], stageItem as Map, pipelineSettings,
                 envVariables) : [[:], true, envVariables]
         checkOk = stageOk ? checkOk : false
-        println 'checkOk: ' + checkOk
-        println 'stageOk: ' + stageOk
-        if (execute)
+        if (execute) {
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (universalPipelineWrapperBuiltIns, stageOk, envVariables) = checkOrExecuteStageSettingsItem(
                         universalPipelineWrapperBuiltIns, stageItem as Map, pipelineSettings, envVariables, true, false)
                 executeOk = stageOk ? executeOk : false
             }
+        }
     }
-    println 'checkOk && executeOk: ' + (checkOk && executeOk)
     return [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
 }
 
