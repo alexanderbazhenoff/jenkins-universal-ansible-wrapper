@@ -876,6 +876,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
                 envVariables) : [[:], true, envVariables]
         checkOk = stageOk ? checkOk : false
         println 'checkOk: ' + checkOk
+        println 'stageOk: ' + stageOk
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (universalPipelineWrapperBuiltIns, stageOk, envVariables) = checkOrExecuteStageSettingsItem(
@@ -883,6 +884,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
                 executeOk = stageOk ? executeOk : false
             }
     }
+    println 'checkOk && executeOk: ' + checkOk && executeOk
     return [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
 }
 
