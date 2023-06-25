@@ -1127,6 +1127,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     if (actionItem.get('stop_on_fail') && !check && !actionLinkOk)
         error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                 "('stop_on_fail' is enabled for current action)")
+    println 'actionStructureAndLinkOk: ' + actionStructureAndLinkOk
     return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
 }
 
@@ -1286,7 +1287,6 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
         }
     }
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
-    println 'actionOK: ' + actionOk
     return [actionOk, actionDetails, envVariables]
 }
 
