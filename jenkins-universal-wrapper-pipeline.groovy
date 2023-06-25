@@ -836,11 +836,14 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
         checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
         if (checkPipelineParametersPass || getBooleanPipelineParamState(pipelineParams)) {
             Boolean requiredPipelineParamsSet
-            Boolean regexCheckAllRequiredPipelineParamsOk
+            Boolean regexCheckAllRequiredPipelineParamsOk = true
             (requiredPipelineParamsSet, env) = checkAllRequiredPipelineParamsAreSet(pipelineSettings, pipelineParams,
                     envVariables)
-            (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
-                    pipelineParams, env)
+            println 'requiredPipelineParamsSet: ' + requiredPipelineParamsSet
+            if (requiredPipelineParamsSet) {
+                (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
+                        pipelineParams, env)
+            }
             pipelineFailReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
                     'Required pipeline parameter(s) was not specified or incorrect. '
         }
