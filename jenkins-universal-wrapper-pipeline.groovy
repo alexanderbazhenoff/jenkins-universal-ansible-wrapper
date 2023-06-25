@@ -1611,6 +1611,7 @@ node(jenkinsNodeToExecute) {
         (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
                 pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
                         PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
+        println 'checkPipelineParametersPass: ' + checkPipelineParametersPass
 
         // When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct.
         Boolean pipelineSettingsCheckOk = true
