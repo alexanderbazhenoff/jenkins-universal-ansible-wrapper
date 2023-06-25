@@ -1546,7 +1546,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
         executionLinkNames[stringKeyName] = executionLinkName
     }
-    //env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
+    env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
 
     if (scriptRun) {
 
@@ -1567,11 +1567,10 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         actionOk = errorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format("Key '%s' is undefined in '%s'.",
                 stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
         def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
-                                                           checkOrExecuteData?.get(stringSubKeys[1])]
+                                                            checkOrExecuteData?.get(stringSubKeys[1])]
         pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
                 'return universalPipelineWrapperBuiltIns')
         // TODO: remove from doc 'Для внутренних нужд путем запуска скриптов "как часть pipeline'а"'
-        // TODO: fix ansible fatal: [$IP_ADDRESSES]: UNREACHABLE!
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             def universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
             return [actionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate]
@@ -1605,7 +1604,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
-    //env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
+    env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
     return [actionOk, actionMsg]
 }
 
