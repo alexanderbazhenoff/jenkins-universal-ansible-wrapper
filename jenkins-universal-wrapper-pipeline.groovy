@@ -1613,7 +1613,7 @@ node(jenkinsNodeToExecute) {
 
         // When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct.
         Boolean pipelineSettingsCheckOk = true
-        if (!pipelineFailReasonText.trim() && checkPipelineParametersPass || getBooleanPipelineParamState(params)) {
+        if ((!pipelineFailReasonText.trim() && checkPipelineParametersPass) || getBooleanPipelineParamState(params)) {
             (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                     false)
         }
@@ -1633,11 +1633,11 @@ node(jenkinsNodeToExecute) {
             (universalPipelineWrapperBuiltIns, allDone, env) = checkOrExecutePipelineWrapperFromSettings(
                     pipelineSettings, env)
             pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
+            String overallResults = universalPipelineWrapperBuiltIns.get('multilineReport') ?
+                    universalPipelineWrapperBuiltIns.multilineReport.replaceAll('\\[PASS\\]', "\033[0;32m[PASS]\033[0m")
+                            .replaceAll('\\[FAIL\\]', "\033[0;31m[FAIL]\033[0m") : 'n/a'
+            CF.outMsg(allDone ? 1 : 3, String.format('%s\nOVERALL:\n\n%s\n%s', '-' * 80, overallResults, '-' * 80))
         }
-        String overallResults = universalPipelineWrapperBuiltIns.get('multilineReport') ?
-                universalPipelineWrapperBuiltIns.multilineReport.replaceAll('\\[PASS\\]', "\033[0;32m[PASS]\033[0m")
-                        .replaceAll('\\[FAIL\\]', "\033[0;31m[FAIL]\033[0m") : 'n/a'
-        CF.outMsg(allDone ? 1 : 3, String.format('%s\nOVERALL:\n\n%s\n%s', '-' * 80, overallResults, '-' * 80))
         if (pipelineFailReasonText.trim())
             error String.format('%s\n%s.', pipelineFailReasonText, 'Please fix then re-build')
 
