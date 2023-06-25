@@ -1286,6 +1286,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
         }
     }
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
+    println 'actionOK: ' + actionOk
     return [actionOk, actionDetails, envVariables]
 }
 
