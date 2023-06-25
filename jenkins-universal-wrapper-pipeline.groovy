@@ -839,8 +839,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
             Boolean regexCheckAllRequiredPipelineParamsOk = true
             (requiredPipelineParamsSet, env) = checkAllRequiredPipelineParamsAreSet(pipelineSettings, pipelineParams,
                     envVariables)
-            println 'requiredPipelineParamsSet: ' + requiredPipelineParamsSet
-            if (requiredPipelineParamsSet) {
+            if (requiredPipelineParamsSet || getBooleanPipelineParamState(pipelineParams)) {
                 (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
                         pipelineParams, env)
             }
@@ -1611,11 +1610,10 @@ node(jenkinsNodeToExecute) {
         (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
                 pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
                         PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
-        println 'checkPipelineParametersPass: ' + checkPipelineParametersPass
 
         // When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct.
         Boolean pipelineSettingsCheckOk = true
-        if (checkPipelineParametersPass || getBooleanPipelineParamState(params)) {
+        if (!pipelineFailReasonText.trim() && checkPipelineParametersPass || getBooleanPipelineParamState(params)) {
             (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                     false)
         }
