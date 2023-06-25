@@ -875,6 +875,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
         (__, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem([:], stageItem as Map, pipelineSettings,
                 envVariables) : [[:], true, envVariables]
         checkOk = stageOk ? checkOk : false
+        println 'checkOk: ' + checkOk
         if (execute)
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (universalPipelineWrapperBuiltIns, stageOk, envVariables) = checkOrExecuteStageSettingsItem(
@@ -954,7 +955,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             printableStageName, allPass, stageStatusDetails)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns,
             'multilineReportStages')
-    println 'allPass' + allPass
     return [universalPipelineWrapperBuiltIns, allPass, envVariables]
 }
 
