@@ -874,7 +874,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     String currentSubjectMsg = 'in pipeline config'
     String functionCallTypes = String.format('%s%s%s', check ? 'check' : '', check & execute ? ' and ' : '',
             execute ? 'execute' : '')
-    Boolean pipelineSettingsContainsStages = (pipelineSettings?.get('stages'))
+    Boolean pipelineSettingsContainsStages = pipelineSettings?.get('stages')?.size()
     Boolean checkOk = errorMsgWrapper(!pipelineSettingsContainsStages && ((check &&
             getBooleanVarStateFromEnv(envVariables)) || execute), true, 0, String.format('No stages %s to %s.',
             functionCallTypes, currentSubjectMsg))
