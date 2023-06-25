@@ -1520,7 +1520,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
         executionLinkNames[stringKeyName] = executionLinkName
     }
-    env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
+    //env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
 
     if (scriptRun) {
 
@@ -1579,7 +1579,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
-    env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
+    //env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
     return [actionOk, actionMsg]
 }
 
