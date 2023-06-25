@@ -1603,9 +1603,10 @@ node(jenkinsNodeToExecute) {
 
         // When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct.
         Boolean pipelineSettingsCheckOk = true
-        if (checkPipelineParametersPass || getBooleanPipelineParamState(params))
+        if (checkPipelineParametersPass || getBooleanPipelineParamState(params)) {
             (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                     false)
+        }
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
 
