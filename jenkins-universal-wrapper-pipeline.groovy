@@ -553,9 +553,6 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                 String assignMessage = ''
                 def (Boolean paramNeedsToBeAssigned, Boolean assignmentOk, String parameterAssignment, Boolean fail,
                         Boolean warn) = handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
-                println 'printableParameterName: ' + printableParameterName + ' paramNeedsToBeAssigned: ' +
-                        paramNeedsToBeAssigned + ' assignmentOk: ' + assignmentOk + ' parameterAssignment: ' +
-                        parameterAssignment + ' fail: ' + fail + ' warn: ' + warn
                 if (paramNeedsToBeAssigned && assignmentOk && printableParameterName != '<undefined>' &&
                         parameterAssignment.trim()) {
                     envVariables[it.name.toString()] = parameterAssignment
@@ -818,6 +815,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
                                           String settingsRelativePathPrefix, ArrayList pipelineNameRegexReplace,
                                           ArrayList builtinPipelineParameters, Object envVariables,
                                           Object pipelineParams) {
+
     // Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings.
     String settingsRelativePath = String.format('%s/%s.yaml', settingsRelativePathPrefix,
             applyReplaceRegexItems(envVariables.JOB_NAME.toString(), pipelineNameRegexReplace))
@@ -839,10 +837,8 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
             Boolean regexCheckAllRequiredPipelineParamsOk
             (requiredPipelineParamsSet, env) = checkAllRequiredPipelineParamsAreSet(pipelineSettings, pipelineParams,
                     envVariables)
-            println 'requiredPipelineParamsSet: ' + requiredPipelineParamsSet
             (regexCheckAllRequiredPipelineParamsOk, env) = regexCheckAllRequiredPipelineParams(allPipelineParams,
                     pipelineParams, env)
-            println 'regexCheckAllRequiredPipelineParamsOk: ' + regexCheckAllRequiredPipelineParamsOk
             pipelineFailReasonText += requiredPipelineParamsSet && regexCheckAllRequiredPipelineParamsOk ? '' :
                     'Required pipeline parameter(s) was not specified or incorrect. '
         }
@@ -1604,14 +1600,12 @@ node(jenkinsNodeToExecute) {
         (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
                 pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
                         PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
-        println 'pipelineFailReasonText: ' + pipelineFailReasonText
 
-        // Check other pipeline settings (stages, playbooks, scripts, inventories, etc) are correct.
-        Boolean pipelineSettingsCheckOk
-        (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
-                false)
-        println 'pipelineSettingsCheckOk: ' + pipelineSettingsCheckOk
-        println 'checkPipelineParametersPass: ' + checkPipelineParametersPass
+        // When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct.
+        Boolean pipelineSettingsCheckOk = true
+        if (checkPipelineParametersPass || getBooleanPipelineParamState(params))
+            (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
+                    false)
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
 
