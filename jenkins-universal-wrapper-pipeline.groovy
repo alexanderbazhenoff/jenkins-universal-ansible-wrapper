@@ -554,7 +554,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                 def (Boolean paramNeedsToBeAssigned, Boolean assignmentOk, String parameterAssignment, Boolean fail,
                         Boolean warn) = handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
                 println 'printableParameterName: ' + printableParameterName + ' paramNeedsToBeAssigned: ' +
-                        paramNeedsToBeAssigned + ' assignmentOk: ' + parameterAssignment + ' parameterAssignment: ' +
+                        paramNeedsToBeAssigned + ' assignmentOk: ' + assignmentOk + ' parameterAssignment: ' +
                         parameterAssignment + ' fail: ' + fail + ' warn: ' + warn
                 if (assignmentOk && printableParameterName != '<undefined>' && parameterAssignment.trim()) {
                     envVariables[it.name.toString()] = parameterAssignment
