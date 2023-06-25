@@ -549,12 +549,13 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
         pipelineSettings.parameters.required.each {
             def (String printableParameterName, Boolean parameterIsUndefined) = getPipelineParamNameAndDefinedState(it
                     as Map, pipelineParameters, envVariables)
-            println 'printableParameterName: ' + printableParameterName + ' parameterIsUndefined: ' +
-                    parameterIsUndefined
             if (parameterIsUndefined) {
                 String assignMessage = ''
                 def (Boolean paramNeedsToBeAssigned, Boolean assignmentOk, String parameterAssignment, Boolean fail,
                         Boolean warn) = handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
+                println 'printableParameterName: ' + printableParameterName + ' paramNeedsToBeAssigned: ' +
+                        paramNeedsToBeAssigned + ' assignmentOk: ' + parameterAssignment + ' parameterAssignment: ' +
+                        parameterAssignment + ' fail: ' + fail + ' warn: ' + warn
                 if (assignmentOk && printableParameterName != '<undefined>' && parameterAssignment.trim()) {
                     envVariables[it.name.toString()] = parameterAssignment
                 } else if (printableParameterName == '<undefined>' || (paramNeedsToBeAssigned && !assignmentOk)) {
