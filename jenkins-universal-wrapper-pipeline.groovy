@@ -556,13 +556,14 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                 println 'printableParameterName: ' + printableParameterName + ' paramNeedsToBeAssigned: ' +
                         paramNeedsToBeAssigned + ' assignmentOk: ' + assignmentOk + ' parameterAssignment: ' +
                         parameterAssignment + ' fail: ' + fail + ' warn: ' + warn
-                if (assignmentOk && printableParameterName != '<undefined>' && parameterAssignment.trim()) {
+                if (paramNeedsToBeAssigned && assignmentOk && printableParameterName != '<undefined>' &&
+                        parameterAssignment.trim()) {
                     envVariables[it.name.toString()] = parameterAssignment
                 } else if (printableParameterName == '<undefined>' || (paramNeedsToBeAssigned && !assignmentOk)) {
                     assignMessage = !assignmentOk ? String.format("(can't be correctly assigned with '%s' variable) ",
                             it.on_empty.get('assign').toString()) : ''
                 }
-                allSet = !assignmentOk && fail ? false : allSet
+                allSet = !paramNeedsToBeAssigned && fail ? false : allSet
                 if (warn || (fail && !allSet))
                     CF.outMsg(fail ? 3 : 2, String.format("'%s' pipeline parameter is required, but undefined %s%s. %s",
                             printableParameterName, assignMessage, 'for current job run',
