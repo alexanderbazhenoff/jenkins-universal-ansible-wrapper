@@ -1582,8 +1582,6 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     } else {
 
         // Templating playbook keys. Setting up playbook, inventory and playbook execution closure.
-        def (String ansiblePlaybookText, String ansibleInventoryText) = [checkOrExecuteData?.get(stringKeys[0]),
-                                                                         checkOrExecuteData?.get(stringKeys[1])]
         String ansibleInstallationName = universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
@@ -1593,6 +1591,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
             checkOrExecuteDataHandled = checkOrExecuteDataHandled + checkOrExecuteDataTemplatedPart
         }
         checkOrExecuteData = checkOrExecuteDataHandled
+        def (String ansiblePlaybookText, String ansibleInventoryText) = [checkOrExecuteDataHandled?.get(stringKeys[0]),
+                                                                         checkOrExecuteDataHandled?.get(stringKeys[1])]
         actionClosure = {
             Map universalPipelineWrapperBuiltInsSaved = universalPipelineWrapperBuiltIns
             actionOk = CF.runAnsible(ansiblePlaybookText, ansibleInventoryText, '', '', '', [], ansibleInstallationName
