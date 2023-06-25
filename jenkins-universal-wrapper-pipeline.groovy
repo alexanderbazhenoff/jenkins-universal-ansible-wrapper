@@ -954,6 +954,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             printableStageName, allPass, stageStatusDetails)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns,
             'multilineReportStages')
+    println 'allPass' + allPass
     return [universalPipelineWrapperBuiltIns, allPass, envVariables]
 }
 
@@ -1127,7 +1128,6 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     if (actionItem.get('stop_on_fail') && !check && !actionLinkOk)
         error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                 "('stop_on_fail' is enabled for current action)")
-    println 'actionStructureAndLinkOk: ' + actionStructureAndLinkOk
     return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
 }
 
