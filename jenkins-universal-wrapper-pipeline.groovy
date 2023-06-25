@@ -884,7 +884,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
                 executeOk = stageOk ? executeOk : false
             }
     }
-    println 'checkOk && executeOk: ' + checkOk && executeOk
+    println 'checkOk && executeOk: ' + (checkOk && executeOk)
     return [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
 }
 
