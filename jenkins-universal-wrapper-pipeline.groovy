@@ -1603,6 +1603,8 @@ node(jenkinsNodeToExecute) {
         Boolean pipelineSettingsCheckOk
         (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
                 false)
+        println 'pipelineSettingsCheckOk: ' + pipelineSettingsCheckOk
+        println 'checkPipelineParametersPass: ' + checkPipelineParametersPass
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
 
