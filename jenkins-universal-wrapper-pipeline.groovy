@@ -1607,6 +1607,7 @@ node(jenkinsNodeToExecute) {
         println 'checkPipelineParametersPass: ' + checkPipelineParametersPass
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
+        println 'pipelineFailReasonText: ' + pipelineFailReasonText
 
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
