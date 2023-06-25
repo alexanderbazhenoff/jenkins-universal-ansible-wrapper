@@ -458,11 +458,11 @@ static ArrayList getPipelineParamNameAndDefinedState(Map paramItem, Object pipel
  */
 ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
     if (!settingsItem.get('on_empty'))
-        return [false, '', true, false]
+        return [false, true, '', true, false]
     Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').asBoolean() : true
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
     if (!settingsItem.on_empty.get('assign'))
-        return [false, '', fail, warn]
+        return [false, true, '', fail, warn]
     def (Boolean assignmentIsPossible, Boolean assignmentOk, String assignment) =
             getTemplatingFromVariables(settingsItem.on_empty.assign.toString(), envVariables)
     return [assignmentIsPossible, assignmentOk, assignment, fail, warn]
