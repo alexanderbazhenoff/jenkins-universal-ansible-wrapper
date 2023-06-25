@@ -1622,11 +1622,11 @@ node(jenkinsNodeToExecute) {
 
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
-        Boolean allDone = true
         Map universalPipelineWrapperBuiltIns = [:]
         universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName = AnsibleInstallationName?.trim() ?
                 AnsibleInstallationName : ''
         if (!pipelineFailReasonText.trim() || getBooleanPipelineParamState(params)) {
+            Boolean allDone
             errorMsgWrapper(getBooleanPipelineParamState(params), true, 2, String.format('%s %s.',
                     'Dry-run mode enabled. All pipeline and settings errors will be ignored and pipeline stages will',
                     'be emulated skipping the scripts, playbooks and pipeline runs.'))
