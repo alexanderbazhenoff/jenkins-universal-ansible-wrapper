@@ -983,7 +983,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
  * @param currentStatus - current status to change on error in check mode, or not to change on execution.
  * @return - true when all map items is not empty and correct type.
  */
-// TODO: Take a look at parameters and stages check and implement this function.
 Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList listOfKeys, Map map, Boolean isString,
                                                       String index, Boolean currentStatus = true) {
     listOfKeys.each {
@@ -1250,9 +1249,6 @@ static ArrayList getDryRunStateAndActionMsg(Object envVariables, String actionNa
  *           - action description for logging in reports;
  *           - environment variables return.
  */
-// TODO: done the env pass inside other functions and return from this
-// TODO: make action vars
-// TODO: make stage vars
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
                                            Boolean check, Map universalPipelineWrapperBuiltIns,
                                            String nodePipelineParameterName = 'NODE_NAME',
@@ -1514,6 +1510,21 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
     return [subKeyDefined, subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]]
 }
 
+/**
+ * Pipeline action: run playbook or script.
+ *
+ * @param actionLink - message prefix for possible errors.
+ * @param pipelineSettings - all universal pipeline settings to get script or playbook from.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param check - set false to execute action item, true to check.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
+ * @param scriptRun - true when script run (including groovy code run 'as a prt of pipeline), false when playbook.
+ * @return - arrayList of:
+ *           - true when success, false when failed;
+ *           - action details for logging.
+ */
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun) {
     String actionMsg
@@ -1547,10 +1558,9 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         executionLinkNames[stringKeyName] = executionLinkName
     }
     env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
-
     if (scriptRun) {
 
-        // Check script keys. Avoiding of negative pointers in parallel run setting up code sub-keys. Choosing closure.
+        // Check script keys. Avoiding of negative pointers in parallel run setting up code sub-keys.
         checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
                 instanceof Map) ? checkOrExecuteData.script as Map : [:]
         (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
@@ -1566,11 +1576,12 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
         actionOk = errorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format("Key '%s' is undefined in '%s'.",
                 stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
+
+        // Setting up closure depending on script type.
         def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
                                                             checkOrExecuteData?.get(stringSubKeys[1])]
         pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
                 'return universalPipelineWrapperBuiltIns')
-        // TODO: remove from doc 'Для внутренних нужд путем запуска скриптов "как часть pipeline'а"'
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             def universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
             return [actionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate]
@@ -1652,6 +1663,5 @@ node(jenkinsNodeToExecute) {
         }
         if (pipelineFailReasonText.trim())
             error String.format('%s\n%s.', pipelineFailReasonText, 'Please fix then re-build')
-
     }
 }
