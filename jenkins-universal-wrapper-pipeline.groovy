@@ -1622,7 +1622,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
 
 ArrayList actionPipelineRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                             Map universalPipelineWrapperBuiltIns) {
-    String actionMsg
+    String actionMsg = ''
     String actionName = 'downstream job run'
     ArrayList stringKeys = ['pipeline']
     ArrayList booleanKeys = ['propagate', 'wait']
