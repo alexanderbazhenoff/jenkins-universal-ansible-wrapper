@@ -1265,7 +1265,8 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                         playbook   : { (actionOk, actionDetails) = actionAnsiblePlaybookOrScriptRun(actionLink,
                                             pipelineSettings, envVariables, check, actionOk,
                                             universalPipelineWrapperBuiltIns, false) },
-                        pipeline   : { println 'run_pipeline' },
+                        pipeline   : { (actionOk, actionDetails) = actionPipelineRun(actionLink, actionLinkItem,
+                                            envVariables, check, actionOk, universalPipelineWrapperBuiltIns) },
                         stash      : { println 'stash' },
                         unstash    : { println 'unstash' },
                         artifacts  : { println 'copy_artifacts' },
@@ -1616,6 +1617,18 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
             actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
     env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
+    return [actionOk, actionMsg]
+}
+
+ArrayList actionPipelineRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                            Map universalPipelineWrapperBuiltIns) {
+    String actionMsg
+    String actionName = 'downstream job run'
+    ArrayList stringKeys = ['pipeline']
+    ArrayList booleanKeys = ['propagate', 'wait']
+    (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
+    println actionLinkItem
     return [actionOk, actionMsg]
 }
 
