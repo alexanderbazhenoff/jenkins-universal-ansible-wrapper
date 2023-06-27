@@ -1696,7 +1696,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
  */
 ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVariables, String keyDescription,
                                          Boolean check, Boolean allPass = true, ArrayList pipelineParameters = [],
-                                         ArrayList printablePipelineParameters = pipelineParameters) {
+                                         ArrayList printablePipelineParameters = []) {
     listOfMapItems.eachWithIndex { listItem, Integer listItemIndex ->
         ArrayList stringParamKeysList = ['name', 'type']
         ArrayList allParamKeysList = stringParamKeysList + ['value']
