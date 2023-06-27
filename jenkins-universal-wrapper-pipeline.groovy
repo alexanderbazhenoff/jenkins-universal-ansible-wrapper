@@ -1650,6 +1650,7 @@ ArrayList actionPipelineRun(String actionLink, Map actionLinkItem, Object envVar
     (actionOk, pipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersMapItems, envVariables,
             String.format("'%s' action", actionLink), check, actionOk)
     // TODO: copy_artifacts keys handling and other function.
+    println 'pipelineParameters: ' + pipelineParameters
     return [actionOk, actionMsg]
 }
 
@@ -1674,21 +1675,24 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
         ArrayList paramTypes = ['string', 'boolean', 'password', 'text']
         String errMsgSubject = String.format('parameter no. %s of %s', listItemIndex.toString(), keyDescription)
         if (listItem instanceof Map) {
+
+            // Checking pipeline parameter item keys types and defined states.
             Map filteredListItem = findMapItemsFromList(listItem as Map, allParamKeysList)
             Boolean allParameterKeysFound = filteredListItem?.size() < 3
             errorMsgWrapper(check && allParameterKeysFound, true, 3, String.format("%s %s: %s required.",
                     'Not enough keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
             Boolean stringItemsOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringParamKeysList,
                     filteredListItem, true, keyDescription)
-            Boolean parameterItemOk = allParameterKeysFound && (filteredListItem?.get('parameter') instanceof String ||
-                    filteredListItem?.get('parameter') instanceof Boolean)
-            errorMsgWrapper(check && !parameterItemOk, true, 3,
-                    String.format("'%s' value in %s should be string or boolean.", errMsgSubject))
+            Boolean parameterItemOk = allParameterKeysFound && !(filteredListItem?.get('parameter') instanceof Map)
+            errorMsgWrapper(check && !parameterItemOk, true, 3, String.format("'parameter' value in %s %s. %s.",
+                    errMsgSubject, "shouldn't be map", 'In most cases, strings or a boolean are sufficient'))
             Boolean paramTypeOk = allParameterKeysFound && paramTypes.any { String paramType ->
                 paramType.contains(filteredListItem?.get(stringParamKeysList[1]) as String)
             }
             errorMsgWrapper(check && !paramTypeOk, true, 3, String.format("Wrong type in %s. Should be: %s.",
                     errMsgSubject, arrayListToReadableString(paramTypes)))
+
+            // Assigning variables to pipeline parameter item keys and converting them to pipeline parameter.
             def (Boolean allAssignmentsPass, Map assignedListItem) = templatingMapKeysFromVariables(filteredListItem,
                     allParamKeysList, envVariables, true, [:], errMsgSubject)
             if (allParameterKeysFound)
