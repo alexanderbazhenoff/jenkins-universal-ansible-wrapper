@@ -224,7 +224,6 @@ static String mapItemsToReadableListString(Map map, Boolean keyNames = true, Boo
     return arrayListToReadableString(keyNames ? map.keySet() as ArrayList : map.values() as ArrayList, splitLastByAnd)
 }
 
-
 /**
  * Convert pipeline settings map item and add to jenkins pipeline parameters.
  *
@@ -438,7 +437,7 @@ Boolean checkPipelineParamsFormat(ArrayList parameters) {
  *           - return true when condition specified in 'isUndefined' method variable met.
  */
 static ArrayList getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
-                                           Boolean isUndefined = true) {
+                                                     Boolean isUndefined = true) {
     return [getPrintableValueKeyFromMapItem(paramItem), (paramItem.get('name') && pipelineParameters
             .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
 }
@@ -502,7 +501,7 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
 /**
  * Templating or assign map keys with variable(s).
  *
- * @param assignMap - map to assign keys from.
+ * @param assignMap - map to assign keys in.
  * @param assignmentKeysList - list of keys in assignMap needs to be assigned.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
@@ -1620,18 +1619,91 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     return [actionOk, actionMsg]
 }
 
+/**
+ * Pipeline action: run downstream jenkins pipeline.
+ *
+ * @param actionLink - message prefix for possible errors.
+ * @param actionLinkItem - action link item to check or execute.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param check - set false to execute action item, true to check.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
+ * @return
+ */
 ArrayList actionPipelineRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                             Map universalPipelineWrapperBuiltIns) {
     String actionMsg = ''
-    String actionName = 'downstream job run'
     ArrayList stringKeys = ['pipeline']
     ArrayList booleanKeys = ['propagate', 'wait']
+    ArrayList pipelineParameters = []
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
-    println actionLinkItem
+    String downstreamJobName = actionLinkItem?.get(stringKeys[0]) instanceof String &&
+            actionLinkItem?.get(stringKeys[0])?.trim() ? actionLinkItem?.get(stringKeys[0]) : '<undefined>'
+    String actionName = String.format("downstream job '%s' run", downstreamJobName)
+    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey('parameters') &&
+            !(actionLinkItem?.get('parameters') instanceof ArrayList), actionOk, 3,
+            String.format("'parameters' key in '%s' action should be a list or just absent.", actionLink))
+    ArrayList pipelineParametersMapItems = actionLinkItem?.get('parameters') instanceof ArrayList ?
+            actionLinkItem?.get('parameters') as ArrayList : []
+    (actionOk, pipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersMapItems, envVariables,
+            String.format("'%s' action", actionLink), check, actionOk)
+    // TODO: copy_artifacts keys handling and other function.
     return [actionOk, actionMsg]
 }
 
+/**
+ * Convert list of maps with job parameter keys to jenkins job parameters with variables assigning.
+ *
+ * @param listOfMapItems - list of maps with job parameters with structure: [name: 'name of downstream job',
+ *                         type: 'parameter type (string, text, password or boolean), parameter: 'parameter value']
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param keyDescription - parameters description (where parameters was taken).
+ * @param check - set false to execute action item, true to check.
+ * @param allPass - just to pass previous action execution/checking state.
+ * @param pipelineParameters - other jenkins job parameters to add to them.
+ * @return
+ */
+ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVariables, String keyDescription,
+                                         Boolean check, Boolean allPass = true, ArrayList pipelineParameters = []) {
+    listOfMapItems.eachWithIndex { listItem, Integer listItemIndex ->
+        ArrayList stringParamKeysList = ['name', 'type']
+        ArrayList allParamKeysList = stringParamKeysList + ['parameter']
+        ArrayList paramTypes = ['string', 'boolean', 'password', 'text']
+        String errMsgSubject = String.format('parameter no. %s of %s', listItemIndex.toString(), keyDescription)
+        if (listItem instanceof Map) {
+            Map filteredListItem = findMapItemsFromList(listItem as Map, allParamKeysList)
+            Boolean allParameterKeysFound = filteredListItem?.size() < 3
+            errorMsgWrapper(check && allParameterKeysFound, true, 3, String.format("%s %s: %s required.",
+                    'Not enough keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
+            Boolean stringItemsOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringParamKeysList,
+                    filteredListItem, true, keyDescription)
+            Boolean parameterItemOk = allParameterKeysFound && (filteredListItem?.get('parameter') instanceof String ||
+                    filteredListItem?.get('parameter') instanceof Boolean)
+            errorMsgWrapper(check && !parameterItemOk, true, 3,
+                    String.format("'%s' value in %s should be string or boolean.", errMsgSubject))
+            Boolean paramTypeOk = allParameterKeysFound && paramTypes.any { String paramType ->
+                paramType.contains(filteredListItem?.get(stringParamKeysList[1]) as String)
+            }
+            errorMsgWrapper(check && !paramTypeOk, true, 3, String.format("Wrong type in %s. Should be: %s.",
+                    errMsgSubject, arrayListToReadableString(paramTypes)))
+            def (Boolean allAssignmentsPass, Map assignedListItem) = templatingMapKeysFromVariables(filteredListItem,
+                    allParamKeysList, envVariables, true, [:], errMsgSubject)
+            if (allParameterKeysFound)
+                pipelineParameters = CF.itemKeyToJobParam(assignedListItem?.get(stringParamKeysList[0]),
+                        assignedListItem?.get('parameter'), assignedListItem?.get(stringParamKeysList[1]), false,
+                        pipelineParameters)
+            allPass = allPass && allParameterKeysFound && stringItemsOk && parameterItemOk && paramTypeOk &&
+                    allAssignmentsPass ? allPass : false
+        } else {
+            allPass = errorMsgWrapper(true, allPass, 3, String.format("Wrong structure in %s: should be map.",
+                    errMsgSubject))
+        }
+    }
+    return [allPass, pipelineParameters]
+}
 
 // Pipeline entry point.
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
