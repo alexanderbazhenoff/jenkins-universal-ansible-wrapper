@@ -1345,9 +1345,9 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     Closure actionClosure = {
         CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?: 'main',
                 actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: gitDefaultCredentials)
-        return [actionOk, universalPipelineWrapperBuiltIns]
+        return [actionOk, universalPipelineWrapperBuiltIns, null]
     }
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, printableActionLinkItem, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
     return [actionOk, actionMsg]
@@ -1372,23 +1372,25 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
  * @return - arrayList of:
  *           - true when success, false when failed;
  *           - action details for logging;
- *           - pipeline wrapper built-ins variable return.
+ *           - pipeline wrapper built-ins variable return;
+ *           - additional untyped object (e.g. for run wrapper object return of downstream pipeline runs).
  */
 ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
                                            String actionName, Map printableActionLinkItem,
                                            ArrayList actionKeysFilterLists, Boolean actionOk,
                                            Map universalPipelineWrapperBuiltIns) {
+    Object additionalObject = null
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
     if (!check && !dryRunAction)
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
-            (actionOk, universalPipelineWrapperBuiltIns) = actionClosure.call()
+            (actionOk, universalPipelineWrapperBuiltIns, additionalObject) = actionClosure.call()
         } catch (Exception err) {
             actionOk = errorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg, actionLink,
                     CF.readableError(err)))
         }
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns]
+    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns, additionalObject]
 }
 
 /**
@@ -1451,9 +1453,9 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
         ansibleCollections.each { ansibleCollectionsItem ->
             sh String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem)
         }
-        return [actionOk, universalPipelineWrapperBuiltIns]
+        return [actionOk, universalPipelineWrapperBuiltIns, null]
     }
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, actionLinkItem, ['collections'], actionOk,
             universalPipelineWrapperBuiltIns)
     return [actionOk, actionMsg]
@@ -1584,10 +1586,10 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 'return universalPipelineWrapperBuiltIns')
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             def universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
-            return [actionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate]
+            return [actionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate, null]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh scriptText
-            return [actionOk, universalPipelineWrapperBuiltIns]
+            return [actionOk, universalPipelineWrapperBuiltIns, null]
         } : {}
     } else {
 
@@ -1607,12 +1609,12 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
             Map universalPipelineWrapperBuiltInsSaved = universalPipelineWrapperBuiltIns
             actionOk = CF.runAnsible(ansiblePlaybookText, ansibleInventoryText, '', '', '', [], ansibleInstallationName
                     ?.trim() ? ansibleInstallationName : GV.AnsibleInstallationName)
-            return [actionOk, universalPipelineWrapperBuiltInsSaved]
+            return [actionOk, universalPipelineWrapperBuiltInsSaved, null]
         }
     }
 
     // Run action closure and finally update env from changed universalPipelineWrapperBuiltIns keys.
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
     env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
@@ -1636,7 +1638,8 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     String actionMsg = ''
     ArrayList stringKeys = ['pipeline']
     ArrayList booleanKeys = ['propagate', 'wait']
-    ArrayList pipelineParameters = []
+    ArrayList pipelineParameters
+    ArrayList printablePipelineParameters
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
     String downstreamJobName = actionLinkItem?.get(stringKeys[0]) instanceof String &&
@@ -1650,21 +1653,27 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             actionLink))
     ArrayList pipelineParametersList = actionLinkItem?.get(kName) instanceof ArrayList ? actionLinkItem?.get(kName) as
             ArrayList : []
-    (actionOk, pipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersList, envVariables,
-            String.format("'%s' action", actionLink), check, actionOk)
+    (actionOk, pipelineParameters, printablePipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersList,
+            envVariables, String.format("'%s' action", actionLink), check, actionOk)
+    println 'printablePipelineParameters: ' + printablePipelineParameters
 
     // Processing copy_artifacts parameters.
     kName = 'copy_artifacts'
     actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) && !(actionLinkItem?.get(kName) instanceof
             Map), actionOk, 3, String.format("%s key in '%s' action should be a map or just absent.", kName,
             actionLink))
-    Map copyArtifactsKeys = actionLinkItem?.get(kName) instanceof Map ? actionLinkItem?.get(kName) as Map: []
+    Map copyArtifactsKeys = actionLinkItem?.get(kName) instanceof Map ? actionLinkItem?.get(kName) as Map : [:]
     ArrayList copyArtifactsStringKeys = ['filter', 'excludes', 'target_directory']
     ArrayList copyArtifactsBooleanKeys = ['optional', 'flatten', 'fingerprint']
     (actionOk, copyArtifactsKeys) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, copyArtifactsKeys, copyArtifactsStringKeys, String.format("%s key in '%s'",
             kName, actionLink), copyArtifactsBooleanKeys)
+    String copyArtifactsFilter = copyArtifactsKeys?.get(copyArtifactsStringKeys[0] as String) ?
+            copyArtifactsKeys.get(copyArtifactsStringKeys[0]) : ''
     println 'copyArtifactsKeys: ' + copyArtifactsKeys
+
+    // Setting up action closure and run downstream job/pipeline.
+
     return [actionOk, actionMsg]
 }
 
@@ -1679,10 +1688,15 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
  * @param check - set false to execute action item, true to check.
  * @param allPass - just to pass previous action execution/checking state.
  * @param pipelineParameters - other jenkins job parameters to add to them.
- * @return
+ * @param printablePipelineParameters - the same as pipelineParameters, but values of 'password' parameters was hidden.
+ * @return arrayList of:
+ *         - true when all pass;
+ *         - pipeline parameters return;
+ *         - printable pipeline parameters return.
  */
 ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVariables, String keyDescription,
-                                         Boolean check, Boolean allPass = true, ArrayList pipelineParameters = []) {
+                                         Boolean check, Boolean allPass = true, ArrayList pipelineParameters = [],
+                                         ArrayList printablePipelineParameters = pipelineParameters) {
     listOfMapItems.eachWithIndex { listItem, Integer listItemIndex ->
         ArrayList stringParamKeysList = ['name', 'type']
         ArrayList allParamKeysList = stringParamKeysList + ['value']
@@ -1706,20 +1720,25 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
             allPass = errorMsgWrapper(!typeKeyOk, allPass, 3, String.format("Wrong in %s. Should be: %s.", errMsgSubject,
                     arrayListToReadableString(paramTypes)))
 
-            // Assigning variables to pipeline parameter item keys and converting them to pipeline parameter.
+            // Assigning variables to pipeline parameter item, hiding passwords, converting them to pipeline parameter.
             (allPass, filteredListItem) = templatingMapKeysFromVariables(filteredListItem, allParamKeysList,
                     envVariables, allPass, [:], errMsgSubject)
-            if (filteredListItem?.size() == 3 && stringKeysOk)
+            if (filteredListItem?.size() == 3 && stringKeysOk) {
                 pipelineParameters = CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
                         filteredListItem?.get('value'), filteredListItem?.get(stringParamKeysList[1]), false,
                         pipelineParameters)
+                printablePipelineParameters = (filteredListItem?.get(stringParamKeysList[1]) == paramTypes[3]) ?
+                        CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
+                                hidePasswordString(filteredListItem?.get('value') as String), filteredListItem
+                                ?.get(stringParamKeysList[1]), false, pipelineParameters) : pipelineParameters
+            }
             allPass = filteredListItem?.size() == 3 && stringKeysOk ? allPass : false
         } else {
             allPass = errorMsgWrapper(true, allPass, 3, String.format("Wrong structure in %s: should be map.",
                     errMsgSubject))
         }
     }
-    return [allPass, pipelineParameters]
+    return [allPass, pipelineParameters, printablePipelineParameters]
 }
 
 // Pipeline entry point.
