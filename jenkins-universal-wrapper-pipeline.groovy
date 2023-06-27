@@ -1681,11 +1681,11 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
             Map filteredListItem = findMapItemsFromList(listItem as Map, allParamKeysList)
             println 'filteredListItem: ' + filteredListItem
             Boolean allParameterKeysFound = filteredListItem?.size() == 3
-            errorMsgWrapper(check && allParameterKeysFound, true, 3, String.format("%s %s: %s required.",
+            errorMsgWrapper(check && !allParameterKeysFound, true, 3, String.format("%s %s: %s required.",
                     'Wrong set of keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
             Boolean stringItemsOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringParamKeysList,
                     filteredListItem, true, keyDescription)
-            Boolean valueItemOk = allParameterKeysFound && !(filteredListItem?.get('value') instanceof Map)
+            Boolean valueItemOk = !(filteredListItem?.get('value') instanceof Map)
             errorMsgWrapper(check && !valueItemOk, true, 3, String.format("'value' in %s %s. %s.", errMsgSubject,
                     "shouldn't be map", 'In most cases, strings or a boolean are sufficient'))
             Boolean paramTypeOk = allParameterKeysFound && paramTypes.any { String paramType ->
