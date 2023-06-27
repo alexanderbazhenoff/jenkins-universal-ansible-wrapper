@@ -1681,28 +1681,27 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
             Map filteredListItem = findMapItemsFromList(listItem as Map, allParamKeysList)
             println 'filteredListItem: ' + filteredListItem
             Boolean allParameterKeysFound = filteredListItem?.size() == 3
-            errorMsgWrapper(check && !allParameterKeysFound, true, 3, String.format("%s %s: %s required.",
+            allPass = errorMsgWrapper(!allParameterKeysFound, allPass, 3, String.format("%s %s: %s required.",
                     'Wrong set of keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
-            Boolean stringItemsOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringParamKeysList,
-                    filteredListItem, true, keyDescription)
-            Boolean valueItemOk = !(filteredListItem?.get('value') instanceof Map)
-            errorMsgWrapper(check && !valueItemOk, true, 3, String.format("'value' in %s %s. %s.", errMsgSubject,
+            Boolean stringKeysOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringParamKeysList,
+                    filteredListItem, true, keyDescription, allPass)
+            Boolean valueKeyWrong = filteredListItem?.get('value') instanceof Map
+            allPass = errorMsgWrapper(valueKeyWrong, allPass, 3, String.format("'value' in %s %s. %s.", errMsgSubject,
                     "shouldn't be map", 'In most cases, strings or a boolean are sufficient'))
-            Boolean paramTypeOk = allParameterKeysFound && paramTypes.any { String paramType ->
-                paramType.contains(filteredListItem?.get(stringParamKeysList[1]) as String)
+            Boolean typeKeyOk = allParameterKeysFound && paramTypes.any { String entry ->
+                entry.contains(filteredListItem?.get(stringParamKeysList[1]) as String)
             }
-            errorMsgWrapper(check && !paramTypeOk, true, 3, String.format("Wrong type in %s. Should be: %s.",
+            allPass = errorMsgWrapper(!typeKeyOk, allPass, 3, String.format("Wrong type in %s. Should be: %s.",
                     errMsgSubject, arrayListToReadableString(paramTypes)))
 
             // Assigning variables to pipeline parameter item keys and converting them to pipeline parameter.
-            def (Boolean allAssignmentsPass, Map assignedListItem) = templatingMapKeysFromVariables(filteredListItem,
-                    allParamKeysList, envVariables, true, [:], errMsgSubject)
-            if (allParameterKeysFound)
-                pipelineParameters = CF.itemKeyToJobParam(assignedListItem?.get(stringParamKeysList[0]),
-                        assignedListItem?.get('value'), assignedListItem?.get(stringParamKeysList[1]), false,
+            (allPass, filteredListItem) = templatingMapKeysFromVariables(filteredListItem, allParamKeysList,
+                    envVariables, allPass, [:], errMsgSubject)
+            if (allParameterKeysFound && stringKeysOk)
+                pipelineParameters = CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
+                        filteredListItem?.get('value'), filteredListItem?.get(stringParamKeysList[1]), false,
                         pipelineParameters)
-            allPass = allPass && allParameterKeysFound && stringItemsOk && valueItemOk && paramTypeOk &&
-                    allAssignmentsPass ? allPass : false
+            allPass = allParameterKeysFound && stringKeysOk ? allPass : false
         } else {
             allPass = errorMsgWrapper(true, allPass, 3, String.format("Wrong structure in %s: should be map.",
                     errMsgSubject))
