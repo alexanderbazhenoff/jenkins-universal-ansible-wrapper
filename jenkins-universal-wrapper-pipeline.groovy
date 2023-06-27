@@ -1664,7 +1664,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     (actionOk, copyArtifactsKeys) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, copyArtifactsKeys, copyArtifactsStringKeys, String.format("%s key in '%s'",
             kName, actionLink), copyArtifactsBooleanKeys)
-    println copyArtifactsKeys
+    println 'copyArtifactsKeys: ' + copyArtifactsKeys
     return [actionOk, actionMsg]
 }
 
