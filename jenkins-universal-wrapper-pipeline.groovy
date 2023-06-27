@@ -1672,7 +1672,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
                                          Boolean check, Boolean allPass = true, ArrayList pipelineParameters = []) {
     listOfMapItems.eachWithIndex { listItem, Integer listItemIndex ->
         ArrayList stringParamKeysList = ['name', 'type']
-        ArrayList allParamKeysList = stringParamKeysList + ['parameter']
+        ArrayList allParamKeysList = stringParamKeysList + ['value']
         ArrayList paramTypes = ['string', 'boolean', 'password', 'text']
         String errMsgSubject = String.format('parameter no. %s of %s', listItemIndex.toString(), keyDescription)
         if (listItem instanceof Map) {
@@ -1685,8 +1685,8 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
                     'Not enough keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
             Boolean stringItemsOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringParamKeysList,
                     filteredListItem, true, keyDescription)
-            Boolean parameterItemOk = allParameterKeysFound && !(filteredListItem?.get('parameter') instanceof Map)
-            errorMsgWrapper(check && !parameterItemOk, true, 3, String.format("'parameter' value in %s %s. %s.",
+            Boolean parameterItemOk = allParameterKeysFound && !(filteredListItem?.get('value') instanceof Map)
+            errorMsgWrapper(check && !parameterItemOk, true, 3, String.format("'value' value in %s %s. %s.",
                     errMsgSubject, "shouldn't be map", 'In most cases, strings or a boolean are sufficient'))
             Boolean paramTypeOk = allParameterKeysFound && paramTypes.any { String paramType ->
                 paramType.contains(filteredListItem?.get(stringParamKeysList[1]) as String)
@@ -1699,7 +1699,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
                     allParamKeysList, envVariables, true, [:], errMsgSubject)
             if (allParameterKeysFound)
                 pipelineParameters = CF.itemKeyToJobParam(assignedListItem?.get(stringParamKeysList[0]),
-                        assignedListItem?.get('parameter'), assignedListItem?.get(stringParamKeysList[1]), false,
+                        assignedListItem?.get('value'), assignedListItem?.get(stringParamKeysList[1]), false,
                         pipelineParameters)
             allPass = allPass && allParameterKeysFound && stringItemsOk && parameterItemOk && paramTypeOk &&
                     allAssignmentsPass ? allPass : false
