@@ -1679,6 +1679,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
 
             // Checking pipeline parameter item keys types and defined states.
             Map filteredListItem = findMapItemsFromList(listItem as Map, allParamKeysList)
+            println 'filteredListItem: ' + filteredListItem
             Boolean allParameterKeysFound = filteredListItem?.size() < 3
             errorMsgWrapper(check && allParameterKeysFound, true, 3, String.format("%s %s: %s required.",
                     'Not enough keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
