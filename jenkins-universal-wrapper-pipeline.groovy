@@ -1264,7 +1264,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                         playbook   : { (actionOk, actionDetails) = actionAnsiblePlaybookOrScriptRun(actionLink,
                                             pipelineSettings, envVariables, check, actionOk,
                                             universalPipelineWrapperBuiltIns, false) },
-                        pipeline   : { (actionOk, actionDetails) = actionPipelineRun(actionLink, actionLinkItem,
+                        pipeline   : { (actionOk, actionDetails) = actionDownstreamJobRun(actionLink, actionLinkItem,
                                             envVariables, check, actionOk, universalPipelineWrapperBuiltIns) },
                         stash      : { println 'stash' },
                         unstash    : { println 'unstash' },
@@ -1631,8 +1631,8 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
  * @return
  */
-ArrayList actionPipelineRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
-                            Map universalPipelineWrapperBuiltIns) {
+ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+                                 Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
     String actionMsg = ''
     ArrayList stringKeys = ['pipeline']
     ArrayList booleanKeys = ['propagate', 'wait']
@@ -1642,15 +1642,29 @@ ArrayList actionPipelineRun(String actionLink, Map actionLinkItem, Object envVar
     String downstreamJobName = actionLinkItem?.get(stringKeys[0]) instanceof String &&
             actionLinkItem?.get(stringKeys[0])?.trim() ? actionLinkItem?.get(stringKeys[0]) : '<undefined>'
     String actionName = String.format("downstream job '%s' run", downstreamJobName)
-    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey('parameters') &&
-            !(actionLinkItem?.get('parameters') instanceof ArrayList), actionOk, 3,
-            String.format("'parameters' key in '%s' action should be a list or just absent.", actionLink))
-    ArrayList pipelineParametersMapItems = actionLinkItem?.get('parameters') instanceof ArrayList ?
-            actionLinkItem?.get('parameters') as ArrayList : []
-    (actionOk, pipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersMapItems, envVariables,
+
+    // Processing downstream job parameters.
+    String kName = 'parameters'
+    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) && !(actionLinkItem?.get(kName) instanceof
+            ArrayList), actionOk, 3, String.format("%s key in '%s' action should be a list or just absent.", kName,
+            actionLink))
+    ArrayList pipelineParametersList = actionLinkItem?.get(kName) instanceof ArrayList ? actionLinkItem?.get(kName) as
+            ArrayList : []
+    (actionOk, pipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersList, envVariables,
             String.format("'%s' action", actionLink), check, actionOk)
-    // TODO: copy_artifacts keys handling and other function.
-    println 'pipelineParameters: ' + pipelineParameters
+
+    // Processing copy_artifacts parameters.
+    kName = 'copy_artifacts'
+    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) && !(actionLinkItem?.get(kName) instanceof
+            Map), actionOk, 3, String.format("%s key in '%s' action should be a map or just absent.", kName,
+            actionLink))
+    Map copyArtifactsKeys = actionLinkItem?.get(kName) instanceof Map ? actionLinkItem?.get(kName) as Map: []
+    ArrayList copyArtifactsStringKeys = ['filter', 'excludes', 'target_directory']
+    ArrayList copyArtifactsBooleanKeys = ['optional', 'flatten', 'fingerprint']
+    (actionOk, copyArtifactsKeys) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, actionOk, actionLink, copyArtifactsKeys, copyArtifactsStringKeys, String.format("%s key in '%s'",
+            kName, actionLink), copyArtifactsBooleanKeys)
+    println copyArtifactsKeys
     return [actionOk, actionMsg]
 }
 
