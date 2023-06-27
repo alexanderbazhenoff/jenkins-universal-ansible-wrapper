@@ -1651,6 +1651,7 @@ ArrayList actionPipelineRun(String actionLink, Map actionLinkItem, Object envVar
             String.format("'%s' action", actionLink), check, actionOk)
     // TODO: copy_artifacts keys handling and other function.
     println 'pipelineParameters: ' + pipelineParameters
+    println 'actionOk: ' + actionOk
     return [actionOk, actionMsg]
 }
 
