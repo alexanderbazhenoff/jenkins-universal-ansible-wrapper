@@ -1685,9 +1685,9 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
                     'Not enough keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
             Boolean stringItemsOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringParamKeysList,
                     filteredListItem, true, keyDescription)
-            Boolean parameterItemOk = allParameterKeysFound && !(filteredListItem?.get('value') instanceof Map)
-            errorMsgWrapper(check && !parameterItemOk, true, 3, String.format("'value' value in %s %s. %s.",
-                    errMsgSubject, "shouldn't be map", 'In most cases, strings or a boolean are sufficient'))
+            Boolean valueItemOk = allParameterKeysFound && !(filteredListItem?.get('value') instanceof Map)
+            errorMsgWrapper(check && !valueItemOk, true, 3, String.format("'value' in %s %s. %s.", errMsgSubject,
+                    "shouldn't be map", 'In most cases, strings or a boolean are sufficient'))
             Boolean paramTypeOk = allParameterKeysFound && paramTypes.any { String paramType ->
                 paramType.contains(filteredListItem?.get(stringParamKeysList[1]) as String)
             }
@@ -1701,7 +1701,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
                 pipelineParameters = CF.itemKeyToJobParam(assignedListItem?.get(stringParamKeysList[0]),
                         assignedListItem?.get('value'), assignedListItem?.get(stringParamKeysList[1]), false,
                         pipelineParameters)
-            allPass = allPass && allParameterKeysFound && stringItemsOk && parameterItemOk && paramTypeOk &&
+            allPass = allPass && allParameterKeysFound && stringItemsOk && valueItemOk && paramTypeOk &&
                     allAssignmentsPass ? allPass : false
         } else {
             allPass = errorMsgWrapper(true, allPass, 3, String.format("Wrong structure in %s: should be map.",
