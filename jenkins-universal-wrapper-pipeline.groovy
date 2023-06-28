@@ -1675,6 +1675,8 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             check, actionOk, actionLink, copyArtifactsKeys, copyArtifactsStringKeys, String.format("%s key in '%s'",
             kName, actionLink), copyArtifactsBooleanKeys)
     String copyArtifactsFilter = copyArtifactsKeys?.get(copyArtifactsStringKeys[0] as String) ?: ''
+    actionOk = errorMsgWrapper(!copyArtifactsFilter.trim(), actionOk, 3, String.format(
+            "Mandatory key '%s' of '%s' in '%s' action is undefined.", copyArtifactsStringKeys[0], kName, actionLink))
 
     // Setting up action closure and run downstream job/pipeline.
     Closure actionClosure = downstreamJobNameDefined ? {
@@ -1684,18 +1686,28 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     } : {
         return [false, universalPipelineWrapperBuiltIns, null]
     }
-    errorMsgWrapper(!dryRunMode, true, 0, String.format("%s parameters: %s", actionName,
+    errorMsgWrapper(!check && !dryRunMode, true, 0, String.format("%s parameters: %s", actionName,
             CF.readableJobParams(printablePipelineParameters)))
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, runWrapper) = actionClosureWrapperWithTryCatch(check,
             envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
             actionOk, universalPipelineWrapperBuiltIns)
 
     // Copy artifacts from downstream job.
-    if (waitForPipelineComplete && copyArtifactsFilter?.trim()) {
-        // TODO: this section
+    String copyArtifactsBuildSelector = runWrapper?.getNumber()?.toString() ?: ''
+    String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s in '%s'", actionName, actionLinkItem)
+    String copyArtifactsErrReason = waitForPipelineComplete ? '' : ' defined not to wait for completion.'
+    copyArtifactsErrReason += !check && copyArtifactsBuildSelector.trim() && downstreamJobNameDefined ? '' :
+            String.format(" Unable to get build number of %s: it's undefined. %s", actionName,
+                    "Perhaps this job is still running or wasn't started.")
+    if (!check && waitForPipelineComplete && !copyArtifactsErrReason.trim()) {
+        try {
+            // TODO: this section
+        } catch (Exception err) {
+            copyArtifactsErrReason += String.format(' %s', CF.readableError(err))
+        }
     }
-    errorMsgWrapper(!waitForPipelineComplete, true, 2, String.format("Unable to copy artifacts from %s: %s.",
-            actionName, "defined not to wait for completion."))
+    actionOk = errorMsgWrapper(!copyArtifactsErrReason.trim(), true, 3, String.format('%s:%s', copyArtifactsErrMsg,
+            copyArtifactsErrReason))
     return [actionOk, actionMsg]
 }
 // TODO: replace CF.outMsg() to errorMsgWrapper() when it's more accurate to remove if...(s)
