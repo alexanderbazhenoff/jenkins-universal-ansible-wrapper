@@ -560,10 +560,9 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                             it.on_empty.get('assign').toString()) : ''
                 }
                 allSet = !paramNeedsToBeAssigned && fail ? false : allSet
-                if (warn || (fail && !allSet))
-                    CF.outMsg(fail ? 3 : 2, String.format("'%s' pipeline parameter is required, but undefined %s%s. %s",
-                            printableParameterName, assignMessage, 'for current job run',
-                            'Please specify then re-build again.'))
+                errorMsgWrapper((warn || (fail && !allSet)), true, fail ? 3 : 2, String.format(
+                        "'%s' pipeline parameter is required, but undefined %s%s. %s", printableParameterName,
+                        assignMessage, 'for current job run', 'Please specify then re-build again.'))
             }
         }
     }
@@ -1635,47 +1634,71 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
  */
 ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
                                  Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
-    String actionMsg = ''
+    String actionMsg
     ArrayList stringKeys = ['pipeline']
     ArrayList booleanKeys = ['propagate', 'wait']
     ArrayList pipelineParameters
     ArrayList printablePipelineParameters
+    Object runWrapper
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
-    String downstreamJobName = actionLinkItem?.get(stringKeys[0]) instanceof String &&
-            actionLinkItem?.get(stringKeys[0])?.trim() ? actionLinkItem?.get(stringKeys[0]) : '<undefined>'
+    Boolean downstreamJobNameDefined = actionLinkItem?.get(stringKeys[0]) instanceof String &&
+            actionLinkItem?.get(stringKeys[0])?.trim()
+    String downstreamJobName = downstreamJobNameDefined ? actionLinkItem?.get(stringKeys[0]) : '<undefined>'
     String actionName = String.format("downstream job '%s' run", downstreamJobName)
+    actionOk = errorMsgWrapper(check && !downstreamJobNameDefined, actionOk, 3,
+            String.format("Nothing to execute. '%s' key in '%s' action is mandatory.", stringKeys[0], actionLink))
+    Boolean dryRunMode = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
+    def (Boolean propagatePipelineErrors, Boolean waitForPipelineComplete) = booleanKeys.collect { String booleanKey ->
+        actionLinkItem.containsKey(booleanKey) ? actionLinkItem.get(booleanKey) : true
+    }
 
     // Processing downstream job parameters.
     String kName = 'parameters'
-    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) && !(actionLinkItem?.get(kName) instanceof
-            ArrayList), actionOk, 3, String.format("%s key in '%s' action should be a list or just absent.", kName,
-            actionLink))
-    ArrayList pipelineParametersList = actionLinkItem?.get(kName) instanceof ArrayList ? actionLinkItem?.get(kName) as
-            ArrayList : []
+    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) &&
+            !(actionLinkItem?.get(kName) instanceof ArrayList), actionOk, 3, String.format("%s key in '%s' %s.", kName,
+            actionLink, 'action should be a list or just absent'))
+    ArrayList pipelineParametersList = actionLinkItem?.get(kName) instanceof ArrayList ?
+            actionLinkItem?.get(kName) as ArrayList : []
     (actionOk, pipelineParameters, printablePipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersList,
             envVariables, String.format("'%s' action", actionLink), check, actionOk)
-    println 'printablePipelineParameters: ' + printablePipelineParameters
 
     // Processing copy_artifacts parameters.
     kName = 'copy_artifacts'
-    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) && !(actionLinkItem?.get(kName) instanceof
-            Map), actionOk, 3, String.format("%s key in '%s' action should be a map or just absent.", kName,
-            actionLink))
+    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) &&
+            !(actionLinkItem?.get(kName) instanceof Map), actionOk, 3, String.format("%s key in '%s' %s.", kName,
+            actionLink, 'action should be a map or just absent'))
     Map copyArtifactsKeys = actionLinkItem?.get(kName) instanceof Map ? actionLinkItem?.get(kName) as Map : [:]
     ArrayList copyArtifactsStringKeys = ['filter', 'excludes', 'target_directory']
     ArrayList copyArtifactsBooleanKeys = ['optional', 'flatten', 'fingerprint']
     (actionOk, copyArtifactsKeys) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, copyArtifactsKeys, copyArtifactsStringKeys, String.format("%s key in '%s'",
             kName, actionLink), copyArtifactsBooleanKeys)
-    String copyArtifactsFilter = copyArtifactsKeys?.get(copyArtifactsStringKeys[0] as String) ?
-            copyArtifactsKeys.get(copyArtifactsStringKeys[0]) : ''
-    println 'copyArtifactsKeys: ' + copyArtifactsKeys
+    String copyArtifactsFilter = copyArtifactsKeys?.get(copyArtifactsStringKeys[0] as String) ?: ''
 
     // Setting up action closure and run downstream job/pipeline.
+    Closure actionClosure = downstreamJobNameDefined ? {
+        Object jobRunWrapper = CF.dryRunJenkinsJob(downstreamJobName, pipelineParameters, dryRunMode, false,
+                propagatePipelineErrors, waitForPipelineComplete, envVariables, 'DRY_RUN', printablePipelineParameters)
+        return [actionOk, universalPipelineWrapperBuiltIns, jobRunWrapper]
+    } : {
+        return [false, universalPipelineWrapperBuiltIns, null]
+    }
+    errorMsgWrapper(!dryRunMode, true, 0, String.format("%s parameters: %s", actionName,
+            CF.readableJobParams(printablePipelineParameters)))
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, runWrapper) = actionClosureWrapperWithTryCatch(check,
+            envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
+            actionOk, universalPipelineWrapperBuiltIns)
 
+    // Copy artifacts from downstream job.
+    if (waitForPipelineComplete && copyArtifactsFilter?.trim()) {
+        // TODO: this section
+    }
+    errorMsgWrapper(!waitForPipelineComplete, true, 2, String.format("Unable to copy artifacts from %s: %s.",
+            actionName, "defined not to wait for completion."))
     return [actionOk, actionMsg]
 }
+// TODO: replace CF.outMsg() to errorMsgWrapper() when it's more accurate to remove if...(s)
 
 /**
  * Convert list of maps with job parameter keys to jenkins job parameters with variables assigning.
