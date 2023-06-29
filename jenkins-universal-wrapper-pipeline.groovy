@@ -1115,17 +1115,19 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         // Directory change wrapper.
         String actionItemCurrentDirectory = !check && actionItem.get('dir') ? actionItem.get('dir').toString() : ''
         Closure checkOrExecutePipelineActionLinkClosure = {
-            (actionLinkOk, actionDescription, envVariables) = checkOrExecutePipelineActionLink(actionItem.action
-                    as String, nodeItem?.get('node') as Map, pipelineSettings, envVariables, check,
-                    universalPipelineWrapperBuiltIns)
-            return [actionLinkOk, actionDescription, envVariables]
+            (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
+                    checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
+                            pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
+            return [actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables]
         }
         if (actionItemCurrentDirectory.trim()) {
             dir(actionItemCurrentDirectory) {
-                checkOrExecutePipelineActionLinkClosure.call()
+                (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
+                        checkOrExecutePipelineActionLinkClosure.call()
             }
         } else {
-            checkOrExecutePipelineActionLinkClosure.call()
+            (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
+                    checkOrExecutePipelineActionLinkClosure.call()
         }
 
         // Processing post-messages and/or 'ignore_fail' keys.
@@ -1245,6 +1247,7 @@ static ArrayList getDryRunStateAndActionMsg(Object envVariables, String actionNa
  * @return - arrayList of:
  *           - true when action link is ok;
  *           - action description for logging in reports;
+ *           - universtal pipeline built-ins return;
  *           - environment variables return.
  */
 ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
@@ -1255,23 +1258,34 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
-    Map detectByKeys = [repo_url   : { (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem,
-                                            envVariables, check, actionOk, universalPipelineWrapperBuiltIns) },
-                        collections: { (actionOk, actionDetails) = actionInstallAnsibleCollections(actionLink,
-                                            actionLinkItem, envVariables, check, actionOk,
-                                            universalPipelineWrapperBuiltIns) },
-                        playbook   : { (actionOk, actionDetails) = actionAnsiblePlaybookOrScriptRun(actionLink,
-                                            pipelineSettings, envVariables, check, actionOk,
-                                            universalPipelineWrapperBuiltIns, false) },
-                        pipeline   : { (actionOk, actionDetails) = actionDownstreamJobRun(actionLink, actionLinkItem,
-                                            envVariables, check, actionOk, universalPipelineWrapperBuiltIns) },
-                        stash      : { println 'stash' },
-                        unstash    : { println 'unstash' },
-                        artifacts  : { println 'copy_artifacts' },
-                        script     : { (actionOk, actionDetails) = actionAnsiblePlaybookOrScriptRun(actionLink,
-                                            pipelineSettings, envVariables, check, actionOk,
-                                            universalPipelineWrapperBuiltIns, true) },
-                        report     : { println 'send_report' }]
+    Map detectByKeys = [
+            repo_url   : {
+                (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
+            },
+            collections: {
+                (actionOk, actionDetails) = actionInstallAnsibleCollections(actionLink, actionLinkItem, envVariables,
+                        check, actionOk, universalPipelineWrapperBuiltIns)
+            },
+            playbook   : {
+                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
+                        actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
+                                universalPipelineWrapperBuiltIns, false)
+            },
+            pipeline   : {
+                (actionOk, actionDetails) = actionDownstreamJobRun(actionLink, actionLinkItem, envVariables, check,
+                        actionOk, universalPipelineWrapperBuiltIns)
+            },
+            stash      : { println 'stash' },
+            unstash    : { println 'unstash' },
+            artifacts  : { println 'archive_artifacts' },
+            script     : {
+                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
+                        actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns, true)
+            },
+            report     : { println 'send_report' }
+    ]
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
@@ -1309,7 +1323,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
         }
     }
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
-    return [actionOk, actionDetails, envVariables]
+    return [actionOk, actionDetails, universalPipelineWrapperBuiltIns, envVariables]
 }
 
 /**
@@ -1524,7 +1538,8 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
  * @param scriptRun - true when script run (including groovy code run 'as a prt of pipeline), false when playbook.
  * @return - arrayList of:
  *           - true when success, false when failed;
- *           - action details for logging.
+ *           - action details for logging;
+ *           - universal pipeline wrapper built-ins.
  */
 ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
                                            Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun) {
@@ -1617,7 +1632,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
             actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
     env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
-    return [actionOk, actionMsg]
+    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns]
 }
 
 /**
@@ -1630,7 +1645,9 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
- * @return
+ * @return - arrayList of:
+ *           - true when success, false when failed;
+ *           - action details for logging.
  */
 ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
                                  Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
@@ -1699,14 +1716,25 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     copyArtifactsErrReason += !check && copyArtifactsBuildSelector.trim() && downstreamJobNameDefined ? '' :
             String.format(" Unable to get build number of %s: it's undefined. %s", actionName,
                     "Perhaps this job is still running or wasn't started.")
-    if (!check && waitForPipelineComplete && !copyArtifactsErrReason.trim()) {
+    if (!check && waitForPipelineComplete && copyArtifactsFilter.trim() && !copyArtifactsErrReason.trim()) {
         try {
-            // TODO: this section
+            CF.outMsg(0, String.format("Copying artifacts from '%s' job build no. %s parameters %s.", downstreamJobName,
+                    copyArtifactsBuildSelector, CF.readableMap(copyArtifactsKeys)))
+            copyArtifacts(
+                    projectName: downstreamJobName,
+                    selector: specific(copyArtifactsBuildSelector),
+                    filter: copyArtifactsFilter,
+                    excludes: copyArtifactsKeys?.get(copyArtifactsStringKeys[1] as String) ?: '',
+                    target: copyArtifactsKeys?.get(copyArtifactsStringKeys[2] as String) ?: '',
+                    optional: copyArtifactsKeys?.get(copyArtifactsBooleanKeys[0] as String) ?: false,
+                    flatten: copyArtifactsKeys?.get(copyArtifactsBooleanKeys[1] as String) ?: false,
+                    fingerprintArtifacts: copyArtifactsKeys?.get(copyArtifactsBooleanKeys[2] as String) ?: false,
+            )
         } catch (Exception err) {
             copyArtifactsErrReason += String.format(' %s', CF.readableError(err))
         }
     }
-    actionOk = errorMsgWrapper(!copyArtifactsErrReason.trim(), true, 3, String.format('%s:%s', copyArtifactsErrMsg,
+    actionOk = errorMsgWrapper(!copyArtifactsErrReason.trim(), actionOk, 3, String.format('%s:%s', copyArtifactsErrMsg,
             copyArtifactsErrReason))
     return [actionOk, actionMsg]
 }
