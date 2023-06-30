@@ -1737,12 +1737,11 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
                     fingerprintArtifacts: copyArtifactsKeys?.get(copyArtifactsBooleanKeys[2] as String) ?: false,
             )
         } catch (Exception err) {
-            println 'koko'
             copyArtifactsErrReason += String.format(' %s', CF.readableError(err))
         }
     }
-    actionOk = errorMsgWrapper(!copyArtifactsErrReason.trim(), actionOk, 3, String.format('%s:%s', copyArtifactsErrMsg,
-            copyArtifactsErrReason))
+    actionOk = errorMsgWrapper(copyArtifactsErrReason.trim() as Boolean, actionOk, 3, String.format('%s:%s',
+            copyArtifactsErrMsg, copyArtifactsErrReason))
     return [actionOk, actionMsg]
 }
 // TODO: replace CF.outMsg() to errorMsgWrapper() when it's more accurate to remove if...(s)
