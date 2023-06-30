@@ -1709,22 +1709,22 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
             actionOk, universalPipelineWrapperBuiltIns)
     String downstreamJobRunResults = runWrapper?.getResult()?.trim() ? runWrapper.getResult() : ''
-    Boolean getStatusFromDownstreamJobRunIsPossible = !check && !dryRunMode && downstreamJobNameDefined &&
-            waitForPipelineComplete && downstreamJobRunResults.trim()
-    actionOk = errorMsgWrapper(!check && getStatusFromDownstreamJobRunIsPossible, actionOk, downstreamJobRunResults ==
-            'SUCCESS' ? 0 : 3, String.format("%s finished with '%s'.", actionName, downstreamJobRunResults))
+    Boolean getStatusFromDownstreamJobRunIsPossible = downstreamJobNameDefined && waitForPipelineComplete &&
+            downstreamJobRunResults.trim()
+    errorMsgWrapper(!check && !dryRunMode && getStatusFromDownstreamJobRunIsPossible, actionOk, 0, String.format(
+            "%s finished with '%s'.", actionName, downstreamJobRunResults))
 
     // Copy artifacts from downstream job.
     String copyArtifactsBuildSelector = !check && runWrapper?.getNumber()?.toString() ?
             runWrapper.getNumber().toString() : ''
     println 'copyArtifactsBuildSelector: ' + copyArtifactsBuildSelector
     String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s in '%s'", actionName, actionLink)
-    String copyArtifactsErrReason = !check && dryRunMode ? " 'DRY_RUN' mode enabled." : ''
-    copyArtifactsErrReason += waitForPipelineComplete ? '' : ' defined not to wait for completion.'
-    copyArtifactsErrReason += !check && downstreamJobNameDefined && !copyArtifactsBuildSelector.trim() ? '' :
-            String.format(" Unable to get build number of %s: it's undefined. %s", actionName,
+    String copyArtifactsErrReason = waitForPipelineComplete ? '' : ' defined not to wait for completion.'
+    copyArtifactsErrReason += !check && !dryRunMode && downstreamJobNameDefined && !copyArtifactsBuildSelector.trim() ?
+            '' : String.format(" Build number of %s is undefined. %s", actionName,
                     "Perhaps this job is still running or wasn't started.")
-    if (!check && waitForPipelineComplete && copyArtifactsFilter.trim() && !copyArtifactsErrReason.trim()) {
+    if (!check && !dryRunMode && waitForPipelineComplete && copyArtifactsFilter.trim() &&
+            !copyArtifactsErrReason.trim()) {
         try {
             CF.outMsg(0, String.format("Copying artifacts from '%s' job build no. %s parameters %s.", downstreamJobName,
                     copyArtifactsBuildSelector, CF.readableMap(copyArtifactsKeys)))
