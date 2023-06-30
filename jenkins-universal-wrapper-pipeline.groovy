@@ -1708,11 +1708,16 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, runWrapper) = actionClosureWrapperWithTryCatch(check,
             envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
             actionOk, universalPipelineWrapperBuiltIns)
+    String downstreamJobRunResults = runWrapper?.getResult()?.trim() ? runWrapper.getResult() : ''
+    actionOk = errorMsgWrapper(!check && !dryRunMode && downstreamJobNameDefined && waitForPipelineComplete &&
+            downstreamJobRunResults.trim(), actionOk, downstreamJobRunResults == 'SUCCESS' ? 0 : 3, String.format(
+            "%s finished with '%s'.", actionName, downstreamJobRunResults))
 
     // Copy artifacts from downstream job.
     String copyArtifactsBuildSelector = runWrapper?.getNumber()?.toString() ?: ''
-    String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s in '%s'", actionName, actionLinkItem)
-    String copyArtifactsErrReason = waitForPipelineComplete ? '' : ' defined not to wait for completion.'
+    String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s in '%s'", actionName, actionLink)
+    String copyArtifactsErrReason = dryRunMode ? " 'DRY_RUN' mode enabled." : ''
+    copyArtifactsErrReason += waitForPipelineComplete ? '' : ' defined not to wait for completion.'
     copyArtifactsErrReason += !check && copyArtifactsBuildSelector.trim() && downstreamJobNameDefined ? '' :
             String.format(" Unable to get build number of %s: it's undefined. %s", actionName,
                     "Perhaps this job is still running or wasn't started.")
@@ -1731,6 +1736,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
                     fingerprintArtifacts: copyArtifactsKeys?.get(copyArtifactsBooleanKeys[2] as String) ?: false,
             )
         } catch (Exception err) {
+            println 'koko'
             copyArtifactsErrReason += String.format(' %s', CF.readableError(err))
         }
     }
