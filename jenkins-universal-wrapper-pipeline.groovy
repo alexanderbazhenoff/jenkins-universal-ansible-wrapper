@@ -1709,9 +1709,10 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
             actionOk, universalPipelineWrapperBuiltIns)
     String downstreamJobRunResults = runWrapper?.getResult()?.trim() ? runWrapper.getResult() : ''
-    actionOk = errorMsgWrapper(!check && !dryRunMode && downstreamJobNameDefined && waitForPipelineComplete &&
-            downstreamJobRunResults.trim(), actionOk, downstreamJobRunResults == 'SUCCESS' ? 0 : 3, String.format(
-            "%s finished with '%s'.", actionName, downstreamJobRunResults))
+    Boolean getStatusFromDownstreamJobRunIsPossible = !check && !dryRunMode && downstreamJobNameDefined &&
+            waitForPipelineComplete && downstreamJobRunResults.trim()
+    actionOk = errorMsgWrapper(getStatusFromDownstreamJobRunIsPossible, actionOk, downstreamJobRunResults == 'SUCCESS' ?
+            0 : 3, String.format("%s finished with '%s'.", actionName, downstreamJobRunResults))
 
     // Copy artifacts from downstream job.
     String copyArtifactsBuildSelector = runWrapper?.getNumber()?.toString() ?: ''
