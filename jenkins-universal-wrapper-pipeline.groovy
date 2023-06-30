@@ -1711,14 +1711,14 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     String downstreamJobRunResults = runWrapper?.getResult()?.trim() ? runWrapper.getResult() : ''
     Boolean getStatusFromDownstreamJobRunIsPossible = !check && !dryRunMode && downstreamJobNameDefined &&
             waitForPipelineComplete && downstreamJobRunResults.trim()
-    actionOk = errorMsgWrapper(getStatusFromDownstreamJobRunIsPossible, actionOk, downstreamJobRunResults == 'SUCCESS' ?
-            0 : 3, String.format("%s finished with '%s'.", actionName, downstreamJobRunResults))
+    actionOk = errorMsgWrapper(!check && getStatusFromDownstreamJobRunIsPossible, actionOk, downstreamJobRunResults ==
+            'SUCCESS' ? 0 : 3, String.format("%s finished with '%s'.", actionName, downstreamJobRunResults))
 
     // Copy artifacts from downstream job.
     String copyArtifactsBuildSelector = !check && runWrapper?.getNumber()?.toString() ?
             runWrapper.getNumber().toString() : ''
     String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s in '%s'", actionName, actionLink)
-    String copyArtifactsErrReason = dryRunMode ? " 'DRY_RUN' mode enabled." : ''
+    String copyArtifactsErrReason = !check && dryRunMode ? " 'DRY_RUN' mode enabled." : ''
     copyArtifactsErrReason += waitForPipelineComplete ? '' : ' defined not to wait for completion.'
     copyArtifactsErrReason += !check && copyArtifactsBuildSelector.trim() && downstreamJobNameDefined ? '' :
             String.format(" Unable to get build number of %s: it's undefined. %s", actionName,
