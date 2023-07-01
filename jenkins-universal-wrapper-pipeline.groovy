@@ -1659,6 +1659,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     Object runWrapper
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
+    println 'actionLinkItem: ' + actionLinkItem
     Boolean downstreamJobNameDefined = actionLinkItem?.get(stringKeys[0]) instanceof String &&
             actionLinkItem?.get(stringKeys[0])?.trim()
     String downstreamJobName = downstreamJobNameDefined ? actionLinkItem?.get(stringKeys[0]) : '<undefined>'
