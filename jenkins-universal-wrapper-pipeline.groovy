@@ -1704,6 +1704,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     errorMsgWrapper(!check && !dryRunMode, true, 0, String.format("%s parameters: %s", actionName,
             CF.readableJobParams(printablePipelineParameters)))
     Map printableActionLinkItem = actionLinkItem + [parameters: printablePipelineParameters]
+    println 'printableActionLinkItem: ' + printableActionLinkItem
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, runWrapper) = actionClosureWrapperWithTryCatch(check,
             envVariables, actionClosure, actionLink, actionName, printableActionLinkItem, stringKeys + booleanKeys +
             [kName] as ArrayList, actionOk, universalPipelineWrapperBuiltIns)
