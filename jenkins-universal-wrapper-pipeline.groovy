@@ -642,7 +642,7 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 String regexPattern = it.regex_replace.get('regex')
                 Boolean regexKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('regex'))
                 if (regexPattern?.length() && regexKeyIsConvertibleToString) {
-                    errorMsgWrapper(!regexReplacement.trim(), true, 0, String.format(msgTemplateNoValue, 'to',
+                    errorMsgWrapper(!regexReplacement.trim(), false, 0, String.format(msgTemplateNoValue, 'to',
                             printableParamName, 'Regex match(es) will be removed.'))
                     if (paramIsDefined && printableParamName != '<undefined>') {
                         regexReplacementOk = errorMsgWrapper(true, true, 0, String.format(
@@ -1740,7 +1740,6 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             copyArtifactsErrMsg, copyArtifactsErrReason))
     return [actionOk, actionMsg]
 }
-// TODO: replace CF.outMsg() to errorMsgWrapper() when it's more accurate to remove if...(s)
 
 /**
  * Convert list of maps with job parameter keys to jenkins job parameters with variables assigning.
@@ -1805,6 +1804,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
     }
     return [allPass, pipelineParameters, printablePipelineParameters]
 }
+
 
 // Pipeline entry point.
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
