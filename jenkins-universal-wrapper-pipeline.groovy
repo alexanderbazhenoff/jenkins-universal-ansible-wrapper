@@ -1502,9 +1502,11 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys.size() > 0, booleanKeys,
             mapToCheckAndTemplate, false, messagePrefix, actionOk)
     if (templateKeys) {
+        println 'mapToCheckAndTemplate: ' + mapToCheckAndTemplate
         (actionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
                 envVariables, actionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
                 keyDescription))
+        println 'mapToCheckAndTemplate: ' + mapToCheckAndTemplate
     }
     return [actionOk, mapToCheckAndTemplate]
 }
