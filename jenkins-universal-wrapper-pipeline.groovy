@@ -632,9 +632,9 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 String msgRecommendation = ' Please fix them. Otherwise, replacement will be skipped with an error.'
 
                 // Handle 'to' sub-key of 'regex_replace' parameter item key.
-                String regexReplacement = it.regex_replace.get('to')
+                String regexReplacement = it.regex_replace?.get('to')?.trim() ? it.regex_replace.get('to') : ''
                 Boolean regexToKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('to'))
-                Boolean regexReplacementDone = errorMsgWrapper(regexReplacement?.trim() &&
+                Boolean regexReplacementOk = errorMsgWrapper(regexReplacement?.trim() &&
                         !regexToKeyIsConvertibleToString, false, 3, String.format(msgTemplateWrongType, 'to',
                         printableParamName, msgRecommendation))
 
@@ -642,28 +642,25 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 String regexPattern = it.regex_replace.get('regex')
                 Boolean regexKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('regex'))
                 if (regexPattern?.length() && regexKeyIsConvertibleToString) {
-                    if (!regexReplacement?.trim()) {
-                        CF.outMsg(0, String.format(msgTemplateNoValue, 'to', printableParamName,
-                                'Regex match(es) will be removed.' ))
-                        regexReplacement = ''
-                    }
+                    errorMsgWrapper(!regexReplacement.trim(), true, 0, String.format(msgTemplateNoValue, 'to',
+                            printableParamName, 'Regex match(es) will be removed.'))
                     if (paramIsDefined && printableParamName != '<undefined>') {
-                        CF.outMsg(0, String.format("Replacing '%s' regex to '%s' in '%s' pipeline parameter value...",
-                                regexPattern, regexReplacement, printableParamName))
+                        regexReplacementOk = errorMsgWrapper(true, true, 0, String.format(
+                                "Replacing '%s' regex to '%s' in '%s' pipeline parameter value...", regexPattern,
+                                regexReplacement, printableParamName))
                         envVariables[it.name.toString()] = applyReplaceRegexItems(envVariables[it.name.toString()] as
                                 String, [regexPattern], [regexReplacement])
-                        regexReplacementDone = true
-                    } else if (printableParamName == '<undefined>') {
-                        CF.outMsg(3, String.format("Replace '%s' regex to '%s' is not possible: 'name' key is %s. %s.",
-                                regexPattern, regexReplacement, 'not defined for pipeline parameter item.',
-                                'Please fix pipeline config. Otherwise, replacement will be skipped with an error.'))
                     }
+                    regexReplacementOk = errorMsgWrapper(printableParamName == '<undefined>', regexReplacementOk, 3,
+                            String.format("Replace '%s' regex to '%s' is not possible: 'name' key is %s. %s.",
+                                    regexPattern, regexReplacement, 'not defined for pipeline parameter item.',
+                                    'Please fix pipeline config. Otherwise, replacement will be skipped with an error'))
                 } else if (regexPattern?.length() && !regexKeyIsConvertibleToString) {
                     CF.outMsg(3, String.format(msgTemplateWrongType, 'regex', printableParamName, msgRecommendation))
                 } else {
                     CF.outMsg(3, String.format(msgTemplateNoValue, 'regex', printableParamName, msgRecommendation))
                 }
-                allCorrect = regexReplacementDone ? allCorrect : false
+                allCorrect = regexReplacementOk ? allCorrect : false
             }
 
         }
