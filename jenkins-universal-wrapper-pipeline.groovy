@@ -1721,8 +1721,8 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s in '%s'", actionName, actionLink)
     String copyArtifactsErrReason = waitForPipelineComplete ? '' : ' defined not to wait for completion.'
     copyArtifactsErrReason += !check && !dryRunMode && downstreamJobNameDefined && !copyArtifactsBuildSelector.trim() ?
-            '' : String.format(" Build number of %s is undefined. %s", actionName,
-                    "Perhaps this job is still running or wasn't started.")
+            String.format(" Build number of %s is undefined. Perhaps this job is still running or wasn't started.",
+                    actionName) : ''
     // TODO: fix 'Build number of downstream job 'downstream-example-pipeline' run is undefined. ' in check mode
     if (!check && !dryRunMode && waitForPipelineComplete && copyArtifactsFilter.trim() &&
             !copyArtifactsErrReason.trim()) {
