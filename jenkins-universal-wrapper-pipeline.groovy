@@ -1502,11 +1502,11 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys.size() > 0, booleanKeys,
             mapToCheckAndTemplate, false, messagePrefix, actionOk)
     if (templateKeys) {
-        println 'mapToCheckAndTemplate: ' + mapToCheckAndTemplate
+        println 'mapToCheckAndTemplate1: ' + mapToCheckAndTemplate
         (actionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
                 envVariables, actionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
                 keyDescription))
-        println 'mapToCheckAndTemplate: ' + mapToCheckAndTemplate
+        println 'mapToCheckAndTemplate2: ' + mapToCheckAndTemplate
     }
     return [actionOk, mapToCheckAndTemplate]
 }
@@ -1659,10 +1659,10 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     ArrayList pipelineParameters
     ArrayList printablePipelineParameters
     Object runWrapper
-    println 'actionLinkItem: ' + actionLinkItem
+    println 'actionLinkItem1: ' + actionLinkItem
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
-    println 'actionLinkItem: ' + actionLinkItem
+    println 'actionLinkItem2: ' + actionLinkItem
     Boolean downstreamJobNameDefined = actionLinkItem?.get(stringKeys[0]) instanceof String &&
             actionLinkItem?.get(stringKeys[0])?.trim()
     String downstreamJobName = downstreamJobNameDefined ? actionLinkItem?.get(stringKeys[0]) : '<undefined>'
