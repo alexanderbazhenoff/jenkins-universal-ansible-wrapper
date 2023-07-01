@@ -1692,8 +1692,9 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             check, actionOk, actionLink, copyArtifactsKeys, copyArtifactsStringKeys, String.format("%s key in '%s'",
             kName, actionLink), copyArtifactsBooleanKeys)
     String copyArtifactsFilter = copyArtifactsKeys?.get(copyArtifactsStringKeys[0] as String) ?: ''
-    actionOk = errorMsgWrapper(!copyArtifactsFilter.trim(), actionOk, 3, String.format(
-            "Mandatory key '%s' of '%s' in '%s' action is undefined.", copyArtifactsStringKeys[0], kName, actionLink))
+    actionOk = errorMsgWrapper(actionLinkItem.containsKey(kName) && !copyArtifactsFilter.trim(), actionOk, 3,
+            String.format("Mandatory key '%s' of '%s' in '%s' action is undefined.", copyArtifactsStringKeys[0], kName,
+                    actionLink))
 
     // Setting up action closure and run downstream job/pipeline.
     Closure actionClosure = downstreamJobNameDefined ? {
