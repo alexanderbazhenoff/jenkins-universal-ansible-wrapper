@@ -1223,8 +1223,9 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 static ArrayList getDryRunStateAndActionMsg(Object envVariables, String actionName, Map printableActionLinkItem,
                                             ArrayList actionLinkItemKeysFilter) {
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
+    printableActionLinkItem = findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter)
     String actionMsgDetails = String.format(' %s', printableActionLinkItem.size() > 0 ?
-            findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter).toString() : '')
+            printableActionLinkItem.toString() : '')
     return [dryRunAction, String.format('%s%s%s', dryRunAction ? 'dry-run of ' : '', actionName, actionMsgDetails)]
 }
 
@@ -1745,6 +1746,13 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             copyArtifactsErrMsg, copyArtifactsErrReason))
     return [actionOk, actionMsg]
 }
+
+ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+                                 Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+
+    return [actionOk, actionMsg]
+}
+
 
 /**
  * Convert list of maps with job parameter keys to jenkins job parameters with variables assigning.
