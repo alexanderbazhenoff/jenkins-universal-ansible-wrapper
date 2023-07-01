@@ -1276,7 +1276,10 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             },
             stash      : { println 'stash' },
             unstash    : { println 'unstash' },
-            artifacts  : { println 'archive_artifacts' },
+            artifacts  : {
+                (actionOk, actionDetails) = actionArchiveArtifacts(actionLink, actionLinkItem, envVariables, check,
+                        actionOk, universalPipelineWrapperBuiltIns)
+            },
             script     : {
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
@@ -1714,8 +1717,8 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     actionMsg += downstreamJobConsoleUrl
     Boolean getStatusFromDownstreamJobRunIsPossible = downstreamJobNameDefined && waitForPipelineComplete &&
             downstreamJobRunResults.trim()
-    errorMsgWrapper(!check && !dryRunMode && getStatusFromDownstreamJobRunIsPossible, actionOk, 0, String.format(
-            "%s%s finished with '%s'.", actionName, downstreamJobConsoleUrl, downstreamJobRunResults))
+    errorMsgWrapper(!check && !dryRunMode && getStatusFromDownstreamJobRunIsPossible, actionOk, 0,
+            String.format("%s%s finished with '%s'.", actionName, downstreamJobConsoleUrl, downstreamJobRunResults))
 
     // Copy artifacts from downstream job.
     String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s%s in '%s'", actionName,
@@ -1747,9 +1750,52 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     return [actionOk, actionMsg]
 }
 
+/**
+ * Pipeline action: archive artifacts.
+ *
+ * @param actionLink - message prefix for possible errors.
+ * @param actionLinkItem - action link item to check or execute.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param check - set false to execute action item, true to check.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
+ * @return - arrayList of:
+ *           - true when success, false when failed;
+ *           - action details for logging.
+ */
 ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
                                  Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+    String actionMsg
+    String actionName = 'archive artifacts'
+    ArrayList stringKeys = ['artifacts', 'excludes']
+    ArrayList booleanKeys = ['allow_empty', 'fingerprint']
+    Boolean dryRunMode = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
+    (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
+    String archiveArtifactsMask = actionLinkItem?.get(stringKeys[0]) ?: ''
+    actionOk = errorMsgWrapper(check && !archiveArtifactsMask.trim(), actionOk, 3, String.format("'%s' in '%s' %s.",
+            'Mandatory key', stringKeys[0], actionLink, 'action is undefined or empty.'))
+    actionLinkItem = findMapItemsFromList(actionLinkItem, stringKeys + booleanKeys as ArrayList)
 
+    // Setting-up closure for archive artifacts and execute an action.
+    Closure actionClosure = archiveArtifactsMask.trim() ? {
+        archiveArtifacts(
+                artifacts: archiveArtifactsMask,
+                excludes: actionLinkItem?.get(stringKeys[1]) ?: '',
+                allowEmptyArchive: actionLinkItem?.get(booleanKeys[0]) ?: false,
+                fingerprint: actionLinkItem?.get(booleanKeys[1]) ?: false
+        )
+        return [actionOk, universalPipelineWrapperBuiltIns, null]
+    } : {
+        return [false, universalPipelineWrapperBuiltIns, null]
+    }
+    errorMsgWrapper(!check && !dryRunMode, true, 0, String.format("%s parameters: %s", actionName.capitalize(),
+            CF.readableMap(actionLinkItem)))
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check,
+            envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
+            actionOk, universalPipelineWrapperBuiltIns)
+    actionMsg += String.format(' %sartifact/', envVariables.BUILD_URL)
     return [actionOk, actionMsg]
 }
 
