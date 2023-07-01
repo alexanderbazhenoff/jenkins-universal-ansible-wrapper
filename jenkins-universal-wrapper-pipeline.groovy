@@ -1659,6 +1659,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     ArrayList pipelineParameters
     ArrayList printablePipelineParameters
     Object runWrapper
+    println 'actionLinkItem: ' + actionLinkItem
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
     println 'actionLinkItem: ' + actionLinkItem
