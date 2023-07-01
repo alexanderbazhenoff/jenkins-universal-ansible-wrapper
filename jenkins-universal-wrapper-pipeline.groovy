@@ -1708,20 +1708,23 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             ArrayList, actionOk, universalPipelineWrapperBuiltIns)
     String downstreamJobRunResults = runWrapper?.getResult()?.trim() ? runWrapper.getResult() : ''
     String copyArtifactsBuildSelector = runWrapper?.getNumber()?.toString() ?: ''
+    String downstreamJobAbsoluteUrl = runWrapper?.getAbsoluteUrl() ?: ''
     Boolean getStatusFromDownstreamJobRunIsPossible = downstreamJobNameDefined && waitForPipelineComplete &&
             downstreamJobRunResults.trim()
     errorMsgWrapper(!check && !dryRunMode && getStatusFromDownstreamJobRunIsPossible, actionOk, 0, String.format(
             "%s finished with '%s'.", actionName, downstreamJobRunResults))
+    actionMsg += downstreamJobAbsoluteUrl.trim().toBoolean() ? String.format(' %s', downstreamJobAbsoluteUrl) : ''
 
     // Copy artifacts from downstream job.
     String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s in '%s'", actionName, actionLink)
     String copyArtifactsErrReason = waitForPipelineComplete ? '' : ' defined not to wait for completion.'
     copyArtifactsErrReason += !check && !dryRunMode && !copyArtifactsBuildSelector.trim() ? String.format(
             " Build number of %s is undefined. Perhaps this job is still running or wasn't started.", actionName) : ''
-    if (!check && !dryRunMode && copyArtifactsFilter.trim() && !copyArtifactsErrReason.trim()) {
+    Boolean copyingArtifactsConditionsMet = !check && copyArtifactsFilter.trim() && !copyArtifactsErrReason.trim()
+    errorMsgWrapper(copyingArtifactsConditionsMet, true, 0, String.format("%s '%s' job build no. %s parameters %s.",
+            'Copying artifacts from', downstreamJobName, copyArtifactsBuildSelector, CF.readableMap(copyArtifactsKeys)))
+    if (copyingArtifactsConditionsMet && !dryRunMode) {
         try {
-            CF.outMsg(0, String.format("Copying artifacts from '%s' job build no. %s parameters %s.", downstreamJobName,
-                    copyArtifactsBuildSelector, CF.readableMap(copyArtifactsKeys)))
             copyArtifacts(
                     projectName: downstreamJobName,
                     selector: specific(copyArtifactsBuildSelector),
