@@ -1708,11 +1708,11 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             ArrayList, actionOk, universalPipelineWrapperBuiltIns)
     String downstreamJobRunResults = runWrapper?.getResult()?.trim() ? runWrapper.getResult() : ''
     String copyArtifactsBuildSelector = runWrapper?.getNumber()?.toString() ?: ''
-    String downstreamJobConsoleUrl = runWrapper?.getAbsoluteUrl() ? String.format(' %s/console',
+    String downstreamJobConsoleUrl = runWrapper?.getAbsoluteUrl() ? String.format(' %sconsole',
             runWrapper.getAbsoluteUrl()) : ''
+    actionMsg += downstreamJobConsoleUrl
     Boolean getStatusFromDownstreamJobRunIsPossible = downstreamJobNameDefined && waitForPipelineComplete &&
             downstreamJobRunResults.trim()
-    actionMsg += downstreamJobConsoleUrl.trim().toBoolean() ? String.format(' %s', downstreamJobConsoleUrl) : ''
     errorMsgWrapper(!check && !dryRunMode && getStatusFromDownstreamJobRunIsPossible, actionOk, 0, String.format(
             "%s%s finished with '%s'.", actionName, downstreamJobConsoleUrl, downstreamJobRunResults))
 
