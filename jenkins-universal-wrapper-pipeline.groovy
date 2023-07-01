@@ -1707,8 +1707,8 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     errorMsgWrapper(!check && !dryRunMode, true, 0, String.format("%s parameters: %s", actionName,
             CF.readableJobParams(printablePipelineParameters)))
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, runWrapper) = actionClosureWrapperWithTryCatch(check,
-            envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
-            actionOk, universalPipelineWrapperBuiltIns)
+            envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys + [kName] as
+            ArrayList, actionOk, universalPipelineWrapperBuiltIns)
     String downstreamJobRunResults = runWrapper?.getResult()?.trim() ? runWrapper.getResult() : ''
     String copyArtifactsBuildSelector = runWrapper?.getNumber()?.toString() ?: ''
     Boolean getStatusFromDownstreamJobRunIsPossible = downstreamJobNameDefined && waitForPipelineComplete &&
