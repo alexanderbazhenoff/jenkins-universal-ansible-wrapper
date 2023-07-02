@@ -765,7 +765,7 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  *           - table column sizes map on createTable = false;
  *           - formatted string table results on createTable = true.
  */
-static ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
+ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
                                            String replaceKeyName = 'state',
                                            ArrayList regexItemsList = ['true', 'false'],
                                            ArrayList replaceItemsList = ['[PASS]', '[FAIL]']) {
@@ -776,7 +776,7 @@ static ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = 
                     applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
             if (createTable) {
                 Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
-                println 'lolo3a tableColumnSizes: ' + padSize
+                println 'lolo3a padSize: ' + padSize
                 formattedStringTable += String.format('%s%s', tableEntry, ' ' * padSize)
             } else {
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
