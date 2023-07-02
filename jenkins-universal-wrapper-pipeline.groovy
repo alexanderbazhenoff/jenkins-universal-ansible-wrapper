@@ -775,7 +775,7 @@ ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, 
             String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
                     applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
             if (createTable) {
-                println 'lolo3a tableColumnSizes[k as String]: ' + tableColumnSizes[k as String]
+                println 'lolo3a k:' + k + ' tableColumnSizes[k]: ' + tableColumnSizes[k as String]
                 Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
                 println 'lolo3b padSize: ' + padSize
                 formattedStringTable += String.format('%s%s', tableEntry, ' ' * padSize)
