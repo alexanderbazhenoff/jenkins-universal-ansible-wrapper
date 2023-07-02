@@ -43,11 +43,11 @@ final BuiltinPipelineParameters = [
          description: 'Git branch of ansible-wrapper-settings project (to override defaults on development).'],
         [name       : 'NODE_NAME',
          type       : 'string',
-         description: 'Jenkins node name to run.'],
+         description: 'Name of Jenkins node to run directly on.'],
         [name       : 'NODE_TAG',
          type       : 'string',
          default    : 'ansible210',
-         description: 'Jenkins node tag to run.'],
+         description: 'Run on Jenkins node with specified tag.'],
         [name       : 'DRY_RUN',
          type       : 'boolean',
          description: String.format('%s (%s).', 'Dry run mode to use for pipeline settings troubleshooting',
@@ -1850,7 +1850,7 @@ ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariabl
                         Map universalPipelineWrapperBuiltIns, Boolean stashFiles = true) {
     String actionMsg
     String actionName = String.format('%stash files', stashFiles ? '' : 'un')
-    ArrayList stringKeys = stashFiles ? ['name', 'includes', 'excludes'] : ['name']
+    ArrayList stringKeys = stashFiles ? ['stash', 'includes', 'excludes'] : ['unstash']
     ArrayList booleanKeys = stashFiles ? ['default_excludes', 'allow_empty'] : []
     ArrayList mandatoryKeyValues
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
