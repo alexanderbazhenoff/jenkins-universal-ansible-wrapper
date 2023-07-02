@@ -1112,7 +1112,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                 currentBuild.displayName
 
         // Directory change wrapper.
-        String actionItemCurrentDirectory = actionItem.get('dir') ? actionItem.get('dir').toString() : ''
+        String actionItemCurrentDirectory = actionItem?.get('dir') ? actionItem.get('dir').toString() : ''
         Closure checkOrExecutePipelineActionLinkClosure = {
             (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                     checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
@@ -1124,7 +1124,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                 (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                         checkOrExecutePipelineActionLinkClosure.call()
             }
-        } else if (actionItemCurrentDirectory.trim()) {
+        } else {
             (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                     checkOrExecutePipelineActionLinkClosure.call()
         }
@@ -1132,7 +1132,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         // Processing post-messages and/or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
-        actionLinkOk = !check && actionItem.get('ignore_fail') ? true : actionLinkOk
+        actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
     } else if (!actionItem.containsKey('action')) {
         actionStructureOk = errorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
