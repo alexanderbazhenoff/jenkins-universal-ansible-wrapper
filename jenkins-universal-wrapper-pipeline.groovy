@@ -1124,6 +1124,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                     checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
                             pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
         }
+        println 'lolo'
 
         // Processing post-messages and/or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
