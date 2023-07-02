@@ -1849,7 +1849,7 @@ ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object e
 ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                         Map universalPipelineWrapperBuiltIns, Boolean stashFiles = true) {
     String actionMsg
-    String actionName = String.format('%stash files', stashFiles ? '' : 'un')
+    String actionName = String.format('%sstash files', stashFiles ? '' : 'un')
     ArrayList stringKeys = stashFiles ? ['stash', 'includes', 'excludes'] : ['unstash']
     ArrayList booleanKeys = stashFiles ? ['default_excludes', 'allow_empty'] : []
     ArrayList mandatoryKeyValues
