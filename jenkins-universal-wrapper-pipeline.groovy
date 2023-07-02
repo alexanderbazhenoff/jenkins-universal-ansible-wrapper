@@ -775,8 +775,9 @@ ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, 
             String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
                     applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
             if (createTable) {
+                println 'lolo3a tableColumnSizes[k as String]: ' + tableColumnSizes[k as String]
                 Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
-                println 'lolo3a padSize: ' + padSize
+                println 'lolo3b padSize: ' + padSize
                 formattedStringTable += String.format('%s%s', tableEntry, ' ' * padSize)
             } else {
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
@@ -1165,7 +1166,6 @@ Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyN
     def (Map tableColumnSizes, __) = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
     println 'lolo3 tableColumnSizes: ' + tableColumnSizes
     (__, stringTableReport) = mapToFormattedStringTable(wrapperBuiltInsStatusMap, true, tableColumnSizes)
-    println 'lolo4'
     pipelineWrapperBuiltIns[keyNamePrefix] = stringTableReport
     pipelineWrapperBuiltIns[String.format('%sFailed', keyNamePrefix)] = CF.grepFailedStates(pipelineWrapperBuiltIns,
             keyNamePrefix, '[FAIL]')
