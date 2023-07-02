@@ -1112,7 +1112,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                 currentBuild.displayName*/
 
         // Directory change wrapper.
-        String actionItemCurrentDirectory = !check && actionItem?.get('dir') ? actionItem.get('dir').toString() : ''
+        String actionItemCurrentDirectory = actionItem.get('dir')?.toString() ?: ''
         println 'actionItemCurrentDirectory: ' + actionItemCurrentDirectory
         if (!check && actionItemCurrentDirectory.trim()) {
             dir(actionItemCurrentDirectory) {
