@@ -1112,7 +1112,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                 currentBuild.displayName
 
         // Directory change wrapper.
-        String actionItemCurrentDirectory = actionItem?.get('dir') ? actionItem.get('dir').toString() : ''
+        String actionItemCurrentDirectory = !check && actionItem?.get('dir') ? actionItem.get('dir').toString() : ''
         Closure checkOrExecutePipelineActionLinkClosure = {
             (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                     checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
