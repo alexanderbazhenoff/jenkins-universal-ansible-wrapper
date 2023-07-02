@@ -1118,13 +1118,11 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                 (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                         checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
                                 pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
-                println 'koko dir'
             }
         } else {
             (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                     checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
                             pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
-            println 'koko no dir'
         }
 
         // Processing post-messages and/or 'ignore_fail' keys.
@@ -1299,7 +1297,10 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                         universalPipelineWrapperBuiltIns, true)
                 return [actionOk, actionDetails]
             },
-            report     : { println 'send_report' }
+            report     : {
+                println 'send_report'
+                return [actionOk, actionDetails]
+            }
     ]
 
     // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
