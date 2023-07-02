@@ -5,6 +5,8 @@
 import org.yaml.snakeyaml.*
 import groovy.text.StreamingTemplateEngine
 
+import java.lang.reflect.Array
+
 // TODO: change branch
 @Library('jenkins-shared-library-alx@devel') _
 
@@ -1274,8 +1276,11 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 (actionOk, actionDetails) = actionDownstreamJobRun(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
             },
-            stash      : { println 'stash' },
-            unstash    : { println 'unstash' },
+            stash      : { (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
+                    actionOk, universalPipelineWrapperBuiltIns) },
+            unstash    : { (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
+                    actionOk, universalPipelineWrapperBuiltIns, false)
+            },
             artifacts  : {
                 (actionOk, actionDetails) = actionArchiveArtifacts(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
@@ -1527,6 +1532,39 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
 }
 
 /**
+ * Check value type, template and check mandatory map keys, then filter required keys from this map.
+ *
+ * @param map - map to check and filter keys.
+ * @param keyToCheck - list of mandatory keys to check.
+ * @param stringKeys - list of map keys which should be strings (also keys to filter).
+ * @param booleanKeys - list of map keys which should be booleans (also keys to filter).
+ * @param state - current state to pass or change (true when ok).
+ * @param enableCheck - true on check mode, false to skip checking.
+ * @param errorMessageTemplate - description of all keys just to print message (e.g. action key).
+ * @param envVariables - environment variables ('env' which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable.
+ * @return - arrayList of:
+ *           - list of mandatory key values;
+ *           - map with filtered keys;
+ *           - current state return.
+ */
+ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList keyToCheck, ArrayList stringKeys,
+                                                        ArrayList booleanKeys, Boolean state, Boolean enableCheck,
+                                                        String keysDescription, Object envVariables,
+                                                        Map universalPipelineWrapperBuiltIns) {
+    ArrayList mandatoryKeyValues = []
+    (state, map) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns, enableCheck, state,
+            keysDescription, map, stringKeys, String.format("'%s' key", keysDescription), booleanKeys)
+    keyToCheck.eachWithIndex { mandatoryItem, Integer mandatoryItemIndex ->
+        mandatoryKeyValues[mandatoryItemIndex] = map?.get(mandatoryItem as String) ?: ''
+        state = errorMsgWrapper(enableCheck && !mandatoryKeyValues[mandatoryItemIndex].trim(), state, 3,
+                String.format("Mandatory key '%s' in '%s' is undefined or empty.", mandatoryItem, keysDescription))
+    }
+    Map filteredKeysMap = findMapItemsFromList(map, stringKeys + booleanKeys as ArrayList)
+    return [mandatoryKeyValues, filteredKeysMap, state]
+}
+
+/**
  * Pipeline action: run playbook or script.
  *
  * @param actionLink - message prefix for possible errors.
@@ -1559,6 +1597,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
+    // TODO: try to replace this with wrappers
     stringKeys.eachWithIndex { stringKeyName, Integer actionLinkKeysIndex ->
         Boolean actionLinkItemKeyIsDefined = actionLinkItem.containsKey(stringKeyName)
         String executionLinkName = stringKeyName == 'inventory' && !actionLinkItemKeyIsDefined ? 'default' :
@@ -1755,8 +1794,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
  *
  * @param actionLink - message prefix for possible errors.
  * @param actionLinkItem - action link item to check or execute.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables ('env' which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
@@ -1770,18 +1808,13 @@ ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object e
     String actionName = 'archive artifacts'
     ArrayList stringKeys = ['artifacts', 'excludes']
     ArrayList booleanKeys = ['allow_empty', 'fingerprint']
-    Boolean dryRunMode = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
-    (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
-            check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
-    String archiveArtifactsMask = actionLinkItem?.get(stringKeys[0]) ?: ''
-    actionOk = errorMsgWrapper(check && !archiveArtifactsMask.trim(), actionOk, 3, String.format("'%s' in '%s' %s.",
-            'Mandatory key', stringKeys[0], actionLink, 'action is undefined or empty.'))
-    actionLinkItem = findMapItemsFromList(actionLinkItem, stringKeys + booleanKeys as ArrayList)
-
-    // Setting-up closure for archive artifacts and execute an action.
-    Closure actionClosure = archiveArtifactsMask.trim() ? {
+    ArrayList mandatoryKeyValues
+    (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
+            [stringKeys[0] as String], stringKeys, booleanKeys, actionOk, check, actionLink, envVariables,
+            universalPipelineWrapperBuiltIns)
+    Closure actionClosure = mandatoryKeyValues[0].trim() ? {
         archiveArtifacts(
-                artifacts: archiveArtifactsMask,
+                artifacts: mandatoryKeyValues[0],
                 excludes: actionLinkItem?.get(stringKeys[1]) ?: '',
                 allowEmptyArchive: actionLinkItem?.get(booleanKeys[0]) ?: false,
                 fingerprint: actionLinkItem?.get(booleanKeys[1]) ?: false
@@ -1790,8 +1823,8 @@ ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object e
     } : {
         return [false, universalPipelineWrapperBuiltIns, null]
     }
-    errorMsgWrapper(!check && !dryRunMode, true, 0, String.format("%s parameters: %s", actionName.capitalize(),
-            CF.readableMap(actionLinkItem)))
+    errorMsgWrapper(!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'), true, 0,
+            String.format("%s parameters: %s", actionName.capitalize(), CF.readableMap(actionLinkItem)))
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check,
             envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
             actionOk, universalPipelineWrapperBuiltIns)
@@ -1799,6 +1832,50 @@ ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object e
     return [actionOk, actionMsg]
 }
 
+/**
+ * Pipeline action: stash/unstash files.
+ *
+ * @param actionLink - message prefix for possible errors.
+ * @param actionLinkItem - action link item to check or execute.
+ * @param envVariables - environment variables ('env' which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param check - set false to execute action item, true to check.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
+ * @param stashFiles - true to stash files, false to unstash files.
+ * @return - arrayList of:
+ *           - true when success, false when failed;
+ *           - action details for logging.
+ */
+ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                        Map universalPipelineWrapperBuiltIns, Boolean stashFiles = true) {
+    String actionMsg
+    String actionName = String.format('%stash files', stashFiles ? '' : 'un')
+    ArrayList stringKeys = stashFiles ? ['name', 'includes', 'excludes'] : ['name']
+    ArrayList booleanKeys = stashFiles ? ['default_excludes', 'allow_empty'] : []
+    ArrayList mandatoryKeyValues
+    (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
+            [stringKeys[0] as String], stringKeys, booleanKeys, actionOk, check, actionLink, envVariables,
+            universalPipelineWrapperBuiltIns)
+    Closure actionClosure = stashFiles ? {
+        stash(
+                name: mandatoryKeyValues[0],
+                includes: actionLinkItem?.get(stringKeys[1]) ?: '',
+                excludes: actionLinkItem?.get(stringKeys[2]) ?: '',
+                useDefaultExcludes: actionLinkItem?.get(booleanKeys[0]) ?: true,
+                allowEmpty: actionLinkItem?.get(booleanKeys[1]) ?: false
+        )
+        return [actionOk, universalPipelineWrapperBuiltIns, null]
+    } : {
+        unstash(name: mandatoryKeyValues[0])
+        return [actionOk, universalPipelineWrapperBuiltIns, null]
+    }
+    errorMsgWrapper(!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'), true, 0,
+            String.format("%s parameters: %s", actionName.capitalize(), CF.readableMap(actionLinkItem)))
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check,
+            envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
+            actionOk, universalPipelineWrapperBuiltIns)
+    return [actionOk, actionMsg]
+}
 
 /**
  * Convert list of maps with job parameter keys to jenkins job parameters with variables assigning.
