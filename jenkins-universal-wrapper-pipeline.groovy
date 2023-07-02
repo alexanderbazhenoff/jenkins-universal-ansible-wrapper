@@ -1108,8 +1108,8 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             String.format("'%s' will be skipped by conditions met: %s", printableStageAndAction, actionSkipMsgReason))
     if (actionIsCorrect && (check || allActionConditionsMet)) {
         actionMessageOutputWrapper(check, actionItem, 'before', envVariables)
-        /*currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
-                currentBuild.displayName*/
+        currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
+                currentBuild.displayName
 
         // Directory change wrapper.
         String actionItemCurrentDirectory = actionItem.get('dir')?.toString() ?: ''
@@ -1118,11 +1118,13 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                 (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                         checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
                                 pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
+                println 'koko dir'
             }
         } else {
             (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                     checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
                             pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
+            println 'koko no dir'
         }
 
         // Processing post-messages and/or 'ignore_fail' keys.
