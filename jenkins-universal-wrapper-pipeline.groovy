@@ -1132,7 +1132,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         // Processing post-messages and/or 'ignore_fail' keys.
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
-        actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
+        actionLinkOk = !check && actionItem.get('ignore_fail') ? true : actionLinkOk
     } else if (!actionItem.containsKey('action')) {
         actionStructureOk = errorMsgWrapper(check, actionStructureOk, check ? 3 : 2,
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
