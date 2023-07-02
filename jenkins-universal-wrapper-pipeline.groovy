@@ -1113,20 +1113,16 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
 
         // Directory change wrapper.
         String actionItemCurrentDirectory = !check && actionItem?.get('dir') ? actionItem.get('dir').toString() : ''
-        Closure checkOrExecutePipelineActionLinkClosure = {
-            (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
-                    checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
-                            pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
-            return [actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables]
-        }
         if (!check && actionItemCurrentDirectory.trim()) {
             dir(actionItemCurrentDirectory) {
                 (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
-                        checkOrExecutePipelineActionLinkClosure.call()
+                        checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
+                                pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
             }
         } else {
             (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
-                    checkOrExecutePipelineActionLinkClosure.call()
+                    checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
+                            pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
         }
 
         // Processing post-messages and/or 'ignore_fail' keys.
