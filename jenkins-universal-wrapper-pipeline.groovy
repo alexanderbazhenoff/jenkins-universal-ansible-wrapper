@@ -1138,17 +1138,12 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     // Processing action link state, updating results of current build and actions report, stop on fail handle.
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     if (!check && !actionStructureAndLinkOk) currentBuild.result = 'FAILURE'
-    println 'lolo1'
     universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result
-    println 'lolo1a'
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
-    println 'lolo1b'
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
             printableStageAndAction, actionStructureAndLinkOk, actionDescription)
-    println 'lolo1c'
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns)
-    println 'lolo2'
     if (actionItem.get('stop_on_fail') && !check && !actionLinkOk)
         error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                 "('stop_on_fail' is enabled for current action)")
@@ -1165,12 +1160,18 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
  */
 Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyNamePrefix = 'multilineReport') {
     String stringTableReport
+    println 'lolo1'
     Map wrapperBuiltInsStatusMap = pipelineWrapperBuiltIns[String.format('%sMap', keyNamePrefix)] as Map
+    println 'lolo2'
     def (Map tableColumnSizes, __) = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
+    println 'lolo3'
     (__, stringTableReport) = mapToFormattedStringTable(wrapperBuiltInsStatusMap, true, tableColumnSizes)
+    println 'lolo4'
     pipelineWrapperBuiltIns[keyNamePrefix] = stringTableReport
+    println 'lolo5'
     pipelineWrapperBuiltIns[String.format('%sFailed', keyNamePrefix)] = CF.grepFailedStates(pipelineWrapperBuiltIns,
             keyNamePrefix, '[FAIL]')
+    println 'lolo6'
     return pipelineWrapperBuiltIns
 }
 
