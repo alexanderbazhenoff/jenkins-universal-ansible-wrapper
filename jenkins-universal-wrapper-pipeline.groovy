@@ -1113,16 +1113,13 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
 
         // Directory change wrapper.
         String actionItemCurrentDirectory = actionItem.get('dir')?.toString() ?: ''
-        println 'actionItemCurrentDirectory: ' + actionItemCurrentDirectory
         if (!check && actionItemCurrentDirectory.trim()) {
             dir(actionItemCurrentDirectory) {
-                println 'koko dir'
                 (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                         checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
                                 pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
             }
         } else {
-            println 'koko not dir'
             (actionLinkOk, actionDescription, universalPipelineWrapperBuiltIns, envVariables) =
                     checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
                             pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
