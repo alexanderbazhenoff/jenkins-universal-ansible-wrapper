@@ -1160,11 +1160,9 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
  */
 Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyNamePrefix = 'multilineReport') {
     String stringTableReport
-    println 'lolo1'
     Map wrapperBuiltInsStatusMap = pipelineWrapperBuiltIns[String.format('%sMap', keyNamePrefix)] as Map
-    println 'lolo2'
     def (Map tableColumnSizes, __) = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
-    println 'lolo3'
+    println 'lolo3 tableColumnSizes: ' + tableColumnSizes
     (__, stringTableReport) = mapToFormattedStringTable(wrapperBuiltInsStatusMap, true, tableColumnSizes)
     println 'lolo4'
     pipelineWrapperBuiltIns[keyNamePrefix] = stringTableReport
