@@ -1258,48 +1258,48 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             repo_url   : {
                 (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             collections: {
                 (actionOk, actionDetails) = actionInstallAnsibleCollections(actionLink, actionLinkItem, envVariables,
                         check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             playbook   : {
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns, false)
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             pipeline   : {
                 (actionOk, actionDetails) = actionDownstreamJobRun(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             stash      : {
                 (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             unstash    : {
                 (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns, false)
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             artifacts  : {
                 (actionOk, actionDetails) = actionArchiveArtifacts(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             script     : {
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns, true)
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             report     : {
                 println 'send_report'
-                return [actionOk, actionDetails]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             }
     ]
 
