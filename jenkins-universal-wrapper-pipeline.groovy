@@ -1260,33 +1260,44 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             repo_url   : {
                 (actionOk, actionDetails) = actionCloneGit(actionLink, actionLinkItem, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns)
+                return [actionOk, actionDetails]
             },
             collections: {
                 (actionOk, actionDetails) = actionInstallAnsibleCollections(actionLink, actionLinkItem, envVariables,
                         check, actionOk, universalPipelineWrapperBuiltIns)
+                return [actionOk, actionDetails]
             },
             playbook   : {
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns, false)
+                return [actionOk, actionDetails]
             },
             pipeline   : {
                 (actionOk, actionDetails) = actionDownstreamJobRun(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
+                return [actionOk, actionDetails]
             },
-            stash      : { (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
-                    actionOk, universalPipelineWrapperBuiltIns) },
-            unstash    : { (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
-                    actionOk, universalPipelineWrapperBuiltIns, false)
+            stash      : {
+                (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
+                        actionOk, universalPipelineWrapperBuiltIns)
+                return [actionOk, actionDetails]
+            },
+            unstash    : {
+                (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
+                        actionOk, universalPipelineWrapperBuiltIns, false)
+                return [actionOk, actionDetails]
             },
             artifacts  : {
                 (actionOk, actionDetails) = actionArchiveArtifacts(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
+                return [actionOk, actionDetails]
             },
             script     : {
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns, true)
+                return [actionOk, actionDetails]
             },
             report     : { println 'send_report' }
     ]
@@ -1320,10 +1331,10 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 String nodeSelectionPrintable = changeNodeData instanceof Map ? String.format("node with label '%s'",
                         changeNodeData.label) : String.format('%s node', (changeNodeData) ? changeNodeData : 'any')
                 CF.outMsg(0, String.format("Executing '%s' action on %s...", actionLink, nodeSelectionPrintable))
-                keysFound[keysFound.keySet()[0]].call()
+                (actionOk, actionDetails) = keysFound[keysFound.keySet()[0]].call()
             }
         } else {
-            keysFound[keysFound.keySet()[0]].call()
+            (actionOk, actionDetails) = keysFound[keysFound.keySet()[0]].call()
         }
     }
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
