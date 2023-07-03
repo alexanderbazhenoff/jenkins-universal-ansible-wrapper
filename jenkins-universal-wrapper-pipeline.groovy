@@ -1248,58 +1248,49 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [
             repo_url   : {
-                println '---repo_url ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionCloneGit(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             collections: {
-                println '---collections ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionInstallAnsibleCollections(actionLink, actionLinkItem, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             playbook   : {
-                println '---playbook ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns, false)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             pipeline   : {
-                println '---pipeline ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionDownstreamJobRun(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             stash      : {
-                println '---stash ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionUnStash(actionLink, actionLinkItem,
                         envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             unstash    : {
-                println '---unstash ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionUnStash(actionLink, actionLinkItem,
                         envVariables, check, actionOk, universalPipelineWrapperBuiltIns, false)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             artifacts  : {
-                println '---artifacts ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionArchiveArtifacts(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             script     : {
-                println '---script ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns, true)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             report     : {
-                println '---report ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionSendReport(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
