@@ -1623,7 +1623,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
     if (scriptRun) {
 
-        // Check script keys. Avoiding of negative pointers in parallel run setting up code sub-keys.
+        // Check script keys.
         checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
                 instanceof Map) ? checkOrExecuteData.script as Map : [:]
         (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
