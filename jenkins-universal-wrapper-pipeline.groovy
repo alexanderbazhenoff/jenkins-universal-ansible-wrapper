@@ -1599,14 +1599,13 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
-    // TODO: try to replace this with wrappers
     stringKeys.eachWithIndex { stringKeyName, Integer actionLinkKeysIndex ->
         Boolean actionLinkItemKeyIsDefined = actionLinkItem.containsKey(stringKeyName)
+        actionOk = errorMsgWrapper(check && actionLinkItemKeyIsDefined && !(actionLinkItem?.get(stringKeyName)
+                instanceof String), actionOk, 3, String.format("'%s' %s item in '%s' should be string.",
+                actionLinkItem?.get(stringKeyName), stringKeyName, actionLink))
         String executionLinkName = stringKeyName == 'inventory' && !actionLinkItemKeyIsDefined ? 'default' :
-                actionLinkItem?.get(stringKeyName)
-        actionOk = errorMsgWrapper(check && actionLinkItemKeyIsDefined && !(executionLinkName instanceof String),
-                actionOk, 3, String.format("'%s' %s item in '%s' should be string.", executionLinkName, stringKeyName,
-                actionLink))
+                actionLinkItem?.get(stringKeyName)?.toString()
         def (Boolean subKeyIsDefined, Object subKeyValue) = getMapSubKey(executionLinkName, pipelineSettings,
                 pipelineConfigKeys[actionLinkKeysIndex] as String)
         actionOk = errorMsgWrapper(check && !subKeyIsDefined, actionOk, 3,
