@@ -1557,14 +1557,15 @@ ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList manda
                                                         String keysDescription, Object envVariables,
                                                         Map universalPipelineWrapperBuiltIns) {
     ArrayList mandatoryKeyValues = []
+    println 'ololo' + map
     (state, map) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns, enableCheck, state,
             keysDescription, map, stringKeys, String.format("'%s' key", keysDescription), booleanKeys)
+    println 'ololo2' + map
     mandatoryKeysToCheck.eachWithIndex { mandatoryItem, Integer mandatoryItemIndex ->
         mandatoryKeyValues[mandatoryItemIndex] = map?.get(mandatoryItem as String) ?: ''
         state = errorMsgWrapper(enableCheck && !mandatoryKeyValues[mandatoryItemIndex].trim(), state, 3,
                 String.format("Mandatory key '%s' in '%s' is undefined or empty.", mandatoryItem, keysDescription))
     }
-    println 'ololo'
     return [mandatoryKeyValues, findMapItemsFromList(map, stringKeys + booleanKeys as ArrayList), state]
 }
 
