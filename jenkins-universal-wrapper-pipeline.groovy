@@ -1251,7 +1251,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 println '---repo_url ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionCloneGit(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                //return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             collections: {
                 println '---collections ' + universalPipelineWrapperBuiltIns
@@ -1261,48 +1261,48 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             playbook   : {
-                println '---playbook ' + universalPipelineWrapperBuiltIns
+                /*println '---playbook ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns, false)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]*/
             },
             pipeline   : {
-                println '---pipeline ' + universalPipelineWrapperBuiltIns
+                /*println '---pipeline ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionDownstreamJobRun(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]*/
             },
             stash      : {
-                println '---stash ' + universalPipelineWrapperBuiltIns
+                /*println '---stash ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionUnStash(actionLink, actionLinkItem,
                         envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]*/
             },
             unstash    : {
-                println '---unstash ' + universalPipelineWrapperBuiltIns
+                /*println '---unstash ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionUnStash(actionLink, actionLinkItem,
                         envVariables, check, actionOk, universalPipelineWrapperBuiltIns, false)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]*/
             },
             artifacts  : {
-                println '---artifacts ' + universalPipelineWrapperBuiltIns
+                /*println '---artifacts ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionArchiveArtifacts(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]*/
             },
             script     : {
-                println '---script ' + universalPipelineWrapperBuiltIns
+                /*println '---script ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns, true)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]*/
             },
             report     : {
-                println '---report ' + universalPipelineWrapperBuiltIns
+                /*println '---report ' + universalPipelineWrapperBuiltIns
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionSendReport(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]*/
             }
     ]
 
@@ -1335,12 +1335,10 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 String nodeSelectionPrintable = changeNodeData instanceof Map ? String.format("node with label '%s'",
                         changeNodeData.label) : String.format('%s node', (changeNodeData) ? changeNodeData : 'any')
                 CF.outMsg(0, String.format("Executing '%s' action on %s...", actionLink, nodeSelectionPrintable))
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns, __) =
-                        keysFound[keysFound.keySet()[0]].call()
+                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = keysFound[keysFound.keySet()[0]].call()
             }
         } else {
-            ArrayList arl = keysFound[keysFound.keySet()[0]].call()
-            println '===arl: ' + arl
+            (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = keysFound[keysFound.keySet()[0]].call()
         }
     }
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
@@ -1384,7 +1382,7 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, printableActionLinkItem, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns]
+    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
 /**
