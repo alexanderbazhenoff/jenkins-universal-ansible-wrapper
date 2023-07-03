@@ -1291,8 +1291,9 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             },
             report     : {
                 println 'kuku0'
-                /*(actionOk, actionDetails) = actionSendReport(actionLink, actionLinkItem, envVariables, check,
-                        actionOk, universalPipelineWrapperBuiltIns)*/
+                (actionOk, actionDetails) = actionSendReport(actionLink, actionLinkItem, envVariables, check,
+                        actionOk, universalPipelineWrapperBuiltIns)
+                println 'kuku00'
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             }
     ]
