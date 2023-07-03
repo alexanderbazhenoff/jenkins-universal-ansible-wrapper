@@ -762,7 +762,6 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
 String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
                                  ArrayList regexItemsList = ['true', 'false'],
                                  ArrayList replaceItemsList = ['[PASS]', '[FAIL]']) {
-    println 'sourceMap: ' + sourceMap
     String formattedStringTable = ''
     Boolean createTable = false
     Map tableColumnSizes = [:]
@@ -774,8 +773,8 @@ String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
                 if (createTable) {
                     Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
-                    println 'lolo3a k: ' + k + ' tableColumnSizes[k]: ' + tableColumnSizes[k as String] +
-                            ' tableEntry.length(): ' + tableEntry.length() + ' padSize: ' + padSize
+                    /*println 'lolo3a k: ' + k + ' tableColumnSizes[k]: ' + tableColumnSizes[k as String] +
+                            ' tableEntry.length(): ' + tableEntry.length() + ' padSize: ' + padSize*/
                     formattedStringTable += String.format('%s%s', tableEntry, ' ' * padSize)
                 }
             }
