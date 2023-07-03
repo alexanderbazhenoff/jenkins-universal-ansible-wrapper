@@ -1290,8 +1290,8 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             report     : {
-                (actionOk, actionDetails) = actionSendReport(actionLink, actionLinkItem, envVariables, check, actionOk,
-                        universalPipelineWrapperBuiltIns)
+                /*(actionOk, actionDetails) = actionSendReport(actionLink, actionLinkItem, envVariables, check,
+                        actionOk, universalPipelineWrapperBuiltIns)*/
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             }
     ]
