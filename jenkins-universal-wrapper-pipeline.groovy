@@ -771,8 +771,8 @@ static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = '
                 String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
                         applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
-                String pad = createTable ? ' ' * (tableColumnSizes[k as String] as Integer - tableEntry.length()) : ''
-                formattedTable += createTable ? String.format('%s%s', tableEntry, pad) : ''
+                Integer padSize = tableColumnSizes[k] - tableEntry.length()
+                formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' * padSize) : ''
             }
             formattedTable += createTable ? '\n' : ''
         }
