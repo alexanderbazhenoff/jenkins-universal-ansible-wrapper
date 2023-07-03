@@ -1490,7 +1490,7 @@ ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem,
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, actionLinkItem, ['collections'], actionOk,
             universalPipelineWrapperBuiltIns)
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns]
+    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
 /**
