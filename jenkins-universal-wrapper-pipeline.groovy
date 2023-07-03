@@ -1562,8 +1562,7 @@ ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList keyTo
         state = errorMsgWrapper(enableCheck && !mandatoryKeyValues[mandatoryItemIndex].trim(), state, 3,
                 String.format("Mandatory key '%s' in '%s' is undefined or empty.", mandatoryItem, keysDescription))
     }
-    Map filteredKeysMap = findMapItemsFromList(map, stringKeys + booleanKeys as ArrayList)
-    return [mandatoryKeyValues, filteredKeysMap, state]
+    return [mandatoryKeyValues, findMapItemsFromList(map, stringKeys + booleanKeys as ArrayList), state]
 }
 
 /**
@@ -1940,6 +1939,22 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
         }
     }
     return [allPass, pipelineParameters, printablePipelineParameters]
+}
+
+ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                           Map universalPipelineWrapperBuiltIns) {
+    ArrayList stringKeys = ['report']
+    def (ArrayList mandatoryKeyValues, __, Boolean reportKeyIsDefined) =
+            checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem, [stringKeys[0] as String], stringKeys, [],
+                    actionOk, check, actionLink, envVariables, universalPipelineWrapperBuiltIns)
+    if (reportKeyIsDefined && mandatoryKeyValues[0] == 'email') {
+
+    } else if (reportKeyIsDefined && mandatoryKeyValues[0] == 'mattermost') {
+
+    } else if (!check && !reportKeyIsDefined) {
+
+    }
+    return [actionOk, actionMsg]
 }
 
 
