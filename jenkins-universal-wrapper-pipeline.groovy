@@ -757,32 +757,28 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  * @param regexItemsList - list of regex items to apply for value replacement.
  * @param replaceItemsList - list of items for value replacement to replace with. List must be the same length as a
  *                           regexItemsList, otherwise will be replaced with empty line ''
+ * @param formattedTable - pass a table header here.
  * @return - formatted string table results.
  */
-String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
-                                 ArrayList regexItemsList = ['true', 'false'],
-                                 ArrayList replaceItemsList = ['[PASS]', '[FAIL]']) {
-    String formattedStringTable = ''
+static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
+                                        ArrayList regexItemsList = ['true', 'false'],
+                                        ArrayList replaceItemsList = ['[PASS]', '[FAIL]'], String formattedTable = '') {
     Boolean createTable = false
     Map tableColumnSizes = [:]
     for (Integer i = 0; i < 2; i++) {
-        sourceMap.each { entry ->
-            entry.value.each { k, v ->
+        sourceMap.each { sourceMapEntry ->
+            sourceMapEntry.value.each { k, v ->
                 String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
                         applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
-                if (createTable) {
-                    Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
-                    /*println 'lolo3a k: ' + k + ' tableColumnSizes[k]: ' + tableColumnSizes[k as String] +
-                            ' tableEntry.length(): ' + tableEntry.length() + ' padSize: ' + padSize*/
-                    formattedStringTable += String.format('%s%s', tableEntry, ' ' * padSize)
-                }
+                formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' *
+                        (tableColumnSizes[k as String] as Integer - tableEntry.length())) : ''
             }
-            formattedStringTable += createTable ? '\n' : ''
+            formattedTable += createTable ? '\n' : ''
         }
         createTable = !createTable
     }
-    return formattedStringTable
+    return formattedTable
 }
 
 /**
