@@ -753,39 +753,37 @@ static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, Stri
  * Map to formatted string table with values replacement.
  *
  * @param sourceMap - source map to create text table from.
- * @param createTable - when true create string table, or calculate table columns length when false. So the first
- *                      function call with 'createTable = false' calculates columns length, while the second with
- *                      'createTable = true' create a resulting table.
- * @param tableColumnSizes - column length map for table creation with the structure: [key1: length1, key2, length2].
  * @param replaceKeyName - key name in source map to perform value replacement.
  * @param regexItemsList - list of regex items to apply for value replacement.
  * @param replaceItemsList - list of items for value replacement to replace with. List must be the same length as a
  *                           regexItemsList, otherwise will be replaced with empty line ''
- * @return - arrayList of:
- *           - table column sizes map on createTable = false;
- *           - formatted string table results on createTable = true.
+ * @return - formatted string table results.
  */
-ArrayList mapToFormattedStringTable(Map sourceMap, Boolean createTable = false, Map tableColumnSizes = [:],
-                                           String replaceKeyName = 'state',
-                                           ArrayList regexItemsList = ['true', 'false'],
-                                           ArrayList replaceItemsList = ['[PASS]', '[FAIL]']) {
+String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
+                                 ArrayList regexItemsList = ['true', 'false'],
+                                 ArrayList replaceItemsList = ['[PASS]', '[FAIL]']) {
+    println 'sourceMap: ' + sourceMap
     String formattedStringTable = ''
-    sourceMap.each { entry ->
-        entry.value.each { k, v ->
-            String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
-                    applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
-            if (createTable) {
-                Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
-                println 'lolo3a k: ' + k + ' tableColumnSizes[k]: ' + tableColumnSizes[k as String] +
-                        ' tableEntry.length(): ' + tableEntry.length() + 'padSize: ' + padSize
-                formattedStringTable += String.format('%s%s', tableEntry, ' ' * padSize)
-            } else {
+    Boolean createTable = false
+    Map tableColumnSizes = [:]
+    for (Integer i = 0; i < 2; i++) {
+        sourceMap.each { entry ->
+            entry.value.each { k, v ->
+                String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
+                        applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
+                if (createTable) {
+                    Integer padSize = tableColumnSizes[k as String] - tableEntry.length()
+                    println 'lolo3a k: ' + k + ' tableColumnSizes[k]: ' + tableColumnSizes[k as String] +
+                            ' tableEntry.length(): ' + tableEntry.length() + ' padSize: ' + padSize
+                    formattedStringTable += String.format('%s%s', tableEntry, ' ' * padSize)
+                }
             }
+            formattedStringTable += createTable ? '\n' : ''
         }
-        formattedStringTable += '\n'
+        createTable = !createTable
     }
-    return [tableColumnSizes, formattedStringTable]
+    return formattedStringTable
 }
 
 /**
@@ -1161,9 +1159,8 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
  * @return - universal pipeline wrapper built-ins map.
  */
 Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyNamePrefix = 'multilineReport') {
-    String stringTableReport
     Map wrapperBuiltInsStatusMap = pipelineWrapperBuiltIns[String.format('%sMap', keyNamePrefix)] as Map
-    def (Map tableColumnSizes, __) = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
+    def (Map tableColumnSizes, String stringTableReport) = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
     println 'lolo3 tableColumnSizes: ' + tableColumnSizes
     (__, stringTableReport) = mapToFormattedStringTable(wrapperBuiltInsStatusMap, true, tableColumnSizes)
     pipelineWrapperBuiltIns[keyNamePrefix] = stringTableReport
