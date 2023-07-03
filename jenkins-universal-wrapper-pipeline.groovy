@@ -1960,19 +1960,25 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
                            Map universalPipelineWrapperBuiltIns) {
     String actionMsg
     ArrayList mandatoryKeys = ['report']
+    println 'kuku1'
     String reportTarget = actionLinkItem?.get(mandatoryKeys[0]) instanceof String ?
             actionLinkItem.get(mandatoryKeys[0]) : ''
     actionOk = errorMsgWrapper(!check && !reportTarget.trim(), actionOk, 3,
             String.format("Unable to detect report target: '%s' action key in '%s' is undefined or incorrect.",
                     mandatoryKeys[0], actionLink))
+    println 'kuku2'
     mandatoryKeys += reportTarget == 'email' ? ['to', 'reply_to'] : []
+    println 'kuku3'
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
     String stringKeys = reportTarget == 'email' ? ['subject', 'body'] : []
+    println 'kuku4'
     ArrayList mandatoryKeyValues
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
             mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
+    println 'kuku5'
     String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
+    println 'kuku6'
     Closure actionClosure = mandatoryKeyValues.size() == 3 && mandatoryKeyValues[0] == 'email' ? {
         emailext(
                 to: mandatoryKeyValues[1],
@@ -1988,9 +1994,11 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     } : {
         return [actionOk, universalPipelineWrapperBuiltIns, null]
     }
+    println 'kuku7'
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, actionLinkItem, mandatoryKeys + stringKeys as ArrayList, actionOk,
             universalPipelineWrapperBuiltIns)
+    println 'kuku8'
     return [actionOk, actionMsg]
 }
 
