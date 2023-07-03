@@ -1269,13 +1269,13 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             stash      : {
-                (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
-                        actionOk, universalPipelineWrapperBuiltIns)
+                (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             unstash    : {
-                (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check,
-                        actionOk, universalPipelineWrapperBuiltIns, false)
+                (actionOk, actionDetails) = actionUnStash(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns, false)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             artifacts  : {
