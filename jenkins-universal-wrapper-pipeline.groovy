@@ -1290,7 +1290,8 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             report     : {
-                println 'send_report'
+                (actionOk, actionDetails) = actionSendReport(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             }
     ]
@@ -1825,9 +1826,9 @@ ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object e
     }
     errorMsgWrapper(!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'), true, 0,
             String.format("%s parameters: %s", actionName.capitalize(), CF.readableMap(actionLinkItem)))
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check,
-            envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
-            actionOk, universalPipelineWrapperBuiltIns)
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList, actionOk,
+            universalPipelineWrapperBuiltIns)
     actionMsg += String.format(' %sartifact/', envVariables.BUILD_URL)
     return [actionOk, actionMsg]
 }
@@ -1871,9 +1872,9 @@ ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariabl
     }
     errorMsgWrapper(!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'), true, 0,
             String.format("%s parameters: %s", actionName.capitalize(), CF.readableMap(actionLinkItem)))
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check,
-            envVariables, actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList,
-            actionOk, universalPipelineWrapperBuiltIns)
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList, actionOk,
+            universalPipelineWrapperBuiltIns)
     return [actionOk, actionMsg]
 }
 
@@ -1941,17 +1942,55 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
     return [allPass, pipelineParameters, printablePipelineParameters]
 }
 
+/**
+ * Pipeline action: send report to email/mattermost.
+ *
+ * @param actionLink - message prefix for possible errors.
+ * @param actionLinkItem - action link item to check or execute.
+ * @param envVariables - environment variables ('env' which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param check - set false to execute action item, true to check.
+ * @param actionOk - just to pass previous action execution/checking state.
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
+ * @param stashFiles - true to stash files, false to unstash files.
+ * @return - arrayList of:
+ *           - true when success, false when failed;
+ *           - action details for logging.
+ */
 ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                            Map universalPipelineWrapperBuiltIns) {
-    ArrayList mandatoryStringKeys = ['report']
-    String reportTarget = actionLinkItem?.get(mandatoryStringKeys[0])?.toString() ?: ''
-    if (reportTarget == 'email') {
-
-    } else if (reportTarget == 'mattermost') {
-
-    } else if (!check && !reportTarget.trim()) {
-
+    String actionMsg
+    ArrayList mandatoryKeys = ['report']
+    String reportTarget = actionLinkItem?.get(mandatoryKeys[0]) instanceof String ?
+            actionLinkItem.get(mandatoryKeys[0]) : ''
+    actionOk = errorMsgWrapper(!check && !reportTarget.trim(), actionOk, 3,
+            String.format("Unable to detect report target: '%s' action key in '%s' is undefined or incorrect.",
+                    mandatoryKeys[0], actionLink))
+    mandatoryKeys += reportTarget == 'email' ? ['to', 'reply_to'] : []
+    mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
+    String stringKeys = reportTarget == 'email' ? ['subject', 'body'] : []
+    ArrayList mandatoryKeyValues
+    (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
+            mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
+            universalPipelineWrapperBuiltIns)
+    String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
+    Closure actionClosure = mandatoryKeyValues.size() == 3 && mandatoryKeyValues[0] == 'email' ? {
+        emailext(
+                to: mandatoryKeyValues[1],
+                replyTo: mandatoryKeyValues[2],
+                subject: actionLinkItem?.get(stringKeys[0]) ?: '',
+                body: actionLinkItem?.get(stringKeys[1]) ?: ''
+        )
+        return [actionOk, universalPipelineWrapperBuiltIns, null]
+    } : mandatoryKeyValues.size() == 3 && mandatoryKeyValues[0] == 'mattermost' ? {
+        Boolean sendReportStatus = CF.sendMattermostChannelSingleMessage(mandatoryKeyValues[1], mandatoryKeyValues[2],
+                getBooleanVarStateFromEnv(envVariables) ? 2 : 0)
+        return [sendReportStatus && actionOk, universalPipelineWrapperBuiltIns, null]
+    } : {
+        return [actionOk, universalPipelineWrapperBuiltIns, null]
     }
+    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, actionLinkItem, mandatoryKeys + stringKeys as ArrayList, actionOk,
+            universalPipelineWrapperBuiltIns)
     return [actionOk, actionMsg]
 }
 
