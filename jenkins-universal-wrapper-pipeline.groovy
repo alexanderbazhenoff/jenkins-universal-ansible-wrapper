@@ -1564,6 +1564,7 @@ ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList manda
         state = errorMsgWrapper(enableCheck && !mandatoryKeyValues[mandatoryItemIndex].trim(), state, 3,
                 String.format("Mandatory key '%s' in '%s' is undefined or empty.", mandatoryItem, keysDescription))
     }
+    println 'ololo'
     return [mandatoryKeyValues, findMapItemsFromList(map, stringKeys + booleanKeys as ArrayList), state]
 }
 
