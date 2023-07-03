@@ -1972,7 +1972,7 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     mandatoryKeys += reportTarget == 'email' ? ['to', 'reply_to'] : []
     println 'kuku3'
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
-    String stringKeys = reportTarget == 'email' ? ['subject', 'body'] : []
+    String stringKeys = (reportTarget == 'email') ? ['subject', 'body'] : []
     println 'kuku4'
     ArrayList mandatoryKeyValues
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
