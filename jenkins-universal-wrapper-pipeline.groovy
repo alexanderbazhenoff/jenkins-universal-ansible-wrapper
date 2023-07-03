@@ -1537,7 +1537,7 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
  * Check value type, template and check mandatory map keys, then filter required keys from this map.
  *
  * @param map - map to check and filter keys.
- * @param keyToCheck - list of mandatory keys to check.
+ * @param mandatoryKeysToCheck - list of mandatory keys to check.
  * @param stringKeys - list of map keys which should be strings (also keys to filter).
  * @param booleanKeys - list of map keys which should be booleans (also keys to filter).
  * @param state - current state to pass or change (true when ok).
@@ -1550,14 +1550,14 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
  *           - map with filtered keys;
  *           - current state return.
  */
-ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList keyToCheck, ArrayList stringKeys,
+ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList mandatoryKeysToCheck, ArrayList stringKeys,
                                                         ArrayList booleanKeys, Boolean state, Boolean enableCheck,
                                                         String keysDescription, Object envVariables,
                                                         Map universalPipelineWrapperBuiltIns) {
     ArrayList mandatoryKeyValues = []
     (state, map) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns, enableCheck, state,
             keysDescription, map, stringKeys, String.format("'%s' key", keysDescription), booleanKeys)
-    keyToCheck.eachWithIndex { mandatoryItem, Integer mandatoryItemIndex ->
+    mandatoryKeysToCheck.eachWithIndex { mandatoryItem, Integer mandatoryItemIndex ->
         mandatoryKeyValues[mandatoryItemIndex] = map?.get(mandatoryItem as String) ?: ''
         state = errorMsgWrapper(enableCheck && !mandatoryKeyValues[mandatoryItemIndex].trim(), state, 3,
                 String.format("Mandatory key '%s' in '%s' is undefined or empty.", mandatoryItem, keysDescription))
@@ -1943,15 +1943,13 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
 
 ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                            Map universalPipelineWrapperBuiltIns) {
-    ArrayList stringKeys = ['report']
-    def (ArrayList mandatoryKeyValues, __, Boolean reportKeyIsDefined) =
-            checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem, [stringKeys[0] as String], stringKeys, [],
-                    actionOk, check, actionLink, envVariables, universalPipelineWrapperBuiltIns)
-    if (reportKeyIsDefined && mandatoryKeyValues[0] == 'email') {
+    ArrayList mandatoryStringKeys = ['report']
+    String reportTarget = actionLinkItem?.get(mandatoryStringKeys[0])?.toString() ?: ''
+    if (reportTarget == 'email') {
 
-    } else if (reportKeyIsDefined && mandatoryKeyValues[0] == 'mattermost') {
+    } else if (reportTarget == 'mattermost') {
 
-    } else if (!check && !reportKeyIsDefined) {
+    } else if (!check && !reportTarget.trim()) {
 
     }
     return [actionOk, actionMsg]
