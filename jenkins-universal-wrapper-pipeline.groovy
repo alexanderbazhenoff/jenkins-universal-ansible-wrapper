@@ -1719,7 +1719,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     ArrayList pipelineParametersList = actionLinkItem?.get(kName) instanceof ArrayList ?
             actionLinkItem?.get(kName) as ArrayList : []
     (actionOk, pipelineParameters, printablePipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersList,
-            envVariables, String.format("'%s' action", actionLink), check, actionOk)
+            envVariables, String.format("'%s' action", actionLink), universalPipelineWrapperBuiltIns, check, actionOk)
 
     // Processing copy_artifacts parameters.
     kName = 'copy_artifacts'
@@ -1886,6 +1886,7 @@ ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariabl
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param keyDescription - parameters description (where parameters was taken).
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
  * @param check - set false to execute action item, true to check.
  * @param allPass - just to pass previous action execution/checking state.
  * @param pipelineParameters - jenkins job parameters to add to them.
@@ -1896,7 +1897,8 @@ ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariabl
  *         - printable pipeline parameters return.
  */
 ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVariables, String keyDescription,
-                                         Boolean check, Boolean allPass = true, ArrayList pipelineParameters = [],
+                                         Map universalPipelineWrapperBuiltIns, Boolean check, Boolean allPass = true,
+                                         ArrayList pipelineParameters = [],
                                          ArrayList printablePipelineParameters = []) {
     listOfMapItems.eachWithIndex { listItem, Integer listItemIndex ->
         ArrayList stringParamKeysList = ['name', 'type']
@@ -1923,7 +1925,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
 
             // Assigning variables to pipeline parameter item, hiding passwords, converting them to pipeline parameter.
             (allPass, filteredListItem) = templatingMapKeysFromVariables(filteredListItem, allParamKeysList,
-                    envVariables, allPass, [:], errMsgSubject)
+                    envVariables, allPass, universalPipelineWrapperBuiltIns, errMsgSubject)
             if (filteredListItem?.size() == 3 && stringKeysOk) {
                 pipelineParameters = CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
                         filteredListItem?.get('value'), filteredListItem?.get(stringParamKeysList[1]), false,
