@@ -1292,7 +1292,6 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             report     : {
                 (actionOk, actionDetails) = actionSendReport(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
-                println '---a ' + universalPipelineWrapperBuiltIns
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             }
     ]
@@ -1961,6 +1960,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
  */
 ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                            Map universalPipelineWrapperBuiltIns) {
+    println '---a ' + universalPipelineWrapperBuiltIns
     String actionMsg
     ArrayList mandatoryKeys = ['report']
     String reportTarget = actionLinkItem?.get(mandatoryKeys[0]) instanceof String ?
