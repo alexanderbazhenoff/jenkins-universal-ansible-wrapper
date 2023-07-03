@@ -1160,10 +1160,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
  */
 Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyNamePrefix = 'multilineReport') {
     Map wrapperBuiltInsStatusMap = pipelineWrapperBuiltIns[String.format('%sMap', keyNamePrefix)] as Map
-    def (Map tableColumnSizes, String stringTableReport) = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
-    println 'lolo3 tableColumnSizes: ' + tableColumnSizes
-    (__, stringTableReport) = mapToFormattedStringTable(wrapperBuiltInsStatusMap, true, tableColumnSizes)
-    pipelineWrapperBuiltIns[keyNamePrefix] = stringTableReport
+    pipelineWrapperBuiltIns[keyNamePrefix] = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
     pipelineWrapperBuiltIns[String.format('%sFailed', keyNamePrefix)] = CF.grepFailedStates(pipelineWrapperBuiltIns,
             keyNamePrefix, '[FAIL]')
     return pipelineWrapperBuiltIns
