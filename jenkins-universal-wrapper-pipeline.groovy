@@ -1969,10 +1969,10 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
             String.format("Unable to detect report target: '%s' action key in '%s' is undefined or incorrect.",
                     mandatoryKeys[0], actionLink))
     println 'kuku2'
-    mandatoryKeys += (reportTarget == 'email') ? ['to', 'reply_to'] : []
+    mandatoryKeys = reportTarget == 'email' ? mandatoryKeys + ['to', 'reply_to'] : mandatoryKeys
     println 'kuku3'
-    mandatoryKeys += (reportTarget == 'mattermost') ? ['url', 'text'] : []
-    String stringKeys = (reportTarget == 'email') ? ['subject', 'body'] : []
+    mandatoryKeys = reportTarget == 'mattermost' ? mandatoryKeys + ['url', 'text'] : mandatoryKeys
+    String stringKeys = reportTarget == 'email' ? ['subject', 'body'] : []
     println 'kuku4'
     ArrayList mandatoryKeyValues
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
