@@ -1290,10 +1290,8 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             report     : {
-                println 'kuku0'
                 (actionOk, actionDetails) = actionSendReport(actionLink, actionLinkItem, envVariables, check,
                         actionOk, universalPipelineWrapperBuiltIns)
-                println 'kuku00'
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             }
     ]
@@ -1962,15 +1960,12 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
                            Map universalPipelineWrapperBuiltIns) {
     String actionMsg
     ArrayList mandatoryKeys = ['report']
-    println 'kuku1'
     String reportTarget = actionLinkItem?.get(mandatoryKeys[0]) instanceof String ?
             actionLinkItem.get(mandatoryKeys[0]) : ''
     actionOk = errorMsgWrapper(!check && !reportTarget.trim(), actionOk, 3,
             String.format("Unable to detect report target: '%s' action key in '%s' is undefined or incorrect.",
                     mandatoryKeys[0], actionLink))
-    println 'kuku2'
     mandatoryKeys += reportTarget == 'email' ? ['to', 'reply_to'] : []
-    println 'kuku3'
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
     ArrayList stringKeys = reportTarget == 'email' ? ['subject', 'body'] : []
     println 'kuku4'
