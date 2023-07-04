@@ -487,6 +487,7 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
     if (!mentionedVariables[0])
         return [false, assignmentOk, assignment]
     Map bindingVariables = CF.envVarsToMap(envVariables) + additionalVariablesBinding
+    println 'bindingVariables: ' + bindingVariables
     mentionedVariables.each { mentioned ->
         Boolean variableNameIsIncorrect = !checkEnvironmentVariableNameCorrect(mentioned)
         Boolean variableIsUndefined = !bindingVariables.containsKey(mentioned)
@@ -518,11 +519,9 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
                                          Boolean allAssignmentsPass = true, Map additionalVariablesBinding = [:],
                                          String keysDescription = 'Key') {
     assignmentKeysList.each { currentKey ->
-        println 'assignMap: ' + assignMap
         if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
-            println 'assignMap2: ' + assignMap
             allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
