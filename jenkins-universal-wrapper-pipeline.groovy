@@ -488,6 +488,8 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
         return [false, assignmentOk, assignment]
     Map bindingVariables = CF.envVarsToMap(envVariables) + additionalVariablesBinding
     println 'bindingVariables: ' + bindingVariables
+    // TODO: fix this loop
+    // TODO: fix built-in variables loss
     mentionedVariables.each { mentioned ->
         Boolean variableNameIsIncorrect = !checkEnvironmentVariableNameCorrect(mentioned)
         Boolean variableIsUndefined = !bindingVariables.containsKey(mentioned)
