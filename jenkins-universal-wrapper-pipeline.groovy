@@ -522,6 +522,7 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
         if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
+            println 'assignMap2: ' + assignMap
             allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
