@@ -503,7 +503,7 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
         println 'bindingVariables2: ' + bindingVariables
     }
     String assigned = new StreamingTemplateEngine().createTemplate(assignment).make(bindingVariables)
-    println 'assigned: ' + assigned
+    println '---assigned: ' + assigned
     return [true, assignmentOk, assigned]
 }
 
