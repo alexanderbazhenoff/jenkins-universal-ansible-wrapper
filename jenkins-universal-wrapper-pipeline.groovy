@@ -486,8 +486,6 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
     if (!mentionedVariables[0])
         return [false, assignmentOk, assignment]
     Map bindingVariables = CF.envVarsToMap(envVariables) + additionalVariablesBinding
-    // TODO: fix this loop
-    // TODO: fix built-in variables loss
     mentionedVariables.each { mentioned ->
         Boolean variableNameIsIncorrect = !checkEnvironmentVariableNameCorrect(mentioned)
         Boolean variableIsUndefined = !bindingVariables.containsKey(mentioned)
@@ -1977,14 +1975,11 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     mandatoryKeys += reportTarget == 'email' ? ['to', 'reply_to'] : []
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
     ArrayList stringKeys = reportTarget == 'email' ? ['subject', 'body'] : []
-    println 'kuku4'
     ArrayList mandatoryKeyValues
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
             mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
-    println 'kuku5'
     String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
-    println 'kuku6'
     Closure actionClosure = mandatoryKeyValues.size() == 3 && mandatoryKeyValues[0] == 'email' ? {
         emailext(
                 to: mandatoryKeyValues[1],
@@ -2000,11 +1995,9 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     } : {
         return [actionOk, universalPipelineWrapperBuiltIns, null]
     }
-    println 'kuku7'
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, actionLinkItem, mandatoryKeys + stringKeys as ArrayList, actionOk,
             universalPipelineWrapperBuiltIns)
-    println 'kuku8'
     return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
