@@ -961,7 +961,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', stageItem.actions?.size(),
             stageItem.actions?.size() > 1 ? 's' : '', stageItem.get('parallel') ? ' in parallel' : '') : '<no actions>'
     universalPipelineWrapperBuiltIns.multilineReportStagesMap = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
-            printableStageName, allPass, stageStatusDetails)
+            printableStageName, allPass, stageStatusDetails, '', false)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns,
             'multilineReportStages')
     return [universalPipelineWrapperBuiltIns, allPass, envVariables]
@@ -1140,7 +1140,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
-            printableStageAndAction, actionStructureAndLinkOk, actionDescription, '', false)
+            printableStageAndAction, actionStructureAndLinkOk, actionDescription)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns)
     if (actionItem.get('stop_on_fail') && !check && !actionLinkOk)
         error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
