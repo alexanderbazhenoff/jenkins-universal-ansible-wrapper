@@ -1140,7 +1140,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
-            printableStageAndAction, actionStructureAndLinkOk, actionDescription)
+            printableStageAndAction, actionStructureAndLinkOk, actionDescription, '', false)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns)
     if (actionItem.get('stop_on_fail') && !check && !actionLinkOk)
         error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
