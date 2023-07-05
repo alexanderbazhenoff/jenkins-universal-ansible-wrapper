@@ -500,7 +500,7 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
                 String.format("Specified '%s' variable in '%s' value is undefined. %s", mentioned, assignment, errMsg))
         println '---1'
         bindingVariables[mentioned] = variableNameIsIncorrect || variableIsUndefined ? '' : bindingVariables[mentioned]
-        println '---2'
+        println 'bindingVariables2: ' + bindingVariables
     }
     return [true, assignmentOk, new StreamingTemplateEngine().createTemplate(assignment).make(bindingVariables)]
 }
