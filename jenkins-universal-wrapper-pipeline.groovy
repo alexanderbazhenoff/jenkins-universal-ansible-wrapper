@@ -5,10 +5,9 @@
 import org.yaml.snakeyaml.*
 import groovy.text.StreamingTemplateEngine
 
-import java.lang.reflect.Array
 
 // TODO: change branch
-@Library('jenkins-shared-library-alx@devel') _
+@Library('jenkins-shared-library-alx@main') _
 
 
 // Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
@@ -492,13 +491,16 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
     // TODO: fix built-in variables loss
     mentionedVariables.each { mentioned ->
         Boolean variableNameIsIncorrect = !checkEnvironmentVariableNameCorrect(mentioned)
+        println 'mentioned: ' + mentioned
         Boolean variableIsUndefined = !bindingVariables.containsKey(mentioned)
         String errMsg = "The value of this variable will be templated with '' (empty string)."
         assignmentOk = errorMsgWrapper(variableNameIsIncorrect, assignmentOk, 3,
                 String.format("Incorrect variable name '%s' in '%s' value. %s", mentioned, assignment, errMsg))
         assignmentOk = errorMsgWrapper(variableIsUndefined, assignmentOk, 3,
                 String.format("Specified '%s' variable in '%s' value is undefined. %s", mentioned, assignment, errMsg))
+        println '---1'
         bindingVariables[mentioned] = variableNameIsIncorrect || variableIsUndefined ? '' : bindingVariables[mentioned]
+        println '---2'
     }
     return [true, assignmentOk, new StreamingTemplateEngine().createTemplate(assignment).make(bindingVariables)]
 }
