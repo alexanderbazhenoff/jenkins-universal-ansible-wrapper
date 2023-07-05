@@ -486,22 +486,20 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
     if (!mentionedVariables[0])
         return [false, assignmentOk, assignment]
     Map bindingVariables = CF.envVarsToMap(envVariables) + additionalVariablesBinding
-    println 'bindingVariables: ' + bindingVariables
     // TODO: fix this loop
     // TODO: fix built-in variables loss
     mentionedVariables.each { mentioned ->
         Boolean variableNameIsIncorrect = !checkEnvironmentVariableNameCorrect(mentioned)
-        println 'mentioned: ' + mentioned
         Boolean variableIsUndefined = !bindingVariables.containsKey(mentioned)
         String errMsg = "The value of this variable will be templated with '' (empty string)."
         assignmentOk = errorMsgWrapper(variableNameIsIncorrect, assignmentOk, 3,
                 String.format("Incorrect variable name '%s' in '%s' value. %s", mentioned, assignment, errMsg))
         assignmentOk = errorMsgWrapper(variableIsUndefined, assignmentOk, 3,
                 String.format("Specified '%s' variable in '%s' value is undefined. %s", mentioned, assignment, errMsg))
-        println '---1'
         bindingVariables[mentioned] = variableNameIsIncorrect || variableIsUndefined ? '' : bindingVariables[mentioned]
-        println 'bindingVariables2: ' + bindingVariables
+
     }
+    println 'bindingVariables: ' + bindingVariables
     String assigned = new StreamingTemplateEngine().createTemplate(assignment).make(bindingVariables)
     println '---assigned: ' + assigned
     return [true, assignmentOk, assigned]
