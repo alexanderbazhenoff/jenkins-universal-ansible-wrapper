@@ -935,16 +935,17 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))), allPass, 3, String.format(
             "Unable to determine 'parallel' value for '%s' stage. Remove them or set as boolean.", printableStageName))
     (allPass, stageItem) = templatingMapKeysFromVariables(stageItem, ['name'], envVariables, allPass)
+    ArrayList actionsInStage = actionsIsNotList ? [] : stageItem.get('actions') as ArrayList
 
     // Creating map and processing items from 'actions' key.
-    stageItem.get('actions').eachWithIndex { item, Integer index ->
+    actionsInStage.eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
             String checkOrExecuteMsg = check ? 'Checking' : 'Executing'
             String actionRunsMsg = String.format("action#%s from '%s' stage", index.toString(), printableStageName)
             CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
             Boolean checkOrExecuteOk
             (universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
-                    universalPipelineWrapperBuiltIns, printableStageName, stageItem.get('actions')[index] as Map,
+                    universalPipelineWrapperBuiltIns, printableStageName, actionsInStage[index] as Map,
                     pipelineSettings, index, envVariables, check)
             allPass = checkOrExecuteOk ? allPass : false
             CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
@@ -960,8 +961,8 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     }
     Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
             universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
-    String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', stageItem.actions?.size(),
-            stageItem.actions?.size() > 1 ? 's' : '', stageItem.get('parallel') ? ' in parallel' : '') : '<no actions>'
+    String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
+            actionsInStage?.size() > 1 ? 's' : '', stageItem.get('parallel') ? ' in parallel' : '') : '<no actions>'
     universalPipelineWrapperBuiltIns.multilineReportStagesMap = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
             printableStageName, allPass, stageStatusDetails, '', false)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns,
