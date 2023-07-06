@@ -1967,6 +1967,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
 ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                            Map universalPipelineWrapperBuiltIns) {
     println '---a ' + universalPipelineWrapperBuiltIns
+    // TODO: fix no built-in variable while templating
     String actionMsg
     ArrayList mandatoryKeys = ['report']
     String reportTarget = actionLinkItem?.get(mandatoryKeys[0]) instanceof String ?
