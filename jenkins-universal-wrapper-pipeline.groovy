@@ -5,6 +5,8 @@
 import org.yaml.snakeyaml.*
 import groovy.text.StreamingTemplateEngine
 
+import java.lang.reflect.Array
+
 
 // TODO: change branch
 @Library('jenkins-shared-library-alx@main') _
@@ -1995,8 +1997,10 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     } : {
         return [actionOk, universalPipelineWrapperBuiltIns, null]
     }
+    ArrayList printableKeys = reportTarget == 'mattermost' ? [mandatoryKeys[0]] :
+            reportTarget == 'email' ? mandatoryKeys : []
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
-            actionClosure, actionLink, actionName, actionLinkItem, mandatoryKeys + stringKeys as ArrayList, actionOk,
+            actionClosure, actionLink, actionName, actionLinkItem, printableKeys, actionOk,
             universalPipelineWrapperBuiltIns)
     return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
