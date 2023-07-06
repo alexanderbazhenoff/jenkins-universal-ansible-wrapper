@@ -1997,11 +1997,9 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     } : {
         return [actionOk, universalPipelineWrapperBuiltIns, null]
     }
-    ArrayList printableKeys = reportTarget == 'mattermost' ? [mandatoryKeys[0]] :
-            reportTarget == 'email' ? mandatoryKeys : []
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
-            actionClosure, actionLink, actionName, actionLinkItem, printableKeys, actionOk,
-            universalPipelineWrapperBuiltIns)
+            actionClosure, actionLink, actionName, actionLinkItem, [], actionOk, universalPipelineWrapperBuiltIns)
+    actionMsg = actionMsg.replaceAll('\\s\\[]', '')
     return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
