@@ -950,16 +950,19 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             allPass = checkOrExecuteOk ? allPass : false
             CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
                     CF.readableMap(universalPipelineWrapperBuiltIns)))
-            println '---d ' + universalPipelineWrapperBuiltIns
+            return [universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables]
         }
     }
+    Map valuesFromRuns = [:]
     if (stageItem.get('parallel')?.toBoolean()) {
-        parallel actionsRuns
+        valuesFromRuns = parallel actionsRuns
     } else {
         actionsRuns.each {
-            it.value.call()
+            valuesFromRuns[it.key] = it.value.call()
         }
     }
+    // TODO: values return parser
+    println 'valuesFromRuns: ' + valuesFromRuns
     Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
             universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
