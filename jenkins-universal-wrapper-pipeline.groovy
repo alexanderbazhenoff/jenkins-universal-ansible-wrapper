@@ -962,7 +962,8 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
         }
     }
     // TODO: values return parser
-    println 'valuesFromRuns: ' + valuesFromRuns
+    println 'valuesFromRuns: ' + CF.readableMap(valuesFromRuns)
+    println 'valuesFromRuns (last): ' + valuesFromRuns[valuesFromRuns.keySet().last()]
     Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
             universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
