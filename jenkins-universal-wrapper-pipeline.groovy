@@ -950,6 +950,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             allPass = checkOrExecuteOk ? allPass : false
             CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
                     CF.readableMap(universalPipelineWrapperBuiltIns)))
+            println '---d ' + universalPipelineWrapperBuiltIns
         }
     }
     if (stageItem.get('parallel')?.toBoolean()) {
