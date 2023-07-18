@@ -1249,6 +1249,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
+    println '---b ' + universalPipelineWrapperBuiltIns
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
@@ -1882,7 +1883,7 @@ ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariabl
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList, actionOk,
             universalPipelineWrapperBuiltIns)
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns]
+    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
 /**
