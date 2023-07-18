@@ -1040,6 +1040,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Map nodeItem = [:]
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
+    println '---c ' + universalPipelineWrapperBuiltIns
 
     // Check keys are not empty and convertible to required type and check incompatible keys.
     ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
