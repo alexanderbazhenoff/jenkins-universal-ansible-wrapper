@@ -962,7 +962,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
         }
     }
     // TODO: values return parser
-    println 'valuesFromRuns: ' + valuesFromRuns
+    println 'envVariables.getClass(): ' + envVariables.getClass()
     println 'valuesFromRuns (last): ' + valuesFromRuns[valuesFromRuns.keySet().last()]
     println 'valuesFromRuns (last).getClass(): ' + valuesFromRuns[valuesFromRuns.keySet().last()].getClass()
     Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
