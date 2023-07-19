@@ -961,10 +961,11 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             valuesFromRuns[it.key] = it.value.call()
         }
     }
-    // TODO: values return parser
-    println 'envVariables.getClass(): ' + envVariables.getClass()
-    println 'valuesFromRuns (last): ' + valuesFromRuns[valuesFromRuns.keySet().last()]
-    println 'valuesFromRuns (last).getClass(): ' + valuesFromRuns[valuesFromRuns.keySet().last()].getClass()
+
+    // Processing results of each action, parsing overall stages results and report.
+    Map universalPipelineWrapperBuiltInsLast = valuesFromRuns[valuesFromRuns.keySet().last()].first()
+    println 'valuesFromRuns (last): ' + universalPipelineWrapperBuiltInsLast
+    println 'checkOrExecuteOk: ' + valuesFromRuns.each { it.value[1] }
     Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
             universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
