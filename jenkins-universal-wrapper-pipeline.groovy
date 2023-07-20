@@ -937,6 +937,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     (allPass, stageItem) = templatingMapKeysFromVariables(stageItem, ['name'], envVariables, allPass)
     ArrayList actionsInStage = actionsIsNotList ? [] : stageItem.get('actions') as ArrayList
 
+    println '---e: ' + universalPipelineWrapperBuiltIns
     // Creating map and processing items from 'actions' key.
     actionsInStage.eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
