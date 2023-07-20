@@ -1,15 +1,20 @@
 #!/usr/bin/env groovy
 
+/**
+ * Jenkins Universal Wrapper Pipeline v1.0.0 (c) Aleksandr Bazhenov, 2023
+ *
+ * This Source Code Form is subject to the terms of the Apache License v2.0.
+ * If a copy of this source file was not distributed with this file, You can obtain one at:
+ * https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/blob/main/LICENSE
+ */
+
+
+@Library('jenkins-shared-library-alx') _
+
 @NonCPS
 @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
 import org.yaml.snakeyaml.*
 import groovy.text.StreamingTemplateEngine
-
-import java.lang.reflect.Array
-
-
-// TODO: change branch
-@Library('jenkins-shared-library-alx@main') _
 
 
 // Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
@@ -949,7 +954,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             allPass = checkOrExecuteOk ? allPass : false
             CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
                     CF.readableMap(universalPipelineWrapperBuiltIns)))
-            return [universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables]
         }
     }
     Map valuesFromRuns = [:]
