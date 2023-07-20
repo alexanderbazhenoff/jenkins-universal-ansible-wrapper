@@ -944,6 +944,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             String actionRunsMsg = String.format("action#%s from '%s' stage", index.toString(), printableStageName)
             CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
             Boolean checkOrExecuteOk
+            println '---d: ' + universalPipelineWrapperBuiltIns
             (universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
                     universalPipelineWrapperBuiltIns, printableStageName, actionsInStage[index] as Map,
                     pipelineSettings, index, envVariables, check)
