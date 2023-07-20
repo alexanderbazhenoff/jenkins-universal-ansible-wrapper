@@ -947,7 +947,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             (universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
                     universalPipelineWrapperBuiltIns, printableStageName, actionsInStage[index] as Map,
                     pipelineSettings, index, envVariables, check)
-            allPass = checkOrExecuteOk ? allPass : false в
+            allPass = checkOrExecuteOk ? allPass : false
             CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
                     CF.readableMap(universalPipelineWrapperBuiltIns)))
             return [universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables]
