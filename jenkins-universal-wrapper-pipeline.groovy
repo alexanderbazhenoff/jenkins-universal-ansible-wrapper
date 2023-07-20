@@ -499,9 +499,7 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
         bindingVariables[mentioned] = variableNameIsIncorrect || variableIsUndefined ? '' : bindingVariables[mentioned]
 
     }
-    println 'bindingVariables: ' + bindingVariables
     String assigned = new StreamingTemplateEngine().createTemplate(assignment).make(bindingVariables)
-    println '---assigned: ' + assigned
     return [true, assignmentOk, assigned]
 }
 
@@ -938,7 +936,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     (allPass, stageItem) = templatingMapKeysFromVariables(stageItem, ['name'], envVariables, allPass)
     ArrayList actionsInStage = actionsIsNotList ? [] : stageItem.get('actions') as ArrayList
 
-    println '---e: ' + universalPipelineWrapperBuiltIns
     // Creating map and processing items from 'actions' key.
     actionsInStage.eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
@@ -946,7 +943,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             String actionRunsMsg = String.format("action#%s from '%s' stage", index.toString(), printableStageName)
             CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
             Boolean checkOrExecuteOk
-            println '---d: ' + universalPipelineWrapperBuiltIns
             (universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
                     universalPipelineWrapperBuiltIns, printableStageName, actionsInStage[index] as Map,
                     pipelineSettings, index, envVariables, check)
@@ -958,20 +954,12 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     }
     Map valuesFromRuns = [:]
     if (stageItem.get('parallel')?.toBoolean()) {
-        valuesFromRuns = parallel actionsRuns
+        parallel actionsRuns
     } else {
         actionsRuns.each {
-            valuesFromRuns[it.key] = it.value.call()
+            it.value.call()
         }
     }
-
-    // Processing results of each action, parsing overall stages results and report.
-    Map universalPipelineWrapperBuiltInsLast = valuesFromRuns[valuesFromRuns.keySet().first()].first()
-    String biMessage = (universalPipelineWrapperBuiltInsLast != universalPipelineWrapperBuiltIns) ?
-            (universalPipelineWrapperBuiltIns - universalPipelineWrapperBuiltInsLast).toString() : 'equal'
-    println '---bi: ' + biMessage
-    println 'valuesFromRuns (last): ' + universalPipelineWrapperBuiltInsLast
-    valuesFromRuns.each { checkOrExecuteOk = it.value[1] ? it.value[1] : false }
     Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
             universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
@@ -1053,7 +1041,6 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Map nodeItem = [:]
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
-    println '---c ' + universalPipelineWrapperBuiltIns
 
     // Check keys are not empty and convertible to required type and check incompatible keys.
     ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
@@ -1263,7 +1250,6 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            String nodePipelineParameterName = 'NODE_NAME',
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
-    println '---b ' + universalPipelineWrapperBuiltIns
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
@@ -1982,8 +1968,6 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
  */
 ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                            Map universalPipelineWrapperBuiltIns) {
-    println '---a ' + universalPipelineWrapperBuiltIns
-    // TODO: fix no built-in variable while templating
     String actionMsg
     ArrayList mandatoryKeys = ['report']
     String reportTarget = actionLinkItem?.get(mandatoryKeys[0]) instanceof String ?
