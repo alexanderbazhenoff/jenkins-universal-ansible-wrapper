@@ -883,8 +883,9 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
             currentSubjectMsg))
     for (stageItem in pipelineSettings.stages) {
         Boolean stageOk
-        (__, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem([:], stageItem as Map, pipelineSettings,
-                envVariables) : [[:], true, envVariables]
+        (universalPipelineWrapperBuiltIns, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem(
+                universalPipelineWrapperBuiltIns, stageItem as Map, pipelineSettings, envVariables) :
+                [universalPipelineWrapperBuiltIns, true, envVariables]
         checkOk = stageOk ? checkOk : false
         if (execute) {
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
