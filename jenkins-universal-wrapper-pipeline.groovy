@@ -963,7 +963,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     }
 
     // Processing results of each action, parsing overall stages results and report.
-    Map universalPipelineWrapperBuiltInsLast = valuesFromRuns[valuesFromRuns.keySet().last()].first()
+    Map universalPipelineWrapperBuiltInsLast = valuesFromRuns[valuesFromRuns.keySet().last()].last()
     String biMessage = (universalPipelineWrapperBuiltInsLast != universalPipelineWrapperBuiltIns) ?
             (universalPipelineWrapperBuiltIns - universalPipelineWrapperBuiltInsLast).toString() : 'equal'
     println '---bi: ' + biMessage
