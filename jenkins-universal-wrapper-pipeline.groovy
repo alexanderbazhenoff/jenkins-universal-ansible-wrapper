@@ -1979,9 +1979,9 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     actionOk = errorMsgWrapper(!check && !reportTarget.trim(), actionOk, 3,
             String.format("Unable to detect report target: '%s' action key in '%s' is undefined or incorrect.",
                     mandatoryKeys[0], actionLink))
-    mandatoryKeys += reportTarget == 'email' ? ['to', 'reply_to'] : []
+    mandatoryKeys += reportTarget == 'email' ? ['to'] : []
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
-    ArrayList stringKeys = reportTarget == 'email' ? ['subject', 'body'] : []
+    ArrayList stringKeys = reportTarget == 'email' ? ['reply_to', 'subject', 'body'] : []
     ArrayList mandatoryKeyValues
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
             mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
@@ -1990,7 +1990,7 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     Closure actionClosure = mandatoryKeyValues.size() == 3 && mandatoryKeyValues[0] == 'email' ? {
         emailext(
                 to: mandatoryKeyValues[1],
-                replyTo: mandatoryKeyValues[2],
+                replyTo: mandatoryKeyValues[2] ?: '$DEFAULT_REPLYTO',
                 subject: actionLinkItem?.get(stringKeys[0]) ?: '',
                 body: actionLinkItem?.get(stringKeys[1]) ?: ''
         )
