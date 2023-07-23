@@ -1534,6 +1534,7 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
         (actionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
                 envVariables, actionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
                 keyDescription))
+        println 'mapToCheckAndTemplate: ' + mapToCheckAndTemplate
     }
     return [actionOk, mapToCheckAndTemplate]
 }
