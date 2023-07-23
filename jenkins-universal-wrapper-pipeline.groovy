@@ -958,6 +958,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
         }
     }
     Map valuesFromRuns = [:]
+    println 'currentBuild_result4: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     if (stageItem.get('parallel')?.toBoolean()) {
         parallel actionsRuns
     } else {
@@ -965,6 +966,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             it.value.call()
         }
     }
+    println 'currentBuild_result5: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
             universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
