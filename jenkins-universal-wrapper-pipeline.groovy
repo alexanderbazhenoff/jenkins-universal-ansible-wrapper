@@ -539,6 +539,7 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
             assignMap[currentKey] = assigned
+            println 'assigned(tmpl):' + assigned
         }
     }
     return [allAssignmentsPass, assignMap]
