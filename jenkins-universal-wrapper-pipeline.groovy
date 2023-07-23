@@ -529,15 +529,15 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
     println keysDescription + ' envVariables(fv): ' + envVariables.currentBuild_result
     println keysDescription + ' additionalVariablesBinding(fv): ' + additionalVariablesBinding.currentBuild_result
     assignmentKeysList.each { currentKey ->
-        if ((additionalVariablesBinding.containsKey(currentKey) && additionalVariablesBinding[currentKey] instanceof
-                String) || (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String)) {
+        /*if ((additionalVariablesBinding.containsKey(currentKey) && additionalVariablesBinding[currentKey] instanceof
+                String) || (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String)) {*/
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
             allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
             assignMap[currentKey] = assigned
-        }
+        /*}*/
     }
     return [allAssignmentsPass, assignMap]
 }
@@ -1528,13 +1528,9 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys.size() > 0, booleanKeys,
             mapToCheckAndTemplate, false, messagePrefix, actionOk)
     if (templateKeys) {
-        println keyDescription + ' universalPipelineWrapperBuiltIns(t): ' + universalPipelineWrapperBuiltIns
-        println keyDescription + ' currentBuild_result(-a): ' + envVariables.currentBuild_result
-        println keyDescription + ' currentBuild_result(-a): ' + universalPipelineWrapperBuiltIns.currentBuild_result
         (actionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
                 envVariables, actionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
                 keyDescription))
-        println keyDescription + ' mapToCheckAndTemplate: ' + mapToCheckAndTemplate
     }
     return [actionOk, mapToCheckAndTemplate]
 }
@@ -1995,7 +1991,6 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
             mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
-    println 'universalPipelineWrapperBuiltIns: ' + universalPipelineWrapperBuiltIns
     String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
     Closure actionClosure = mandatoryKeyValues[0] == 'email' ? {
         emailext(
