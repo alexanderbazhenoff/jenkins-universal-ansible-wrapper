@@ -529,15 +529,15 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
     println keysDescription + ' envVariables(fv): ' + envVariables.currentBuild_result
     println keysDescription + ' additionalVariablesBinding(fv): ' + additionalVariablesBinding.currentBuild_result
     assignmentKeysList.each { currentKey ->
-        /*if ((additionalVariablesBinding.containsKey(currentKey) && additionalVariablesBinding[currentKey] instanceof
-                String) || (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String)) {*/
+        if ((additionalVariablesBinding.containsKey(currentKey) || assignMap.containsKey(currentKey)) &&
+                assignMap[currentKey] instanceof String) {
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
             allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
             assignMap[currentKey] = assigned
-        /*}*/
+        }
     }
     return [allAssignmentsPass, assignMap]
 }
