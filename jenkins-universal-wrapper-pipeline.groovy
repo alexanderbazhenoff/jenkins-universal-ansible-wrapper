@@ -1528,13 +1528,13 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
     actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys.size() > 0, booleanKeys,
             mapToCheckAndTemplate, false, messagePrefix, actionOk)
     if (templateKeys) {
-        println 'universalPipelineWrapperBuiltIns: ' + universalPipelineWrapperBuiltIns
-        println 'currentBuild_result(-a): ' + envVariables.currentBuild_result
-        println 'currentBuild_result(-a): ' + universalPipelineWrapperBuiltIns.currentBuild_result
+        println keyDescription + ' universalPipelineWrapperBuiltIns(t): ' + universalPipelineWrapperBuiltIns
+        println keyDescription + ' currentBuild_result(-a): ' + envVariables.currentBuild_result
+        println keyDescription + ' currentBuild_result(-a): ' + universalPipelineWrapperBuiltIns.currentBuild_result
         (actionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
                 envVariables, actionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
                 keyDescription))
-        println 'mapToCheckAndTemplate: ' + mapToCheckAndTemplate
+        println keyDescription + ' mapToCheckAndTemplate: ' + mapToCheckAndTemplate
     }
     return [actionOk, mapToCheckAndTemplate]
 }
@@ -1981,8 +1981,6 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
  */
 ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
                            Map universalPipelineWrapperBuiltIns) {
-    println 'currentBuild_result(in): ' + envVariables.currentBuild_result
-    println 'currentBuild_result(in): ' + universalPipelineWrapperBuiltIns.currentBuild_result
     String actionMsg
     ArrayList mandatoryKeys = ['report']
     String reportTarget = actionLinkItem?.get(mandatoryKeys[0]) instanceof String ?
