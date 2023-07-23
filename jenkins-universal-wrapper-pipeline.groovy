@@ -530,8 +530,9 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
     println keysDescription + ' additionalVariablesBinding(fv): ' + additionalVariablesBinding.currentBuild_result
     assignmentKeysList.each { currentKey ->
         println 'currentKey: ' + currentKey
-        if ((additionalVariablesBinding.containsKey(currentKey) || assignMap.containsKey(currentKey)) &&
+        if ((assignMap.containsKey(currentKey) || additionalVariablesBinding.containsKey(currentKey)) &&
                 assignMap[currentKey] instanceof String) {
+            println 'currentKey(tmpl): ' + currentKey
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
             allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
