@@ -525,9 +525,11 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
 ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeysList, Object envVariables,
                                          Boolean allAssignmentsPass = true, Map additionalVariablesBinding = [:],
                                          String keysDescription = 'Key') {
+    println 'envVariables: ' + envVariables.currentBuild_result
+    println 'additionalVariablesBinding: ' + additionalVariablesBinding.currentBuild_result
     assignmentKeysList.each { currentKey ->
-        if ((assignMap.containsKey(currentKey) || additionalVariablesBinding.containsKey(currentKey)) &&
-                assignMap[currentKey] instanceof String) {
+        if ((additionalVariablesBinding.containsKey(currentKey) && additionalVariablesBinding[currentKey] instanceof
+                String) || (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String)) {
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
             allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
