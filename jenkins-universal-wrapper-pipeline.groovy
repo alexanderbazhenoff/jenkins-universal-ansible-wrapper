@@ -1988,12 +1988,12 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
             universalPipelineWrapperBuiltIns)
     String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
     Closure actionClosure = mandatoryKeyValues[0] == 'email' ? {
-        println '$DEFAULT_REPLYTO: ' + mandatoryKeyValues[2] ?: '$DEFAULT_REPLYTO'
+        println '$DEFAULT_REPLYTO: ' + actionLinkItem?.get(stringKeys[0]) ?: '$DEFAULT_REPLYTO'
         emailext(
                 to: mandatoryKeyValues[1],
-                replyTo: mandatoryKeyValues[2] ?: '$DEFAULT_REPLYTO',
-                subject: actionLinkItem?.get(stringKeys[0]) ?: '',
-                body: actionLinkItem?.get(stringKeys[1]) ?: ''
+                replyTo: actionLinkItem?.get(stringKeys[0]) ?: '$DEFAULT_REPLYTO',
+                subject: actionLinkItem?.get(stringKeys[1]) ?: '',
+                body: actionLinkItem?.get(stringKeys[2]) ?: ''
         )
         return [actionOk, universalPipelineWrapperBuiltIns, null]
     } : mandatoryKeyValues[0] == 'mattermost' ? {
