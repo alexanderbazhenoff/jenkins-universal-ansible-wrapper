@@ -1987,7 +1987,7 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
             mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
     String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
-    Closure actionClosure = mandatoryKeyValues.size() == 3 && mandatoryKeyValues[0] == 'email' ? {
+    Closure actionClosure = mandatoryKeyValues[0] == 'email' ? {
         println '$DEFAULT_REPLYTO: ' + mandatoryKeyValues[2] ?: '$DEFAULT_REPLYTO'
         emailext(
                 to: mandatoryKeyValues[1],
@@ -1996,7 +1996,7 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
                 body: actionLinkItem?.get(stringKeys[1]) ?: ''
         )
         return [actionOk, universalPipelineWrapperBuiltIns, null]
-    } : mandatoryKeyValues.size() == 3 && mandatoryKeyValues[0] == 'mattermost' ? {
+    } : mandatoryKeyValues[0] == 'mattermost' ? {
         Boolean sendReportStatus = CF.sendMattermostChannelSingleMessage(mandatoryKeyValues[1], mandatoryKeyValues[2],
                 getBooleanVarStateFromEnv(envVariables) ? 2 : 0)
         return [sendReportStatus && actionOk, universalPipelineWrapperBuiltIns, null]
