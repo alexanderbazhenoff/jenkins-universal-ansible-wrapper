@@ -944,7 +944,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     // Creating map and processing items from 'actions' key.
     actionsInStage.eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
-            println 'currentBuild_result3: ' + universalPipelineWrapperBuiltIns.currentBuild_result
             String checkOrExecuteMsg = check ? 'Checking' : 'Executing'
             String actionRunsMsg = String.format("action#%s from '%s' stage", index.toString(), printableStageName)
             CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
@@ -958,7 +957,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
         }
     }
     Map valuesFromRuns = [:]
-    println 'currentBuild_result4: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     if (stageItem.get('parallel')?.toBoolean()) {
         parallel actionsRuns
     } else {
@@ -966,7 +964,6 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             it.value.call()
         }
     }
-    println 'currentBuild_result5: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
             universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
@@ -1048,7 +1045,6 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Map nodeItem = [:]
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
-    println 'currentBuild_result2a: ' + universalPipelineWrapperBuiltIns.currentBuild_result
 
     // Check keys are not empty and convertible to required type and check incompatible keys.
     ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
@@ -1147,7 +1143,6 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
 
     // Processing action link state, updating results of current build and actions report, stop on fail handle.
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
-    println 'currentBuild_result2: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
@@ -1998,9 +1993,9 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
             mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
+    println 'universalPipelineWrapperBuiltIns: ' + universalPipelineWrapperBuiltIns
     String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
     Closure actionClosure = mandatoryKeyValues[0] == 'email' ? {
-        println 'text: ' + actionLinkItem?.get(stringKeys[2])
         emailext(
                 to: mandatoryKeyValues[1],
                 replyTo: actionLinkItem?.get(stringKeys[0]) ?: '$DEFAULT_REPLYTO',
