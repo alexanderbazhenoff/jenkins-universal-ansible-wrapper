@@ -944,6 +944,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     // Creating map and processing items from 'actions' key.
     actionsInStage.eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
+            println 'currentBuild_result3: ' + universalPipelineWrapperBuiltIns.currentBuild_result
             String checkOrExecuteMsg = check ? 'Checking' : 'Executing'
             String actionRunsMsg = String.format("action#%s from '%s' stage", index.toString(), printableStageName)
             CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
@@ -1143,6 +1144,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
 
     // Processing action link state, updating results of current build and actions report, stop on fail handle.
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
+    println 'currentBuild_result2: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
