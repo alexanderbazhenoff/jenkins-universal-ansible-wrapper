@@ -1143,8 +1143,6 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
 
     // Processing action link state, updating results of current build and actions report, stop on fail handle.
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
-    universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result?.trim() ?: 'SUCCESS'
-    println 'currentBuild_result: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
@@ -1345,7 +1343,8 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     }
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
     if (!check && !actionOk) currentBuild.result = 'FAILURE'
-    println 'currentBuild.result: ' + currentBuild.result
+    universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result?.trim() ?: 'SUCCESS'
+    println 'currentBuild_result: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     return [actionOk, actionDetails, universalPipelineWrapperBuiltIns, envVariables]
 }
 
