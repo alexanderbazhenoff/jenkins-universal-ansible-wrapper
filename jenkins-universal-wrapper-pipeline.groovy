@@ -901,6 +901,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
             }
         }
     }
+    println 'pipelineSettings: ' + pipelineSettings
     return [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
 }
 
@@ -2036,7 +2037,7 @@ node(jenkinsNodeToExecute) {
         }
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
-        println 'pipelineSettings: ' + pipelineSettings
+
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
         Map universalPipelineWrapperBuiltIns = [:]
