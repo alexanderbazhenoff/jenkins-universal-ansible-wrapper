@@ -599,7 +599,7 @@ static ArrayList extractParamsListFromSettingsMap(Map pipelineSettings, ArrayLis
  * (Check match when current build pipeline parameter is not empty and a key 'regex' is defined in pipeline settings.
  * Also perform regex replacement of parameter value when 'regex_replace' key is defined).
  *
- * @param pipelineSettings - arrayList of pipeline parameters from settings.
+ * @param allPipelineParams - arrayList of pipeline parameters from settings.
  * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
  *                             class java.util.Collections$UnmodifiableMap).
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
@@ -682,7 +682,7 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
  * Processing wrapper pipeline parameters: check all parameters from pipeline settings are presents. If not inject
  * parameters to pipeline.
  *
- * @param pipelineSettings - pipeline parameters in 'universal-wrapper-pipeline-settings' standard and built-in pipeline
+ * @param pipelineParams - pipeline parameters in 'universal-wrapper-pipeline-settings' standard and built-in pipeline
  *                           parameters (e.g. 'DEBUG_MODE', etc) converted to arrayList.
  *                           See https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings for details.
  * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
@@ -885,13 +885,11 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
             currentSubjectMsg))
     for (stageItem in pipelineSettings.stages) {
-        println 'pipelineSettings(1): ' + pipelineSettings
         Boolean stageOk
         (universalPipelineWrapperBuiltIns, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem(
                 universalPipelineWrapperBuiltIns, stageItem as Map, pipelineSettings, envVariables) :
                 [universalPipelineWrapperBuiltIns, true, envVariables]
         checkOk = stageOk ? checkOk : false
-        println 'pipelineSettings: ' + pipelineSettings
         if (execute) {
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (universalPipelineWrapperBuiltIns, stageOk, envVariables) = checkOrExecuteStageSettingsItem(
@@ -1343,6 +1341,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = keysFound[keysFound.keySet()[0]].call()
         }
     }
+    println 'pipelineSettings: ' + pipelineSettings
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
     if (!check && !actionOk) currentBuild.result = 'FAILURE'
     universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result?.trim() ?: 'SUCCESS'
@@ -2025,7 +2024,6 @@ node(jenkinsNodeToExecute) {
         (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
                 pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
                         PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
-        println 'pipelineSettings(0): ' + pipelineSettings
 
         // When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct.
         Boolean pipelineSettingsCheckOk = true
