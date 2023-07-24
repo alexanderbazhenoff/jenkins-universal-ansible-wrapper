@@ -883,17 +883,18 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     Boolean checkOk = errorMsgWrapper(!pipelineSettingsContainsStages && ((check &&
             getBooleanVarStateFromEnv(envVariables)) || execute), true, 0, String.format('No stages %s to %s.',
             functionCallTypes, currentSubjectMsg))
-    println 'pipelineSettings(1): ' + pipelineSettings
 
     // When pipeline stages are in the config starting iterate of it's items for check and/or execute.
     errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
             currentSubjectMsg))
     for (stageItem in pipelineSettings.stages) {
+        println 'pipelineSettings(1): ' + pipelineSettings
         Boolean stageOk
         (universalPipelineWrapperBuiltIns, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem(
                 universalPipelineWrapperBuiltIns, stageItem as Map, pipelineSettings, envVariables) :
                 [universalPipelineWrapperBuiltIns, true, envVariables]
         checkOk = stageOk ? checkOk : false
+        println 'pipelineSettings: ' + pipelineSettings
         if (execute) {
             stage(getPrintableValueKeyFromMapItem(stageItem as Map)) {
                 (universalPipelineWrapperBuiltIns, stageOk, envVariables) = checkOrExecuteStageSettingsItem(
@@ -902,7 +903,6 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
             }
         }
     }
-    println 'pipelineSettings: ' + pipelineSettings
     return [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
 }
 
