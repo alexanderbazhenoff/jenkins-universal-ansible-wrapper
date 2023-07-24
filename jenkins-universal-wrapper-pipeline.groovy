@@ -1048,6 +1048,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     Map nodeItem = [:]
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
+    println 'pipelineSettings: ' + pipelineSettings
 
     // Check keys are not empty and convertible to required type and check incompatible keys.
     ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
@@ -1256,7 +1257,6 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
-    println 'pipelineSettings: ' + pipelineSettings
     Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [
