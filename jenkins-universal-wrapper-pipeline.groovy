@@ -1329,6 +1329,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     }
 
     // Executing determined action with possible node change or check without node change.
+    println String.format('%s %s pipelineSettings(-): %s', actionLink, check ? 'check' : 'exec', pipelineSettings)
     if (keysFound) {
         if (!check && currentNodeData.toString() != changeNodeData.toString()) {
             node(changeNodeData) {
