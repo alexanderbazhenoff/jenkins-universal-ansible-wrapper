@@ -1256,7 +1256,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                                            String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
-    println 'actionLinkItem: ' + actionLinkItem
+    println 'pipelineSettings: ' + pipelineSettings
     Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
     Map detectByKeys = [
