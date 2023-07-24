@@ -887,6 +887,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     // When pipeline stages are in the config starting iterate of it's items for check and/or execute.
     errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
             currentSubjectMsg))
+    println 'pipelineSettings: ' + pipelineSettings
     for (stageItem in pipelineSettings.stages) {
         Boolean stageOk
         (universalPipelineWrapperBuiltIns, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem(
@@ -929,7 +930,6 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
 ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, Map stageItem, Map pipelineSettings,
                                           Object envVariables, Boolean allPass = true, Boolean check = true) {
     Map actionsRuns = [:]
-    println 'pipelineSettings: ' + pipelineSettings
 
     // Handling 'name' (with possible assignment), 'actions' and 'parallel' stage keys.
     allPass = errorMsgWrapper(check && (!stageItem.containsKey('name') ||
