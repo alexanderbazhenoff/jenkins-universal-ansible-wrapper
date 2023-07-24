@@ -1985,7 +1985,7 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
     ArrayList stringKeys = reportTarget == 'email' ? ['reply_to', 'subject', 'body'] : []
     ArrayList mandatoryKeyValues
-    println String.format('%s %s pipelineSettings(--): %s', actionLink, check ? 'check' : 'exec', pipelineSettings)
+    // TODO: pipeline setting change?
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
             mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
