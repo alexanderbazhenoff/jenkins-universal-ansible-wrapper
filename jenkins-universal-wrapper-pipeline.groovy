@@ -526,8 +526,6 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
 ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeysList, Object envVariables,
                                          Boolean allAssignmentsPass = true, Map additionalVariablesBinding = [:],
                                          String keysDescription = 'Key') {
-    println keysDescription + ' envVariables(fv): ' + envVariables.currentBuild_result
-    println keysDescription + ' additionalVariablesBinding(fv): ' + additionalVariablesBinding.currentBuild_result
     assignmentKeysList.each { currentKey ->
         println 'currentKey: ' + currentKey
         if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
@@ -1575,6 +1573,7 @@ ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList manda
                                                         String keysDescription, Object envVariables,
                                                         Map universalPipelineWrapperBuiltIns) {
     ArrayList mandatoryKeyValues = []
+    println 'map:: ' + map
     (state, map) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns, enableCheck, state,
             keysDescription, map, stringKeys, String.format("'%s' key", keysDescription), booleanKeys)
     mandatoryKeysToCheck.eachWithIndex { mandatoryItem, Integer mandatoryItemIndex ->
