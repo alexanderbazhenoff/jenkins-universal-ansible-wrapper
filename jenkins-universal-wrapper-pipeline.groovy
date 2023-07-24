@@ -505,7 +505,6 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
 
     }
     String assigned = new StreamingTemplateEngine().createTemplate(assignment).make(bindingVariables)
-    println 'assignment: ' + assignment + ' assigned: ' + assigned
     return [true, assignmentOk, assigned]
 }
 
@@ -528,14 +527,12 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
                                          String keysDescription = 'Key') {
     assignmentKeysList.each { currentKey ->
         if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
-            println 'currentKey(tmpl): ' + currentKey + ' : ' + assignMap[currentKey]
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
             allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
             assignMap[currentKey] = assigned
-            println 'assigned(tmpl):' + assigned
         }
     }
     return [allAssignmentsPass, assignMap]
@@ -1349,7 +1346,6 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
     if (!check && !actionOk) currentBuild.result = 'FAILURE'
     universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result?.trim() ?: 'SUCCESS'
-    println 'currentBuild_result: ' + universalPipelineWrapperBuiltIns.currentBuild_result
     return [actionOk, actionDetails, universalPipelineWrapperBuiltIns, envVariables]
 }
 
