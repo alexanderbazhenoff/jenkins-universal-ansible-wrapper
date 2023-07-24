@@ -887,6 +887,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     // When pipeline stages are in the config starting iterate of it's items for check and/or execute.
     errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
             currentSubjectMsg))
+    // TODO: do not template pipelineSettings twice (already templated on execution here).
     println 'pipelineSettings: ' + pipelineSettings
     for (stageItem in pipelineSettings.stages) {
         Boolean stageOk
