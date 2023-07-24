@@ -887,8 +887,6 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     // When pipeline stages are in the config starting iterate of it's items for check and/or execute.
     errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
             currentSubjectMsg))
-    // TODO: do not template pipelineSettings twice (already templated on execution here).
-    println 'pipelineSettings: ' + pipelineSettings
     for (stageItem in pipelineSettings.stages) {
         Boolean stageOk
         (universalPipelineWrapperBuiltIns, stageOk, envVariables) = check ? checkOrExecuteStageSettingsItem(
@@ -2038,7 +2036,7 @@ node(jenkinsNodeToExecute) {
         }
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
-
+        println 'pipelineSettings: ' + pipelineSettings
         // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
         Map universalPipelineWrapperBuiltIns = [:]
