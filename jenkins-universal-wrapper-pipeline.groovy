@@ -1341,7 +1341,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = keysFound[keysFound.keySet()[0]].call()
         }
     }
-    println 'pipelineSettings: ' + pipelineSettings
+    println String.format('%s pipelineSettings: %s', check ? 'check' : 'exec', pipelineSettings)
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
     if (!check && !actionOk) currentBuild.result = 'FAILURE'
     universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result?.trim() ?: 'SUCCESS'
