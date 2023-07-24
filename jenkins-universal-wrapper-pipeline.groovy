@@ -1294,7 +1294,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             script     : {
-                println '---check: ' + check
+                println '---check: ' + actionLink + ' : ' + check
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns, true)
