@@ -527,7 +527,6 @@ ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeys
                                          Boolean allAssignmentsPass = true, Map additionalVariablesBinding = [:],
                                          String keysDescription = 'Key') {
     assignmentKeysList.each { currentKey ->
-        println 'currentKey: ' + currentKey
         if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
             println 'currentKey(tmpl): ' + currentKey + ' : ' + assignMap[currentKey]
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
@@ -1573,7 +1572,6 @@ ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList manda
                                                         String keysDescription, Object envVariables,
                                                         Map universalPipelineWrapperBuiltIns) {
     ArrayList mandatoryKeyValues = []
-    println 'map:: ' + map
     (state, map) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns, enableCheck, state,
             keysDescription, map, stringKeys, String.format("'%s' key", keysDescription), booleanKeys)
     mandatoryKeysToCheck.eachWithIndex { mandatoryItem, Integer mandatoryItemIndex ->
@@ -1989,6 +1987,7 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
     ArrayList stringKeys = reportTarget == 'email' ? ['reply_to', 'subject', 'body'] : []
     ArrayList mandatoryKeyValues
+    println 'actionLinkItem: ' + actionLinkItem
     (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
             mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
