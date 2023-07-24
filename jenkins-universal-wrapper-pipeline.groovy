@@ -883,6 +883,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
     Boolean checkOk = errorMsgWrapper(!pipelineSettingsContainsStages && ((check &&
             getBooleanVarStateFromEnv(envVariables)) || execute), true, 0, String.format('No stages %s to %s.',
             functionCallTypes, currentSubjectMsg))
+    println 'pipelineSettings(1): ' + pipelineSettings
 
     // When pipeline stages are in the config starting iterate of it's items for check and/or execute.
     errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
