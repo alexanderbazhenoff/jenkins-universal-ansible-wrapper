@@ -1255,7 +1255,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
-    // TODO: executing on assigning?
+    // TODO: executing on assigning? Perhaps no.
     Map someClosureMap = [key1: { println '--- key1' }, key2: { println '--- key2' }]
     Map detectByKeys = [
             repo_url   : {
@@ -1303,6 +1303,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             report     : {
+                // TODO: fix change of pipelineSettings here
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionSendReport(actionLink,
                         actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
