@@ -1101,8 +1101,8 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     // Check or execute current action when 'action' key is correct and possible success_only/fail_only conditions met.
     Boolean actionIsCorrect = checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true,
             printableStageAndAction)
-    actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect, actionStructureOk,
-            3, String.format("Wrong format of 'action' key in '%s'.", printableStageAndAction))
+    actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect,
+            actionStructureOk, 3, String.format("Wrong format of 'action' key in '%s'.", printableStageAndAction))
     Boolean successOnlyActionConditionNotMet = actionItem.get('success_only') && currentBuild.result == 'FAILURE'
     Boolean failOnlyActionConditionNotMet = actionItem.get('fail_only') && currentBuild.result != 'FAILURE'
     Boolean allActionConditionsMet = !check && !successOnlyActionConditionNotMet && !failOnlyActionConditionNotMet
@@ -1938,8 +1938,8 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
             Boolean typeKeyOk = filteredListItem?.size() == 3 && paramTypes.any { String entry ->
                 entry.contains(filteredListItem?.get(stringParamKeysList[1]) as String)
             }
-            allPass = errorMsgWrapper(!typeKeyOk, allPass, 3, String.format("Wrong in %s. Should be: %s.", errMsgSubject,
-                    arrayListToReadableString(paramTypes)))
+            allPass = errorMsgWrapper(!typeKeyOk, allPass, 3, String.format("Wrong in %s. Should be: %s.",
+                    errMsgSubject, arrayListToReadableString(paramTypes)))
 
             // Assigning variables to pipeline parameter item, hiding passwords, converting them to pipeline parameter.
             (allPass, filteredListItem) = templatingMapKeysFromVariables(filteredListItem, allParamKeysList,
