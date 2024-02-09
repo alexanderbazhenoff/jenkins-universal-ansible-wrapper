@@ -38,29 +38,7 @@ final PipelineNameRegexReplace = ['^(admin|devops|qa)_'] as ArrayList
 final AnsibleInstallationName = 'home_local_bin_ansible' as String
 
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
-final BuiltinPipelineParameters = [
-        [name       : 'UPDATE_PARAMETERS',
-         type       : 'boolean',
-         default    : false,
-         description: 'Update pipeline parameters from settings file only.'],
-        [name       : 'SETTINGS_GIT_BRANCH',
-         type       : 'string',
-         regex      : '(\\*)? +(.*?) +(.*?)? ((\\[(.*?)(: (.*?) (\\d+))?\\])? ?(.*$))?',
-         description: 'Git branch of ansible-wrapper-settings project (to override defaults on development).'],
-        [name       : 'NODE_NAME',
-         type       : 'string',
-         description: 'Name of Jenkins node to run directly on.'],
-        [name       : 'NODE_TAG',
-         type       : 'string',
-         default    : 'ansible210',
-         description: 'Run on Jenkins node with specified tag.'],
-        [name       : 'DRY_RUN',
-         type       : 'boolean',
-         description: String.format('%s (%s).', 'Dry run mode to use for pipeline settings troubleshooting',
-                 'will be ignored on pipeline parameters needs to be injected')],
-        [name: 'DEBUG_MODE',
-         type: 'boolean']
-] as ArrayList
+final BuiltinPipelineParameters = [] as ArrayList
 
 
 /**
