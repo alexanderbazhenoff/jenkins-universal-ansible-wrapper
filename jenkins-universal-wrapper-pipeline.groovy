@@ -11,7 +11,7 @@
 
 // @NonCPS
 @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
-import org.yaml.snakeyaml.*
+// import org.yaml.snakeyaml.*
 // import groovy.text.StreamingTemplateEngine
 
 @Library('jenkins-shared-library-alx') _
