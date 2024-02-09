@@ -1,5 +1,6 @@
 #!/usr/bin/env groovy
 
+
 /**
  * Jenkins Universal Wrapper Pipeline v1.0.0 (c) Aleksandr Bazhenov, 2023
  *
@@ -9,13 +10,12 @@
  */
 
 
-@NonCPS
-@Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
-import org.yaml.snakeyaml.*
-import groovy.text.StreamingTemplateEngine
-
 @Library('jenkins-shared-library-alx') _
 
+// @NonCPS
+// @Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
+// import org.yaml.snakeyaml.*
+// import groovy.text.StreamingTemplateEngine
 
 // Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
 // 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'. Will be ignored when SETTINGS_GIT_BRANCH pipeline
