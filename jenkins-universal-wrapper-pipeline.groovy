@@ -11,7 +11,7 @@
 
 // @NonCPS
 // groovylint-disable-next-line
-@Grab('org.yaml:snakeyaml:1.5')
+// @Grab('org.yaml:snakeyaml:1.5')
 // import org.yaml.snakeyaml.*
 // import groovy.text.StreamingTemplateEngine
 
