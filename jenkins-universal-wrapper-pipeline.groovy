@@ -10,7 +10,7 @@
  */
 
 // @NonCPS
-@Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')
+@Grab(group = 'org.yaml', module = 'snakeyaml', version = '1.5')  // groovylint-disable-line
 // import org.yaml.snakeyaml.*
 // import groovy.text.StreamingTemplateEngine
 
