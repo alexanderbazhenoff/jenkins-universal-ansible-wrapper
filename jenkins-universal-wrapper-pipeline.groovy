@@ -746,10 +746,10 @@ static Boolean getBooleanPipelineParamState(Object pipelineParams, String parame
  */
 static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
     def nodeToExecute = null
-    if (env.getEnvironment().containsKey(nodeTagParamName) && env.getEnvironment().get(nodeTagParamName)?.trim()) {
-        nodeToExecute = [label: env.getEnvironment().get(nodeTagParamName)]
-    } else if (env.getEnvironment().containsKey(nodeParamName) && env.getEnvironment().get(nodeParamName)?.trim()) {
-        nodeToExecute = env.getEnvironment().get(nodeParamName)
+    if (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) {
+        nodeToExecute = [label: env[nodeTagParamName]]
+    } else if (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) {
+        nodeToExecute = env[nodeParamName]
     }
     return nodeToExecute
 }
