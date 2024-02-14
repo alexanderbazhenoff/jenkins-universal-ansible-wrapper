@@ -88,10 +88,12 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  * @return - resulting text.
  */
 static String applyReplaceRegexItems(String text, List regexItemsList, List replaceItemsList = []) {
+    String replacedText = text
     regexItemsList.eachWithIndex { value, Integer index ->
-        text = text.replaceAll(value as CharSequence, replaceItemsList[index] ? replaceItemsList[index] as String : '')
+        replacedText = text.replaceAll(value as CharSequence,
+                replaceItemsList[index] ? replaceItemsList[index] as String : '')
     }
-    return text
+    replacedText
 }
 
 /**
@@ -104,7 +106,7 @@ static String applyReplaceRegexItems(String text, List regexItemsList, List repl
  */
 static String getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'name',
                                               String nameOnUndefined = '<undefined>') {
-    return mapItem && mapItem.containsKey(keyName) && detectIsObjectConvertibleToString(mapItem.get(keyName)) ?
+    mapItem && mapItem.containsKey(keyName) && detectIsObjectConvertibleToString(mapItem.get(keyName)) ?
             mapItem.get(keyName).toString() : nameOnUndefined
 }
 
@@ -137,7 +139,7 @@ static String getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'nam
  *           - true when jenkins pipeline parameters update required;
  *           - true when no errors.
  */
-ArrayList verifyPipelineParamsArePresents(ArrayList requiredParams, Object currentPipelineParams) {
+ArrayList verifyPipelineParamsArePresents(List requiredParams, Object currentPipelineParams) {
     Boolean updateParamsRequired = false
     Boolean verifyPipelineParamsOk = true
     String ignoreMsg = 'Skipping parameter from pipeline settings'
