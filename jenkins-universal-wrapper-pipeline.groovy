@@ -75,7 +75,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
     CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
     String pathToLoad = String.format('%s/%s', workspaceSubfolder, settingsRelativePath)
     if (printYaml) CF.outMsg(0, String.format('Loading pipeline settings:\n%s', readFile(pathToLoad)))
-    return readYaml(file: pathToLoad)
+    readYaml(file: pathToLoad)
 }
 
 /**
@@ -87,7 +87,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
  *                           will be replaced with empty line ''.
  * @return - resulting text.
  */
-static String applyReplaceRegexItems(String text, ArrayList regexItemsList, ArrayList replaceItemsList = []) {
+static String applyReplaceRegexItems(String text, List regexItemsList, List replaceItemsList = []) {
     regexItemsList.eachWithIndex { value, Integer index ->
         text = text.replaceAll(value as CharSequence, replaceItemsList[index] ? replaceItemsList[index] as String : '')
     }
