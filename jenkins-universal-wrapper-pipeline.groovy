@@ -139,7 +139,7 @@ static String getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'nam
  *           - true when jenkins pipeline parameters update required;
  *           - true when no errors.
  */
-ArrayList verifyPipelineParamsArePresents(List requiredParams, Object currentPipelineParams) {
+List verifyPipelineParamsArePresents(List requiredParams, Object currentPipelineParams) {
     Boolean updateParamsRequired = false
     Boolean verifyPipelineParamsOk = true
     String ignoreMsg = 'Skipping parameter from pipeline settings'
@@ -161,7 +161,7 @@ ArrayList verifyPipelineParamsArePresents(List requiredParams, Object currentPip
             updateParamsRequired = true
         }
     }
-    return [updateParamsRequired, verifyPipelineParamsOk]
+    [updateParamsRequired, verifyPipelineParamsOk]
 }
 
 /**
@@ -171,7 +171,7 @@ ArrayList verifyPipelineParamsArePresents(List requiredParams, Object currentPip
  * @return - true when 'choice'.
  */
 static Boolean detectPipelineParameterItemIsProbablyChoice(Map paramItem) {
-    return paramItem.containsKey('choices') && paramItem.get('choices') instanceof ArrayList
+    paramItem.containsKey('choices') && paramItem.get('choices') instanceof ArrayList
 }
 
 /**
