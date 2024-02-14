@@ -1372,7 +1372,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
  *           - action details for logging.
  */
 ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
-                         Map universalPipelineWrapperBuiltIns, String gitDefaultCredentials = GV.GitCredentialsID) {
+                         Map universalPipelineWrapperBuiltIns, String gitDefaultCredentials = GV.GIT_CREDENTIALS_ID) {
     String actionMsg
     String actionName = 'git clone'
     ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
@@ -1682,7 +1682,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         actionClosure = {
             Map universalPipelineWrapperBuiltInsSaved = universalPipelineWrapperBuiltIns
             actionOk = CF.runAnsible(ansiblePlaybookText, ansibleInventoryText, '', '', '', [],
-                    ansibleInstallationName?.trim() ? ansibleInstallationName : GV.AnsibleInstallationName)
+                    ansibleInstallationName?.trim() ? ansibleInstallationName : GV.ANSIBLE_INSTALLATION_NAME)
             return [actionOk, universalPipelineWrapperBuiltInsSaved, null]
         }
     }
