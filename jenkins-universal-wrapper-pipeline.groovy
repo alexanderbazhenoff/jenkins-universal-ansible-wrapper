@@ -15,7 +15,7 @@
 // import org.yaml.snakeyaml.*
 import groovy.text.StreamingTemplateEngine
 
-@Library('jenkins-shared-library') _
+@Library('jenkins-shared-library-alx') _
 
 
 // Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
