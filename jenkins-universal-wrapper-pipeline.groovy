@@ -9,37 +9,33 @@
  * https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/blob/main/LICENSE
  */
 
-// @NonCPS
-// groovylint-disable-next-line
-// @Grab('org.yaml:snakeyaml:1.5')
-// import org.yaml.snakeyaml.*
 import groovy.text.StreamingTemplateEngine
 
-@Library('jenkins-shared-library-alx') _
+@Library('jenkins-shared-library-alx')
 
 
 // Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
 // 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'. Will be ignored when SETTINGS_GIT_BRANCH pipeline
 // parameter present and not blank.
-final SettingsGitUrl = 'http://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings' as String
-final DefaultSettingsGitBranch = 'main' as String
+final String SettingsGitUrl = 'http://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings'
+final String DefaultSettingsGitBranch = 'main'
 
 // Prefix for pipeline settings relative path inside the 'universal-wrapper-pipeline-settings' project, that will be
 // added automatically on yaml load.
-final SettingsRelativePathPrefix = 'settings' as String
+final String SettingsRelativePathPrefix = 'settings'
 
 // Jenkins pipeline name regex, a string that will be cut from pipeline name to become a filename of yaml pipeline
 // settings to be loaded. Example: Your jenkins pipeline name is 'prefix_pipeline-name_postfix'. To load pipeline
 // settings 'pipeline-name.yml' you can use regex list: ['^prefix_','_postfix$']. FYI: All pipeline name prefixes are
 // useful to split your jenkins between your company departments (e.g: 'admin', 'devops, 'qa', 'develop', etc...), while
 // postfixes are useful to mark pipeline as a changed version of original.
-final PipelineNameRegexReplace = ['^(admin|devops|qa)_'] as ArrayList
+final List PipelineNameRegexReplace = ['^(admin|devops|qa)_']
 
 // Ansible installation name from jenkins Global Configuration Tool or empty for defaults from jenkins shared library.
-final AnsibleInstallationName = 'home_local_bin_ansible' as String
+final String AnsibleInstallationName = 'home_local_bin_ansible'
 
 // Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
-final BuiltinPipelineParameters = [
+final List BuiltinPipelineParameters = [
         [name       : 'UPDATE_PARAMETERS',
          type       : 'boolean',
          default    : false,
@@ -61,7 +57,7 @@ final BuiltinPipelineParameters = [
                  'will be ignored on pipeline parameters needs to be injected')],
         [name: 'DEBUG_MODE',
          type: 'boolean']
-] as ArrayList
+]
 
 
 /**
