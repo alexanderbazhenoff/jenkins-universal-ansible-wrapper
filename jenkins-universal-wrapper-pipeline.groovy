@@ -13,28 +13,33 @@ import groovy.text.StreamingTemplateEngine
 
 @Library('jenkins-shared-library-alx')
 
-
-// Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
-// 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'. Will be ignored when SETTINGS_GIT_BRANCH pipeline
-// parameter present and not blank.
+/**
+ * Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
+ * 'git@github.com:alexanderbazhenoff/ansible-wrapper-settings.git'. Will be ignored when SETTINGS_GIT_BRANCH
+ * pipeline parameter present and not blank.
+ */
 final String SettingsGitUrl = 'http://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings'
 final String DefaultSettingsGitBranch = 'main'
 
-// Prefix for pipeline settings relative path inside the 'universal-wrapper-pipeline-settings' project, that will be
-// added automatically on yaml load.
+/** Prefix for pipeline settings relative path inside the 'universal-wrapper-pipeline-settings' project, that will be
+ * added automatically on yaml load.
+ */
 final String SettingsRelativePathPrefix = 'settings'
 
-// Jenkins pipeline name regex, a string that will be cut from pipeline name to become a filename of yaml pipeline
-// settings to be loaded. Example: Your jenkins pipeline name is 'prefix_pipeline-name_postfix'. To load pipeline
-// settings 'pipeline-name.yml' you can use regex list: ['^prefix_','_postfix$']. FYI: All pipeline name prefixes are
-// useful to split your jenkins between your company departments (e.g: 'admin', 'devops, 'qa', 'develop', etc...), while
-// postfixes are useful to mark pipeline as a changed version of original.
+/** Jenkins pipeline name regex, a string that will be cut from pipeline name to become a filename of yaml pipeline
+ * settings to be loaded. Example: Your jenkins pipeline name is 'prefix_pipeline-name_postfix'. To load pipeline
+ * settings 'pipeline-name.yml' you can use regex list: ['^prefix_','_postfix$']. FYI: All pipeline name prefixes are
+ * useful to split your jenkins between your company departments (e.g: 'admin', 'devops, 'qa', 'develop', etc...), while
+ * postfixes are useful to mark pipeline as a changed version of original.
+ */
 final List PipelineNameRegexReplace = ['^(admin|devops|qa)_']
 
-// Ansible installation name from jenkins Global Configuration Tool or empty for defaults from jenkins shared library.
+/** Ansible installation name from jenkins Global Configuration Tool, otherwise leave them empty for defaults from
+ * jenkins shared library.
+ */
 final String AnsibleInstallationName = 'home_local_bin_ansible'
 
-// Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'.
+/** Built-in pipeline parameters, which are mandatory and not present in 'universal-wrapper-pipeline-settings'. */
 final List BuiltinPipelineParameters = [
         [name       : 'UPDATE_PARAMETERS',
          type       : 'boolean',
@@ -298,7 +303,7 @@ Boolean errorMsgWrapper(Boolean enableCheck, Boolean state, Integer eventNum, St
  * @return - true when match.
  */
 static Boolean checkEnvironmentVariableNameCorrect(Object name) {
-    return detectIsObjectConvertibleToString(name) && name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
+    detectIsObjectConvertibleToString(name) && name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
 }
 
 /**
@@ -308,7 +313,7 @@ static Boolean checkEnvironmentVariableNameCorrect(Object name) {
  * @return - true when object is convertible to human readable string.
  */
 static Boolean detectIsObjectConvertibleToString(Object obj) {
-    return (obj instanceof String || obj instanceof Integer || obj instanceof Float || obj instanceof BigInteger)
+    (obj instanceof String || obj instanceof Integer || obj instanceof Float || obj instanceof BigInteger)
 }
 
 /**
@@ -318,7 +323,7 @@ static Boolean detectIsObjectConvertibleToString(Object obj) {
  * @return - true when object will be correct.
  */
 static Boolean detectIsObjectConvertibleToBoolean(Object obj) {
-    return (obj?.toBoolean()).toString() == obj?.toString()
+    (obj?.toBoolean()).toString() == obj?.toString()
 }
 
 /**
@@ -331,13 +336,13 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     String printableParameterName = getPrintableValueKeyFromMapItem(item)
     CF.outMsg(0, String.format("Checking pipeline parameter '%s':\n%s", printableParameterName, CF.readableMap(item)))
 
-    // Check 'name' key is present and valid.
-    Boolean checkOk = pipelineSettingsItemError(3, printableParameterName, "Invalid parameter name",
+    /** Check 'name' key is present and valid. */
+    Boolean checkOk = pipelineSettingsItemError(3, printableParameterName, 'Invalid parameter name',
             item.containsKey('name') && !checkEnvironmentVariableNameCorrect(item.get('name')), true)
     checkOk = pipelineSettingsItemError(3, printableParameterName, "'name' key is required, but undefined",
             !item.containsKey('name'), checkOk)
 
-    // When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct.
+    /** When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct. */
     checkOk = pipelineSettingsItemError(3, printableParameterName, String.format("%s: '%s'",
             'Unable to assign due to incorrect variable name', item.get('on_empty')?.get('assign')), item
             .get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
@@ -345,7 +350,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
 
     if (item.containsKey('type')) {
 
-        // Check 'type' value with other keys data type mismatch.
+        /** Check 'type' value with other keys data type mismatch. */
         String msg = item.type == 'choice' && !item.containsKey('choices') ?
                 "'type' set as choice while no 'choices' list defined" : ''
         if (item.type == 'boolean' && item.containsKey('default') && !(item.default instanceof Boolean))
@@ -355,11 +360,11 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
         checkOk = pipelineSettingsItemError(3, printableParameterName, msg, msg.trim() as Boolean, checkOk)
     } else {
 
-        // Try to detect 'type' when not defined.
+        /** Try to detect 'type' when not defined. */
         ArrayList autodetectData = detectPipelineParameterItemIsProbablyBoolean(item) ? ['default', 'boolean'] : []
         autodetectData = detectPipelineParameterItemIsProbablyChoice(item) ? ['choices', 'choice'] : autodetectData
 
-        // Output reason and 'type' key when autodetect is possible.
+        /** Output reason and 'type' key when autodetect is possible. */
         if (autodetectData) {
             checkOk = pipelineSettingsItemError(3, printableParameterName, String.format("%s by '%s' key: %s",
                     "'type' key is not defined, but was detected", autodetectData[0], autodetectData[1]))
@@ -371,7 +376,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
         }
     }
 
-    // Check 'default' and 'choices' keys incompatibility and 'choices' value.
+    /** Check 'default' and 'choices' keys incompatibility and 'choices' value. */
     checkOk = pipelineSettingsItemError(3, printableParameterName, "'default' and 'choices' keys are incompatible",
             item.containsKey('choices') && item.containsKey('default'), checkOk)
     return pipelineSettingsItemError(3, printableParameterName, "'choices' value is not a list of items",
@@ -614,7 +619,7 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
             def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndDefinedState(it as Map,
                     pipelineParameters, envVariables, false)
 
-            // If regex was set, preform string concatenation for regex list items. Otherwise, regex value is string.
+            /** If regex was set, preform string concatenation for regex list items. Otherwise, regex value is string */
             if (it.get('regex')) {
                 String regexPattern = ''
                 if (it.regex instanceof ArrayList && (it.regex as ArrayList)[0]) {
@@ -628,8 +633,9 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                         !envVariables[it.name as String].matches(regexPattern), allCorrect, 3,
                         String.format('%s parameter is incorrect due to regex mismatch.', printableParamName))
             }
-
-            // Perform regex replacement when regex_replace was set and pipeline parameter is defined for current build.
+            /**
+             * Perform regex replacement when regex_replace was set and pipeline parameter is defined for current build.
+             */
             if (it.get('regex_replace')) {
                 String msgTemplateNoValue =
                         "'%s' sub-key value of 'regex_replace' wasn't defined for '%s' pipeline parameter.%s"
@@ -637,14 +643,14 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                         "Wrong type of '%s' value sub-key of 'regex_replace' for '%s' pipeline parameter.%s"
                 String msgRecommendation = ' Please fix them. Otherwise, replacement will be skipped with an error.'
 
-                // Handle 'to' sub-key of 'regex_replace' parameter item key.
+                /** Handle 'to' sub-key of 'regex_replace' parameter item key. */
                 String regexReplacement = it.regex_replace?.get('to')?.trim() ? it.regex_replace.get('to') : ''
                 Boolean regexToKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('to'))
                 Boolean regexReplacementOk = errorMsgWrapper(regexReplacement?.trim() &&
                         !regexToKeyIsConvertibleToString, false, 3, String.format(msgTemplateWrongType, 'to',
                         printableParamName, msgRecommendation))
 
-                // Handle 'regex' sub-key of 'regex_replace' parameter item key.
+                /** Handle 'regex' sub-key of 'regex_replace' parameter item key. */
                 String regexPattern = it.regex_replace.get('regex')
                 Boolean regexKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('regex'))
                 if (regexPattern?.length() && regexKeyIsConvertibleToString) {
@@ -813,7 +819,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
                                           ArrayList builtinPipelineParameters, Object envVariables,
                                           Object pipelineParams) {
 
-    // Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings.
+    /** Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings. */
     String settingsRelativePath = String.format('%s/%s.yaml', settingsRelativePathPrefix,
             applyReplaceRegexItems(envVariables.JOB_NAME.toString(), pipelineNameRegexReplace))
     Map pipelineSettings = loadPipelineSettings(settingsGitUrl, defaultSettingsGitBranch, settingsRelativePath,
@@ -823,7 +829,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
     def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParamsProcessingPass) =
     wrapperPipelineParametersProcessing(allPipelineParams, pipelineParams)
 
-    // Check pipeline parameters in the settings are correct, all of them was defined properly for current build.
+    /** Check pipeline parameters in the settings are correct, all of them was defined properly for current build. */
     Boolean checkPipelineParametersPass = true
     if (noPipelineParamsInTheConfig && pipelineParamsProcessingPass) {
         CF.outMsg(1, 'No pipeline parameters in the config.')
@@ -877,7 +883,7 @@ ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object
             getBooleanVarStateFromEnv(envVariables)) || execute), true, 0, String.format('No stages %s to %s.',
             functionCallTypes, currentSubjectMsg))
 
-    // When pipeline stages are in the config starting iterate of it's items for check and/or execute.
+    /** When pipeline stages are in the config starting iterate of it's items for check and/or execute. */
     errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
             currentSubjectMsg))
     for (stageItem in pipelineSettings.stages) {
@@ -923,7 +929,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
                                           Object envVariables, Boolean allPass = true, Boolean check = true) {
     Map actionsRuns = [:]
 
-    // Handling 'name' (with possible assignment), 'actions' and 'parallel' stage keys.
+    /** Handling 'name' (with possible assignment), 'actions' and 'parallel' stage keys. */
     allPass = errorMsgWrapper(check && (!stageItem.containsKey('name') ||
             !detectIsObjectConvertibleToString(stageItem.get('name'))), allPass, 3,
             "Unable to convert stage name to a string, probably it's undefined or empty.")
@@ -937,7 +943,7 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     (allPass, stageItem) = templatingMapKeysFromVariables(stageItem, ['name'], envVariables, allPass)
     ArrayList actionsInStage = actionsIsNotList ? [] : stageItem.get('actions') as ArrayList
 
-    // Creating map and processing items from 'actions' key.
+    /** Creating map and processing items from 'actions' key. */
     actionsInStage.eachWithIndex { item, Integer index ->
         actionsRuns[index] = {
             String checkOrExecuteMsg = check ? 'Checking' : 'Executing'
@@ -1042,7 +1048,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
 
-    // Check keys are not empty and convertible to required type and check incompatible keys.
+    /** Check keys are not empty and convertible to required type and check incompatible keys. */
     ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
     ArrayList booleanKeys = ['ignore_fail', 'stop_on_fail', 'success_only', 'fail_only']
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
@@ -1054,7 +1060,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     (actionStructureOk, actionItem) = templatingMapKeysFromVariables(actionItem, stringKeys + ['action', 'node'] as
             ArrayList, envVariables, actionStructureOk, [:], 'Action key')
 
-    // Check node keys and sub-keys defined properly.
+    /** Check node keys and sub-keys defined properly. */
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
     Boolean nodeIsStringConvertible = detectIsObjectConvertibleToString(actionItem.get('node'))
     if (nodeIsStringConvertible || anyJenkinsNode) {
@@ -1065,7 +1071,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
     } else if (actionItem.get('node') instanceof Map) {
         nodeItem = actionItem.get('node') as Map
 
-        // Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct.
+        /** Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct. */
         String incompatibleKeysMessage
         ArrayList nodeSubKeyNames = ['name', 'label']
         Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
@@ -1076,7 +1082,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
                 actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'label')
 
-        // Check when 'pattern' node sub-key defined and boolean.
+        /** Check when 'pattern' node sub-key defined and boolean. */
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
                 printableStageAndAction)) {
             nodeItem.pattern = actionItem.node.get('pattern')?.toBoolean()
@@ -1086,15 +1092,16 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
             nodeItem.node.remove('pattern')
         }
 
-        // Templating node sub-keys.
+        /** Templating node sub-keys. */
         (actionStructureOk, nodeItem) = templatingMapKeysFromVariables(nodeItem, nodeSubKeyNames, envVariables,
                 actionStructureOk, [:], 'Node (sub-keys of action key)')
     } else if (actionItem.containsKey('node') && !anyJenkinsNode && !(actionItem.get('node') instanceof Map)) {
         actionStructureOk = errorMsgWrapper(check, actionStructureOk, 3, String.format(keyWarnOrErrMsgTemplate, '',
                 'node', printableStageAndAction, 'Key will be ignored.'))
     }
-
-    // Check or execute current action when 'action' key is correct and possible success_only/fail_only conditions met.
+    /**
+     * Check or execute current action when 'action' key is correct and possible success_only/fail_only conditions met.
+     */
     Boolean actionIsCorrect = checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true,
             printableStageAndAction)
     actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect,
@@ -1113,7 +1120,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
                 currentBuild.displayName
 
-        // Directory change wrapper.
+        /** Directory change wrapper. */
         String actionItemCurrentDirectory = actionItem.get('dir')?.toString() ?: ''
         if (!check && actionItemCurrentDirectory.trim()) {
             dir(actionItemCurrentDirectory) {
@@ -1127,7 +1134,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                             pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
         }
 
-        // Processing post-messages and/or 'ignore_fail' keys.
+        /** Processing post-messages and/or 'ignore_fail' keys. */
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
         actionLinkOk = actionItem.get('ignore_fail') && !check ? true : actionLinkOk
@@ -1137,7 +1144,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
                         check ? 'check in' : 'perform at', printableStageAndAction))
     }
 
-    // Processing action link state, updating results of current build and actions report, stop on fail handle.
+    /** Processing action link state, updating results of current build and actions report, stop on fail handle. */
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
@@ -1306,7 +1313,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             }
     ]
 
-    // Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined.
+    /** Determining action by defined keys in 'actions' settings item, check that no incompatible keys defined. */
     Map keysFound = detectByKeys.findAll { k, v -> actionLinkItem.containsKey(k) }
     errorMsgWrapper(check && keysFound?.size() > 1, actionOk, 2, String.format("%s '%s' %s. %s '%s' %s", 'Keys in',
             actionLink, incompatibleKeysMsgWrapper(keysFound.keySet() as ArrayList, ''), 'Only', keysFound.keySet()[0],
@@ -1315,7 +1322,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
             check ? "Can't" : "Nothing to execute due to can't", "determine any action in", actionLink,
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
-    // Handling node selection keys: if name key exists use value from them, otherwise use label key.
+    /** Handling node selection keys: if name key exists use value from them, otherwise use label key. */
     def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
             nodeTagPipelineParameterName)
     def changeNodeData = currentNodeData
@@ -1328,7 +1335,7 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 CF.getJenkinsNodes(nodeItem.get('label'), true)?.first() : nodeItem?.get('label')]
     }
 
-    // Executing determined action with possible node change or check without node change.
+    /** Executing determined action with possible node change or check without node change. */
     println String.format('%s %s pipelineSettings(-): %s', actionLink, check ? 'check' : 'exec', pipelineSettings)
     if (keysFound) {
         if (!check && currentNodeData.toString() != changeNodeData.toString()) {
@@ -1609,7 +1616,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     ArrayList stringSubKeys = ['script', 'jenkins']
     ArrayList booleanSubKeys = ['pipeline']
 
-    // Checking required script or playbook keys. Setting up execution data and printable link names.
+    /** Checking required script or playbook keys. Setting up execution data and printable link names. */
     def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, actionOk, actionLink, actionLinkItem, stringKeys)
@@ -1630,8 +1637,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
     }
     env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
     if (scriptRun) {
-
-        // Check script keys.
+        /** Check script keys. */
         checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
                 instanceof Map) ? checkOrExecuteData.script as Map : [:]
         (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
@@ -1648,7 +1654,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         actionOk = errorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format("Key '%s' is undefined in '%s'.",
                 stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
 
-        // Setting up closure depending on script type.
+        /** Setting up closure depending on script type. */
         def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
                                                             checkOrExecuteData?.get(stringSubKeys[1])]
         pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
@@ -1661,8 +1667,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
             return [actionOk, universalPipelineWrapperBuiltIns, null]
         } : {}
     } else {
-
-        // Templating playbook keys. Setting up playbook, inventory and playbook execution closure.
+        /** Templating playbook keys. Setting up playbook, inventory and playbook execution closure. */
         String ansibleInstallationName = universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
@@ -1682,7 +1687,7 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         }
     }
 
-    // Run action closure and finally update env from changed universalPipelineWrapperBuiltIns keys.
+    /** Run action closure and finally update env from changed universalPipelineWrapperBuiltIns keys. */
     (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
             universalPipelineWrapperBuiltIns)
@@ -1725,7 +1730,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
         actionLinkItem.containsKey(booleanKey) ? actionLinkItem.get(booleanKey) : true
     }
 
-    // Processing downstream job parameters.
+    /** Processing downstream job parameters. */
     String kName = 'parameters'
     actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) &&
             !(actionLinkItem?.get(kName) instanceof ArrayList), actionOk, 3, String.format("%s key in '%s' %s.", kName,
@@ -1735,7 +1740,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     (actionOk, pipelineParameters, printablePipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersList,
             envVariables, String.format("'%s' action", actionLink), universalPipelineWrapperBuiltIns, check, actionOk)
 
-    // Processing copy_artifacts parameters.
+    /** Processing copy_artifacts parameters. */
     kName = 'copy_artifacts'
     actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) &&
             !(actionLinkItem?.get(kName) instanceof Map), actionOk, 3, String.format("%s key in '%s' %s.", kName,
@@ -1751,7 +1756,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             String.format("Mandatory key '%s' of '%s' in '%s' action is undefined.", copyArtifactsStringKeys[0], kName,
                     actionLink))
 
-    // Setting up action closure and run downstream job/pipeline.
+    /** Setting up action closure and run downstream job/pipeline. */
     Closure actionClosure = downstreamJobNameDefined ? {
         Object jobRunWrapper = CF.dryRunJenkinsJob(downstreamJobName, pipelineParameters, dryRunMode, false,
                 propagatePipelineErrors, waitForPipelineComplete, envVariables, 'DRY_RUN', printablePipelineParameters)
@@ -1774,7 +1779,7 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     errorMsgWrapper(!check && !dryRunMode && getStatusFromDownstreamJobRunIsPossible, actionOk, 0,
             String.format("%s%s finished with '%s'.", actionName, downstreamJobConsoleUrl, downstreamJobRunResults))
 
-    // Copy artifacts from downstream job.
+    /** Copy artifacts from downstream job. */
     String copyArtifactsErrMsg = String.format("Unable to copy artifacts from %s%s in '%s'", actionName,
             downstreamJobConsoleUrl, actionLink)
     String copyArtifactsErrReason = waitForPipelineComplete ? '' : ' defined not to wait for completion.'
@@ -1921,8 +1926,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
         String errMsgSubject = String.format('pipeline parameter no. %s of %s', listItemIndex.toString(),
                 keyDescription)
         if (listItem instanceof Map) {
-
-            // Checking pipeline parameter item keys types and defined states.
+            /** Checking pipeline parameter item keys types and defined states. */
             Map filteredListItem = findMapItemsFromList(listItem as Map, allParamKeysList)
             allPass = errorMsgWrapper(filteredListItem?.size() != 3, allPass, 3, String.format("%s %s: %s required.",
                     'Wrong set of keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
@@ -1936,8 +1940,9 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
             }
             allPass = errorMsgWrapper(!typeKeyOk, allPass, 3, String.format("Wrong in %s. Should be: %s.",
                     errMsgSubject, arrayListToReadableString(paramTypes)))
-
-            // Assigning variables to pipeline parameter item, hiding passwords, converting them to pipeline parameter.
+            /**
+             * Assigning variables to pipeline parameter item, hiding passwords, converting them to pipeline parameter.
+             */
             (allPass, filteredListItem) = templatingMapKeysFromVariables(filteredListItem, allParamKeysList,
                     envVariables, allPass, universalPipelineWrapperBuiltIns, errMsgSubject)
             if (filteredListItem?.size() == 3 && stringKeysOk) {
@@ -2013,7 +2018,7 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
 }
 
 
-// Pipeline entry point.
+/** Pipeline entry point. */
 def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
@@ -2027,7 +2032,7 @@ node(jenkinsNodeToExecute) {
                 pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
                         PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
 
-        // When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct.
+        /** When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct. */
         Boolean pipelineSettingsCheckOk = true
         if ((!pipelineFailReasonText.trim() && checkPipelineParametersPass) || getBooleanPipelineParamState(params)) {
             (__, pipelineSettingsCheckOk, env) = checkOrExecutePipelineWrapperFromSettings(pipelineSettings, env, true,
@@ -2035,8 +2040,9 @@ node(jenkinsNodeToExecute) {
         }
         pipelineFailReasonText += pipelineSettingsCheckOk && checkPipelineParametersPass ? '' :
                 'Pipeline settings contains an error(s).'
-
-        // Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
+        /**
+         * Skip stages execution on settings error or undefined required pipeline parameter(s), or execute in dry-run.
+         */
         pipelineFailReasonText += pipelineParamsProcessingPass ? '' : '\nError(s) in pipeline yaml settings. '
         Map universalPipelineWrapperBuiltIns = [:]
         universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName = AnsibleInstallationName?.trim() ?
