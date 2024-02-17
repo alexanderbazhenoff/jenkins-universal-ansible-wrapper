@@ -181,7 +181,7 @@ static Boolean detectPipelineParameterItemIsProbablyChoice(Map paramItem) {
  * @return - true when 'boolean'.
  */
 static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
-    return paramItem.containsKey('default') && paramItem.get('default') instanceof Boolean
+    paramItem.containsKey('default') && paramItem.get('default') instanceof Boolean
 }
 
 /**
@@ -191,8 +191,8 @@ static Boolean detectPipelineParameterItemIsProbablyBoolean(Map paramItem) {
  * @param keysToCollect - list of keys that needs to be found.
  * @return - only map items specified in listOfKeysToCollect.
  */
-static Map findMapItemsFromList(Map map, ArrayList keysToCollect) {
-    return map.findAll { mapKey, mapVal -> keysToCollect.contains(mapKey) && mapVal && mapVal?.toString()?.trim() }
+static Map findMapItemsFromList(Map map, List keysToCollect) {
+    map.findAll { mapKey, mapVal -> keysToCollect.contains(mapKey) && mapVal && mapVal?.toString()?.trim() }
 }
 
 /**
@@ -202,7 +202,7 @@ static Map findMapItemsFromList(Map map, ArrayList keysToCollect) {
  * @return - password with replaced symbols.
  */
 static String hidePasswordString(String passwordString, String replaceSymbol = '*') {
-    return passwordString?.length() > 0 ? replaceSymbol * passwordString?.length() : ''
+    passwordString?.length() > 0 ? replaceSymbol * passwordString?.length() : ''
 }
 
 /**
@@ -212,9 +212,9 @@ static String hidePasswordString(String passwordString, String replaceSymbol = '
  * @param splitLastByAnd - when true separated the last item with 'and' word.
  * @return - string with arrayList items.
  */
-static String arrayListToReadableString(ArrayList arrayListItems, Boolean splitLastByAnd = true) {
+static String arrayListToReadableString(List arrayListItems, Boolean splitLastByAnd = true) {
     String strByCommas = arrayListItems.toString().replaceAll(',\\s', "', '").replaceAll('[\\[\\]]', "'")
-    return splitLastByAnd && arrayListItems?.size() > 1 ? String.format('%s and %s',
+    splitLastByAnd && arrayListItems?.size() > 1 ? String.format('%s and %s',
             strByCommas.substring(0, strByCommas.lastIndexOf(", '")),
             strByCommas.substring(strByCommas.lastIndexOf(", '") + 2, strByCommas.length())) : strByCommas
 }
@@ -228,7 +228,7 @@ static String arrayListToReadableString(ArrayList arrayListItems, Boolean splitL
  * @return - string with key names.
  */
 static String mapItemsToReadableListString(Map map, Boolean keyNames = true, Boolean splitLastByAnd = true) {
-    return arrayListToReadableString(keyNames ? map.keySet() as ArrayList : map.values() as ArrayList, splitLastByAnd)
+    arrayListToReadableString(keyNames ? map.keySet() as ArrayList : map.values() as ArrayList, splitLastByAnd)
 }
 
 /**
@@ -237,8 +237,8 @@ static String mapItemsToReadableListString(Map map, Boolean keyNames = true, Boo
  * @param item - pipeline settings map item to convert.
  * @return - jenkins pipeline parameters.
  */
-ArrayList pipelineSettingsItemToPipelineParam(Map item) {
-    ArrayList param = []
+List pipelineSettingsItemToPipelineParam(Map item) {
+    List param = []
     String defaultString = item.containsKey('default') ? item.default.toString() : ''
     String description = item.containsKey('description') ? item.description : ''
     if (item.get('name') && detectIsObjectConvertibleToString(item.get('name')) &&
@@ -256,7 +256,7 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
             param += [string(name: item.name, defaultValue: defaultString, description: description,
                     trim: item.containsKey('trim') ? item.trim : false)]
     }
-    return param
+    param
 }
 
 /**
@@ -272,8 +272,8 @@ ArrayList pipelineSettingsItemToPipelineParam(Map item) {
  */
 Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String errorMsg, Boolean enableCheck = true,
                                   Boolean currentState = true) {
-    return errorMsgWrapper(enableCheck, currentState, eventNum,
-            String.format("Wrong syntax in pipeline parameter '%s': %s.", itemName, errorMsg))
+    errorMsgWrapper(enableCheck, currentState, eventNum, String.format("Wrong syntax in pipeline parameter '%s': %s.",
+            itemName, errorMsg))
 }
 
 /**
@@ -287,11 +287,8 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
  * @return - current state return.
  */
 Boolean errorMsgWrapper(Boolean enableCheck, Boolean state, Integer eventNum, String msg) {
-    if (enableCheck) {
-        CF.outMsg(eventNum, msg)
-        state = eventNum == 3 ? false : state
-    }
-    return state
+    if (enableCheck) CF.outMsg(eventNum, msg)
+    (enableCheck && eventNum == 3) ? false : state
 }
 
 /**
