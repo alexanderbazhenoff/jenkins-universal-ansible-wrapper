@@ -2,7 +2,7 @@
 
 
 /**
- * Jenkins Universal Wrapper Pipeline v1.0.0 (c) Aleksandr Bazhenov, 2023
+ * Jenkins Universal Wrapper Pipeline v1.0.0 (c) Aleksandr Bazhenov, 2023-2024
  *
  * This Source Code Form is subject to the terms of the Apache License v2.0.
  * If a copy of this source file was not distributed with this file, You can obtain one at:
@@ -346,10 +346,10 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     checkOk = pipelineSettingsItemError(3, printableParameterName, String.format("%s: '%s'",
             'Unable to assign due to incorrect variable name', item.get('on_empty')?.get('assign')), item
             .get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
+            // groovylint-disable-next-line GStringExpressionWithinString
             !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('[\${}]', '')), checkOk)
 
     if (item.containsKey('type')) {
-
         /** Check 'type' value with other keys data type mismatch. */
         String msg = item.type == 'choice' && !item.containsKey('choices') ?
                 "'type' set as choice while no 'choices' list defined" : ''
@@ -359,9 +359,8 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
                     detectPipelineParameterItemIsProbablyBoolean(item) ? ", but it's convertible to boolean" : '')
         checkOk = pipelineSettingsItemError(3, printableParameterName, msg, msg.trim() as Boolean, checkOk)
     } else {
-
         /** Try to detect 'type' when not defined. */
-        ArrayList autodetectData = detectPipelineParameterItemIsProbablyBoolean(item) ? ['default', 'boolean'] : []
+        List autodetectData = detectPipelineParameterItemIsProbablyBoolean(item) ? ['default', 'boolean'] : []
         autodetectData = detectPipelineParameterItemIsProbablyChoice(item) ? ['choices', 'choice'] : autodetectData
 
         /** Output reason and 'type' key when autodetect is possible. */
@@ -379,7 +378,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
     /** Check 'default' and 'choices' keys incompatibility and 'choices' value. */
     checkOk = pipelineSettingsItemError(3, printableParameterName, "'default' and 'choices' keys are incompatible",
             item.containsKey('choices') && item.containsKey('default'), checkOk)
-    return pipelineSettingsItemError(3, printableParameterName, "'choices' value is not a list of items",
+    pipelineSettingsItemError(3, printableParameterName, "'choices' value is not a list of items",
             item.containsKey('choices') && !(item.get('choices') instanceof ArrayList), checkOk)
 }
 
@@ -397,8 +396,9 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
  *                                which is class java.util.Collections$UnmodifiableMap). When
  *                                currentPipelineParams.DRY_RUN is 'true' pipeline parameters update won't be performed.
  */
-def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess, Object currentPipelineParams) {
-    ArrayList newPipelineParams = []
+// groovylint-disable-next-line MethodReturnTypeRequired, NoDef
+def updatePipelineParams(List requiredParams, Boolean finishWithSuccess, Object currentPipelineParams) {
+    List newPipelineParams = []
     Boolean dryRun = getBooleanPipelineParamState(currentPipelineParams)
     currentBuild.displayName = String.format('pipeline_parameters_update--#%s%s', env.BUILD_NUMBER, dryRun ?
             '-dry_run' : '')
@@ -406,8 +406,7 @@ def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess, Ob
     if (!dryRun)
         properties([parameters(newPipelineParams)])
     if (finishWithSuccess) {
-        ArrayList msgArgs = dryRun ? ["n't", 'Disable dry-run mode'] : [' successfully',
-                                                                        "Select 'Build with parameters'"]
+        List msgArgs = dryRun ? ["n't", 'Disable dry-run mode'] : [' successfully', "Select 'Build with parameters'"]
         CF.outMsg(2, String.format('Pipeline parameters was%s injected. %s and run again.', msgArgs[0], msgArgs[1]))
         CF.interruptPipelineOk(3)
     } else {
@@ -422,12 +421,12 @@ def updatePipelineParams(ArrayList requiredParams, Boolean finishWithSuccess, Ob
  * @param parameters - all pipeline parameters to check.
  * @return - the whole pipeline parameters check status (true when ok).
  */
-Boolean checkPipelineParamsFormat(ArrayList parameters) {
+Boolean checkPipelineParamsFormat(List parameters) {
     Boolean allPass = true
     parameters.each {
         allPass = pipelineParametersSettingsItemCheck(it as Map) ? allPass : false
     }
-    return allPass
+    allPass
 }
 
 /**
@@ -445,9 +444,9 @@ Boolean checkPipelineParamsFormat(ArrayList parameters) {
  *           - printable parameter name (or '<undefined>' when name wasn't set);
  *           - return true when condition specified in 'isUndefined' method variable met.
  */
-static ArrayList getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
-                                                     Boolean isUndefined = true) {
-    return [getPrintableValueKeyFromMapItem(paramItem), (paramItem.get('name') && pipelineParameters
+static List getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
+                                                Boolean isUndefined = true) {
+    [getPrintableValueKeyFromMapItem(paramItem), (paramItem.get('name') && pipelineParameters
             .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
 }
 
@@ -464,16 +463,16 @@ static ArrayList getPipelineParamNameAndDefinedState(Map paramItem, Object pipel
  *           - true when needs to count an error when pipeline parameter undefined and can't be assigned;
  *           - true when needs to warn when pipeline parameter undefined and can't be assigned.
  */
-ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
+List handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariables) {
     if (!settingsItem.get('on_empty'))
         return [false, true, '', true, false]
     Boolean fail = settingsItem.on_empty.get('fail') ? settingsItem.on_empty.get('fail').asBoolean() : true
     Boolean warn = settingsItem.on_empty.get('warn').asBoolean()
     if (!settingsItem.on_empty.get('assign'))
         return [false, true, '', fail, warn]
-    def (Boolean assignmentIsPossible, Boolean assignmentOk, String assignment) =
-    getTemplatingFromVariables(settingsItem.on_empty.assign.toString(), envVariables)
-    return [assignmentIsPossible, assignmentOk, assignment, fail, warn]
+    def (Boolean assignmentIsPossible, Boolean assignmentOk, String assignment) = getTemplatingFromVariables(
+            settingsItem.on_empty.assign.toString(), envVariables)
+    [assignmentIsPossible, assignmentOk, assignment, fail, warn]
 }
 
 /**
@@ -488,9 +487,9 @@ ArrayList handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envV
  *           - true when assignment done without errors or skipped, otherwise false;
  *           - templated string.
  */
-ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map additionalVariablesBinding = [:]) {
+List getTemplatingFromVariables(String assignment, Object envVariables, Map additionalVariablesBinding = [:]) {
     Boolean assignmentOk = true
-    ArrayList mentionedVariables = CF.getVariablesMentioningFromString(assignment)
+    List mentionedVariables = CF.getVariablesMentioningFromString(assignment)
     if (!mentionedVariables[0])
         return [false, assignmentOk, assignment]
     Map bindingVariables = CF.envVarsToMap(envVariables) + additionalVariablesBinding
@@ -503,10 +502,9 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
         assignmentOk = errorMsgWrapper(variableIsUndefined, assignmentOk, 3,
                 String.format("Specified '%s' variable in '%s' value is undefined. %s", mentioned, assignment, errMsg))
         bindingVariables[mentioned] = variableNameIsIncorrect || variableIsUndefined ? '' : bindingVariables[mentioned]
-
     }
     String assigned = new StreamingTemplateEngine().createTemplate(assignment).make(bindingVariables)
-    return [true, assignmentOk, assigned]
+    [true, assignmentOk, assigned]
 }
 
 /**
@@ -523,20 +521,22 @@ ArrayList getTemplatingFromVariables(String assignment, Object envVariables, Map
  *           - true when all keys was assigned without errors or assignment skipped, otherwise false;
  *           - map with assigned keys.
  */
-ArrayList templatingMapKeysFromVariables(Map assignMap, ArrayList assignmentKeysList, Object envVariables,
-                                         Boolean allAssignmentsPass = true, Map additionalVariablesBinding = [:],
-                                         String keysDescription = 'Key') {
+List templatingMapKeysFromVariables(Map assignMap, List assignmentKeysList, Object envVariables,
+                                    Boolean allAssignmentsPass = true, Map additionalVariablesBinding = [:],
+                                    String keysDescription = 'Key') {
+    Boolean allAssignmentsPassNew = allAssignmentsPass
     assignmentKeysList.each { currentKey ->
         if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
+            // groovylint-disable-next-line NoDef, VariableTypeRequired
             def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
                     envVariables, additionalVariablesBinding)
-            allAssignmentsPass = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
+            allAssignmentsPassNew = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
             assignMap[currentKey] = assigned
         }
     }
-    return [allAssignmentsPass, assignMap]
+    [allAssignmentsPassNew, assignMap]
 }
 
 /**
@@ -567,8 +567,8 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
                         parameterAssignment.trim()) {
                     envVariables[it.name.toString()] = parameterAssignment
                 } else if (printableParameterName == '<undefined>' || (paramNeedsToBeAssigned && !assignmentOk)) {
-                    assignMessage = !assignmentOk ? String.format("(can't be correctly assigned with '%s' variable) ",
-                            it.on_empty.get('assign').toString()) : ''
+                    assignMessage = assignmentOk ? '' : String.format("(can't be correctly assigned with '%s' %s) ",
+                            it.on_empty.get('assign').toString(), 'variable')
                 }
                 allSet = !paramNeedsToBeAssigned && fail ? false : allSet
                 errorMsgWrapper((warn || (fail && !allSet)), true, fail ? 3 : 2, String.format(
@@ -577,7 +577,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
             }
         }
     }
-    return [allSet, envVariables]
+    [allSet, envVariables]
 }
 
 /**
@@ -587,11 +587,9 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
  * @param builtinPipelineParameters - additional built-in pipeline parameters arrayList.
  * @return - pipeline parameters arrayList.
  */
-static ArrayList extractParamsListFromSettingsMap(Map pipelineSettings, ArrayList builtinPipelineParameters) {
-    return (pipelineSettings.get('parameters')) ?
-            (pipelineSettings.parameters.get('required') ? pipelineSettings.parameters.get('required') : []) +
-                    (pipelineSettings.parameters.get('optional') ? pipelineSettings.parameters.get('optional') : []) +
-                    builtinPipelineParameters : []
+static List extractParamsListFromSettingsMap(Map pipelineSettings, List builtinPipelineParameters) {
+    (pipelineSettings.get('parameters')) ? (pipelineSettings.parameters.get('required') ?: []) +
+            (pipelineSettings.parameters.get('optional') ?: []) + builtinPipelineParameters : []
 }
 
 /**
@@ -610,16 +608,17 @@ static ArrayList extractParamsListFromSettingsMap(Map pipelineSettings, ArrayLis
  *           - true when all pass;
  *           - changed or unchanged environment variables for current job build.
  */
-Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object pipelineParameters,
-                                            Object envVariables) {
+Boolean regexCheckAllRequiredPipelineParams(List allPipelineParams, Object pipelineParameters, Object envVariables) {
     Boolean allCorrect = true
     CF.outMsg(0, "Starting regex check and regex replacement of pipeline parameters for current build.")
     if (allPipelineParams[0]) {
         allPipelineParams.each {
             def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndDefinedState(it as Map,
                     pipelineParameters, envVariables, false)
-
-            /** If regex was set, preform string concatenation for regex list items. Otherwise, regex value is string */
+            /**
+             * If regex was set, preform string concatenation for regex list items. Otherwise, regex value is a string
+             * already.
+             */
             if (it.get('regex')) {
                 String regexPattern = ''
                 if (it.regex instanceof ArrayList && (it.regex as ArrayList)[0]) {
@@ -657,11 +656,11 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                     errorMsgWrapper(!regexReplacement.trim(), false, 0, String.format(msgTemplateNoValue, 'to',
                             printableParamName, 'Regex match(es) will be removed.'))
                     if (paramIsDefined && printableParamName != '<undefined>') {
-                        regexReplacementOk = errorMsgWrapper(true, true, 0, String.format(
-                                "Replacing '%s' regex to '%s' in '%s' pipeline parameter value...", regexPattern,
-                                regexReplacement, printableParamName))
-                        envVariables[it.name.toString()] = applyReplaceRegexItems(envVariables[it.name.toString()] as
-                                String, [regexPattern], [regexReplacement])
+                        regexReplacementOk = errorMsgWrapper(true, true, 0,
+                                String.format("Replacing '%s' regex to '%s' in '%s' pipeline parameter value...",
+                                        regexPattern, regexReplacement, printableParamName))
+                        envVariables[it.name.toString()] = applyReplaceRegexItems(envVariables[it.name
+                                .toString()] as String, [regexPattern], [regexReplacement])
                     }
                     regexReplacementOk = errorMsgWrapper(printableParamName == '<undefined>', regexReplacementOk, 3,
                             String.format("Replace '%s' regex to '%s' is not possible: 'name' key is %s. %s.",
@@ -674,10 +673,9 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
                 }
                 allCorrect = regexReplacementOk ? allCorrect : false
             }
-
         }
     }
-    return [allCorrect, envVariables]
+    [allCorrect, envVariables]
 }
 
 /**
@@ -694,9 +692,8 @@ Boolean regexCheckAllRequiredPipelineParams(ArrayList allPipelineParams, Object 
  *           - true when there is no pipeline parameters in the pipelineSettings;
  *           - true when pipeline parameters processing pass.
  */
-ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object currentPipelineParams) {
-    Boolean noPipelineParams = true
-    Boolean allPass = true
+List wrapperPipelineParametersProcessing(List pipelineParams, Object currentPipelineParams) {
+    def (Boolean noPipelineParams, Boolean allPass) = [true, true]
     if (pipelineParams[0]) {
         noPipelineParams = false
         Boolean updateParamsRequired
@@ -708,7 +705,7 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
             updatePipelineParams(pipelineParams, allPass, currentPipelineParams)
         }
     }
-    return [noPipelineParams, allPass]
+    [noPipelineParams, allPass]
 }
 
 /**
@@ -720,7 +717,7 @@ ArrayList wrapperPipelineParametersProcessing(ArrayList pipelineParams, Object c
  * @return - true when enabled.
  */
 static Boolean getBooleanVarStateFromEnv(Object envVariables, String variableName = 'DEBUG_MODE') {
-    return envVariables.getEnvironment().get(variableName)?.toBoolean()
+    envVariables.getEnvironment().get(variableName)?.toBoolean()  // groovylint-disable-line UnnecessaryGetter
 }
 
 /**
@@ -732,7 +729,7 @@ static Boolean getBooleanVarStateFromEnv(Object envVariables, String variableNam
  * @return - true when enabled.
  */
 static Boolean getBooleanPipelineParamState(Object pipelineParams, String parameterName = 'DRY_RUN') {
-    return pipelineParams.get(parameterName)?.toBoolean()
+    pipelineParams.get(parameterName)?.toBoolean()
 }
 
 /**
@@ -749,14 +746,11 @@ static Boolean getBooleanPipelineParamState(Object pipelineParams, String parame
  * @return - null when nodeParamName or nodeTagParamName parameters found. In this case pipeline starts on any jenkins
  *           node. Otherwise, return 'node_name' or [label: 'node_tag'].
  */
-static getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
-    def nodeToExecute = null
-    if (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) {
-        nodeToExecute = [label: env[nodeTagParamName]]
-    } else if (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) {
-        nodeToExecute = env[nodeParamName]
-    }
-    return nodeToExecute
+static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
+    Object nodeToExecute = null
+    nodeToExecute = (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) ?
+            [label: env[nodeTagParamName]] : nodeToExecute
+    (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) ? env[nodeParamName] : nodeToExecute
 }
 
 /**
