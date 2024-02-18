@@ -1305,16 +1305,16 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
             actionLink, incompatibleKeysMsgWrapper(keysFound.keySet() as ArrayList, ''), 'Only', keysFound.keySet()[0],
             'will be used on action run.'))
     actionOk = errorMsgWrapper(!keysFound && actionOk, actionOk, 3, String.format("%s %s '%s'. %s: %s.",
-            check ? "Can't" : "Nothing to execute due to can't", "determine any action in", actionLink,
+            check ? "Can't" : "Nothing to execute due to can't", 'determine any action in', actionLink,
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
     /** Handling node selection keys: if name key exists use value from them, otherwise use label key. */
-    def currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
+    Object currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
             nodeTagPipelineParameterName)
-    def changeNodeData = currentNodeData
+    Object changeNodeData = currentNodeData
     if (nodeItem?.containsKey('name')) {
-        ArrayList nodeNames = nodeItem?.get('pattern') && nodeItem?.get('name') ?
-                CF.getJenkinsNodes(nodeItem.get('name')) : [nodeItem?.get('name')]
+        List nodeNames = nodeItem?.get('pattern') && nodeItem?.get('name') ? CF.getJenkinsNodes(nodeItem.get('name')) :
+                [nodeItem?.get('name')]
         changeNodeData = !nodeItem.get('name') || !nodeNames ? null : nodeNames[0]
     } else if (!nodeItem?.containsKey('name') && nodeItem?.get('label')) {
         changeNodeData = [label: nodeItem?.get('pattern') && nodeItem?.get('label') ?
@@ -1326,8 +1326,9 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
         if (!check && currentNodeData.toString() != changeNodeData.toString()) {
             node(changeNodeData) {
                 String nodeSelectionPrintable = changeNodeData instanceof Map ? String.format("node with label '%s'",
-                        changeNodeData.label) : String.format('%s node', (changeNodeData) ? changeNodeData : 'any')
+                        changeNodeData.label) : String.format('%s node', (changeNodeData) ?: 'any')
                 CF.outMsg(0, String.format("Executing '%s' action on %s...", actionLink, nodeSelectionPrintable))
+                // TODO: assigning from .call() is ok, but why it's marked as can't assign Object to Map?
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = keysFound[keysFound.keySet()[0]].call()
             }
         } else {
