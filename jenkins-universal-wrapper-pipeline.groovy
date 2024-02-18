@@ -1358,27 +1358,25 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
  *           - true when success, false when failed;
  *           - action details for logging.
  */
-ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
-                         Map universalPipelineWrapperBuiltIns, String gitDefaultCredentials = GV.GIT_CREDENTIALS_ID) {
-    String actionMsg
-    String actionName = 'git clone'
-    ArrayList stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
-    (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
-            check, actionOk, actionLink, actionLinkItem, stringKeys)
+List actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                    Map universalPipelineWrapperBuiltIns, String gitDefaultCredentials = GV.GIT_CREDENTIALS_ID) {
+    def (String actionName, Boolean newActionOk) = ['git clone', actionOk]
+    List stringKeys = ['repo_url', 'repo_branch', 'directory', 'credentials']
+    (newActionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, newActionOk, actionLink, actionLinkItem, stringKeys)
     Boolean repoUrlIsDefined = actionLinkItem?.get('repo_url')
-    actionOk = errorMsgWrapper(!repoUrlIsDefined, actionOk, 3,
+    newActionOk = errorMsgWrapper(!repoUrlIsDefined, newActionOk, 3,
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
     Map printableActionLinkItem = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
             hidePasswordString(actionLinkItem.credentials as String) : null]
     Closure actionClosure = {
         CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?: 'main',
                 actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: gitDefaultCredentials)
-        return [actionOk, universalPipelineWrapperBuiltIns, null]
+        [newActionOk, universalPipelineWrapperBuiltIns, null]
     }
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
-            actionClosure, actionLink, actionName, printableActionLinkItem, stringKeys, actionOk,
-            universalPipelineWrapperBuiltIns)
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
+    /** Returns newActionOk, actionMsg, universalPipelineWrapperBuiltIns, additionalObject (will be ignored). */
+    actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink, actionName,
+            printableActionLinkItem, stringKeys, newActionOk, universalPipelineWrapperBuiltIns)
 }
 
 /**
@@ -1403,22 +1401,21 @@ ArrayList actionCloneGit(String actionLink, Map actionLinkItem, Object envVariab
  *           - pipeline wrapper built-ins variable return;
  *           - additional untyped object (e.g. for run wrapper object return of downstream pipeline runs).
  */
-ArrayList actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
-                                           String actionName, Map printableActionLinkItem,
-                                           ArrayList actionKeysFilterLists, Boolean actionOk,
-                                           Map universalPipelineWrapperBuiltIns) {
-    Object additionalObject = null
+List actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closure actionClosure, String actionLink,
+                                      String actionName, Map printableActionLinkItem, List actionKeysFilterLists,
+                                      Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+    def (Object additionalObject, Boolean newActionOk) = [null, actionOk]
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
     if (!check && !dryRunAction)
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
-            (actionOk, universalPipelineWrapperBuiltIns, additionalObject) = actionClosure.call()
+            (newActionOk, universalPipelineWrapperBuiltIns, additionalObject) = actionClosure.call()
         } catch (Exception err) {
-            actionOk = errorMsgWrapper(true, actionOk, 3, String.format("Error %s in '%s': %s", actionMsg, actionLink,
-                    CF.readableError(err)))
+            newActionOk = errorMsgWrapper(true, newActionOk, 3, String.format("Error %s in '%s': %s", actionMsg,
+                    actionLink, CF.readableError(err)))
         }
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns, additionalObject]
+    [newActionOk, actionMsg, universalPipelineWrapperBuiltIns, additionalObject]
 }
 
 /**
