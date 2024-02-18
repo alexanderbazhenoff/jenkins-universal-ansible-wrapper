@@ -1071,7 +1071,7 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
     Boolean nodeIsStringConvertible = detectIsObjectConvertibleToString(actionItem.get('node'))
     if (nodeIsStringConvertible || anyJenkinsNode) {
         errorMsgWrapper(anyJenkinsNode, true, 0, String.format("'node' key in '%s' action is null. %s",
-                "This stage will run on any free Jenkins node.", printableStageAndAction))
+                'This stage will run on any free Jenkins node.', printableStageAndAction))
         nodeItem.node = [:]
         nodeItem.node.name = nodeIsStringConvertible ? actionItem.node.toString() : actionItem.get('node')?.get('name')
     } else if (actionItem.get('node') instanceof Map) {
@@ -1147,11 +1147,11 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
             universalPipelineWrapperBuiltIns.multilineReportMap as Map : [:]
     universalPipelineWrapperBuiltIns.multilineReportMap = CF.addPipelineStepsAndUrls(multilineReportMap,
             printableStageAndAction, actionStructureAndLinkOk, actionDescription)
-    universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns)
+    Map universalPipelineWrapperBuiltInsNew = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns)
     if (actionItem.get('stop_on_fail') && !check && !actionLinkOk)
         error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                 "('stop_on_fail' is enabled for current action)")
-    [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
+    [universalPipelineWrapperBuiltInsNew, actionStructureAndLinkOk, envVariables]
 }
 
 /**
@@ -1167,7 +1167,7 @@ Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyN
     pipelineWrapperBuiltIns[keyNamePrefix] = mapToFormattedStringTable(wrapperBuiltInsStatusMap)
     pipelineWrapperBuiltIns[String.format('%sFailed', keyNamePrefix)] = CF.grepFailedStates(pipelineWrapperBuiltIns,
             keyNamePrefix, '[FAIL]')
-    return pipelineWrapperBuiltIns
+    pipelineWrapperBuiltIns
 }
 
 /**
@@ -1179,9 +1179,10 @@ Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyN
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  */
+// groovylint-disable-next-line MethodReturnTypeRequired, NoDef
 def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType, Object envVariables) {
     String messageKey = String.format('%s_message', messageType)
-    String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format("%s %s: %s", messageType.capitalize(),
+    String messageText = getBooleanVarStateFromEnv(envVariables) ? String.format('%s %s: %s', messageType.capitalize(),
             'message', actionItem.get(messageKey)) : actionItem.get(messageKey)
     errorMsgWrapper(detectIsObjectConvertibleToString(actionItem.get(messageKey)) && !check, true,
             messageType == 'fail' ? 3 : 1, messageText)
@@ -1202,9 +1203,10 @@ def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType
 Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLabelDefined, Boolean actionStructureOk,
                                             Map actionItem, String printableStageAndAction,
                                             String keyWarnOrErrorMsgTemplate, String nodeSubKeyName) {
-    return nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubKeyName)) ?
-            errorMsgWrapper(check, actionStructureOk, 3, String.format(keyWarnOrErrorMsgTemplate, 'sub-',
-                    nodeSubKeyName, printableStageAndAction, '')) : actionStructureOk
+    String nodeNameOrLabelErrMsg = String.format(keyWarnOrErrorMsgTemplate, 'sub-', nodeSubKeyName,
+            printableStageAndAction, '')
+    nodeNameOrLabelDefined && !detectIsObjectConvertibleToString(actionItem.node.get(nodeSubKeyName)) ?
+            errorMsgWrapper(check, actionStructureOk, 3, nodeNameOrLabelErrMsg) : actionStructureOk
 }
 
 /**
@@ -1219,13 +1221,13 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
  *           - true when dry-run is enabled;
  *           - action message to print before action run.
  */
-static ArrayList getDryRunStateAndActionMsg(Object envVariables, String actionName, Map printableActionLinkItem,
-                                            ArrayList actionLinkItemKeysFilter) {
+static List getDryRunStateAndActionMsg(Object envVariables, String actionName, Map printableActionLinkItem,
+                                       List actionLinkItemKeysFilter) {
     Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
-    printableActionLinkItem = findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter)
-    String actionMsgDetails = String.format(' %s', printableActionLinkItem.size() > 0 ?
-            printableActionLinkItem.toString() : '')
-    return [dryRunAction, String.format('%s%s%s', dryRunAction ? 'dry-run of ' : '', actionName, actionMsgDetails)]
+    Map printableActionLinkItemTemp = findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter)
+    String actionMsgDetails = String.format(' %s', printableActionLinkItemTemp.size() > 0 ?
+            printableActionLinkItemTemp.toString() : '')
+    [dryRunAction, String.format('%s%s%s', dryRunAction ? 'dry-run of ' : '', actionName, actionMsgDetails)]
 }
 
 /**
@@ -1247,16 +1249,14 @@ static ArrayList getDryRunStateAndActionMsg(Object envVariables, String actionNa
  *           - universtal pipeline built-ins return;
  *           - environment variables return.
  */
-ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
-                                           Boolean check, Map universalPipelineWrapperBuiltIns,
-                                           String nodePipelineParameterName = 'NODE_NAME',
-                                           String nodeTagPipelineParameterName = 'NODE_TAG') {
+List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipelineSettings, Object envVariables,
+                                      Boolean check, Map universalPipelineWrapperBuiltIns,
+                                      String nodePipelineParameterName = 'NODE_NAME',
+                                      String nodeTagPipelineParameterName = 'NODE_TAG') {
     String actionDetails = ''
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
-    // TODO: executing on assigning? Perhaps no.
-    Map someClosureMap = [key1: { println '--- key1' }, key2: { println '--- key2' }]
     Map detectByKeys = [
             repo_url   : {
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionCloneGit(actionLink, actionLinkItem,
@@ -1296,7 +1296,6 @@ ArrayList checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map 
                 return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             script     : {
-                println '---check: ' + actionLink + ' : ' + check
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
                         actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns, true)
