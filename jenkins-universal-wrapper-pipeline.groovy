@@ -818,7 +818,7 @@ List pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettin
     Map pipelineSettings = loadPipelineSettings(settingsGitUrl, defaultSettingsGitBranch, settingsRelativePath,
             getBooleanPipelineParamState(pipelineParams, 'DEBUG_MODE'))
     String pipelineFailReasonText = ''
-    ArrayList allPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
+    List allPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParamsProcessingPass) =
     wrapperPipelineParametersProcessing(allPipelineParams, pipelineParams)
 
@@ -866,17 +866,17 @@ List pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettin
  */
 List checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
                                                Boolean execute = true) {
-    def (Map universalPipelineWrapperBuiltIns, Boolean executeOk) = [[:], true]
     String currentSubjectMsg = 'in pipeline config'
-    String functionCallTypes = String.format('%s%s%s', check ? 'check' : '', check & execute ? ' and ' : '',
-            execute ? 'execute' : '')
+    def (Map universalPipelineWrapperBuiltIns, Boolean executeOk) = [[:], true]
+    def (String checkTypeMsg, String executeTypeMsg) = [check ? 'check' : '', execute ? 'execute' : '']
+    String checkExecuteTypeMsg = check && execute ? ' and ' : ''
+    String functionCallTypes = String.format('%s%s%s', checkTypeMsg, checkExecuteTypeMsg, executeTypeMsg)
     Boolean pipelineSettingsContainsStages = pipelineSettings?.get('stages')?.size()
     Boolean checkOk = errorMsgWrapper(!pipelineSettingsContainsStages && ((check &&
             getBooleanVarStateFromEnv(envVariables)) || execute), true, 0, String.format('No stages %s to %s.',
             functionCallTypes, currentSubjectMsg))
-
     /** When pipeline stages are in the config starting iterate of it's items for check and/or execute. */
-    errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format("Starting %s stages %s.", functionCallTypes,
+    errorMsgWrapper(pipelineSettingsContainsStages, true, 0, String.format('Starting %s stages %s.', functionCallTypes,
             currentSubjectMsg))
     for (stageItem in pipelineSettings.stages) {
         Boolean stageOk
@@ -892,7 +892,7 @@ List checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envV
             }
         }
     }
-    return [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
+    [universalPipelineWrapperBuiltIns, checkOk && executeOk, envVariables]
 }
 
 /**
@@ -917,23 +917,23 @@ List checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envV
  *           - true when all stage actions execution/checking successfully done;
  *           - return of environment variables for current job build.
  */
-ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, Map stageItem, Map pipelineSettings,
-                                          Object envVariables, Boolean allPass = true, Boolean check = true) {
-    Map actionsRuns = [:]
+List checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, Map stageItem, Map pipelineSettings,
+                                     Object envVariables, Boolean allPass = true, Boolean check = true) {
+    def (Map actionsRuns, Boolean itsPass) = [[:], allPass]
 
     /** Handling 'name' (with possible assignment), 'actions' and 'parallel' stage keys. */
-    allPass = errorMsgWrapper(check && (!stageItem.containsKey('name') ||
-            !detectIsObjectConvertibleToString(stageItem.get('name'))), allPass, 3,
+    itsPass = errorMsgWrapper(check && (!stageItem.containsKey('name') ||
+            !detectIsObjectConvertibleToString(stageItem.get('name'))), itsPass, 3,
             "Unable to convert stage name to a string, probably it's undefined or empty.")
     String printableStageName = getPrintableValueKeyFromMapItem(stageItem)
     Boolean actionsIsNotList = stageItem.containsKey('actions') && !(stageItem.get('actions') instanceof ArrayList)
-    allPass = errorMsgWrapper(check && (!stageItem.containsKey('actions') || actionsIsNotList), allPass, 3,
+    itsPass = errorMsgWrapper(check && (!stageItem.containsKey('actions') || actionsIsNotList), itsPass, 3,
             String.format("Incorrect or undefined actions for '%s' stage.", printableStageName))
-    allPass = errorMsgWrapper(check && (stageItem.containsKey('parallel') &&
-            !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))), allPass, 3, String.format(
+    itsPass = errorMsgWrapper(check && (stageItem.containsKey('parallel') &&
+            !detectIsObjectConvertibleToBoolean(stageItem.get('parallel'))), itsPass, 3, String.format(
             "Unable to determine 'parallel' value for '%s' stage. Remove them or set as boolean.", printableStageName))
-    (allPass, stageItem) = templatingMapKeysFromVariables(stageItem, ['name'], envVariables, allPass)
-    ArrayList actionsInStage = actionsIsNotList ? [] : stageItem.get('actions') as ArrayList
+    (itsPass, stageItem) = templatingMapKeysFromVariables(stageItem, ['name'], envVariables, itsPass)
+    List actionsInStage = actionsIsNotList ? [] : stageItem.get('actions') as ArrayList
 
     /** Creating map and processing items from 'actions' key. */
     actionsInStage.eachWithIndex { item, Integer index ->
@@ -945,12 +945,11 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
             (universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
                     universalPipelineWrapperBuiltIns, printableStageName, actionsInStage[index] as Map,
                     pipelineSettings, index, envVariables, check)
-            allPass = checkOrExecuteOk ? allPass : false
+            itsPass = checkOrExecuteOk ? itsPass : false
             CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
                     CF.readableMap(universalPipelineWrapperBuiltIns)))
         }
     }
-    Map valuesFromRuns = [:]
     if (stageItem.get('parallel')?.toBoolean()) {
         parallel actionsRuns
     } else {
@@ -963,10 +962,10 @@ ArrayList checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, 
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
             actionsInStage?.size() > 1 ? 's' : '', stageItem.get('parallel') ? ' in parallel' : '') : '<no actions>'
     universalPipelineWrapperBuiltIns.multilineReportStagesMap = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
-            printableStageName, allPass, stageStatusDetails, '', false)
+            printableStageName, itsPass, stageStatusDetails, '', false)
     universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns,
             'multilineReportStages')
-    return [universalPipelineWrapperBuiltIns, allPass, envVariables]
+    [universalPipelineWrapperBuiltIns, itsPass, envVariables]
 }
 
 /**
