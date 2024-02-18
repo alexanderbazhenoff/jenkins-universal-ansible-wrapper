@@ -748,8 +748,10 @@ static Boolean getBooleanPipelineParamState(Object pipelineParams, String parame
  */
 static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
     Object nodeToExecute = null
+    // groovylint-disable-next-line UnnecessaryGetter
     nodeToExecute = (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) ?
             [label: env[nodeTagParamName]] : nodeToExecute
+    // groovylint-disable-next-line UnnecessaryGetter
     (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) ? env[nodeParamName] : nodeToExecute
 }
 
@@ -765,10 +767,9 @@ static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamNam
  * @return - formatted string table results.
  */
 static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
-                                        ArrayList regexItemsList = ['true', 'false'],
-                                        ArrayList replaceItemsList = ['[PASS]', '[FAIL]'], String formattedTable = '') {
-    Boolean createTable = false
-    Map tableColumnSizes = [:]
+                                        List regexItemsList = ['true', 'false'],
+                                        List replaceItemsList = ['[PASS]', '[FAIL]'], String formattedTable = '') {
+    def (Boolean createTable, Map tableColumnSizes) = [false, [:]]
     for (Integer i = 0; i < 2; i++) {
         sourceMap.each { sourceMapEntry ->
             sourceMapEntry.value.each { k, v ->
@@ -782,7 +783,7 @@ static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = '
         }
         createTable = !createTable
     }
-    return formattedTable
+    formattedTable
 }
 
 /**
