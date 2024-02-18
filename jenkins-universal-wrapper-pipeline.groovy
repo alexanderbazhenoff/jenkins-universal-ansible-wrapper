@@ -1008,10 +1008,10 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, List listOf
  * @param onlyOneOfThem - just a postfix message that means only one key required.
  * @return - formatted error message.
  */
-static String incompatibleKeysMsgWrapper(ArrayList keysForMessage, String keyDescriptionMessagePrefix = 'Keys',
+static String incompatibleKeysMsgWrapper(List keysForMessage, String keyDescriptionMessagePrefix = 'Keys',
                                          Boolean onlyOneOfThem = true) {
-    return String.format("%s %s are incompatible.%s", keyDescriptionMessagePrefix,
-            arrayListToReadableString(keysForMessage), onlyOneOfThem ? ' Please define only one of them.' : '')
+    String.format('%s %s are incompatible.%s', keyDescriptionMessagePrefix, arrayListToReadableString(keysForMessage),
+            onlyOneOfThem ? ' Please define only one of them.' : '')
 }
 
 /**
@@ -1034,19 +1034,17 @@ static String incompatibleKeysMsgWrapper(ArrayList keysForMessage, String keyDes
  *           - true when all stage actions execution successfully done;
  *           - environment variables ('env').
  */
-ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, String stageName, Map actionItem,
+List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, String stageName, Map actionItem,
                                            Map pipelineSettings, Integer actionIndex, Object envVariables,
                                            Boolean check) {
-    Boolean actionStructureOk = true
-    Boolean actionLinkOk = true
+    def (Boolean actionStructureOk, Boolean actionLinkOk, Map nodeItem) = [true, true, [:]]
     String actionDescription = '<skipped>'
-    Map nodeItem = [:]
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
 
     /** Check keys are not empty and convertible to required type and check incompatible keys. */
-    ArrayList stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
-    ArrayList booleanKeys = ['ignore_fail', 'stop_on_fail', 'success_only', 'fail_only']
+    List stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
+    List booleanKeys = ['ignore_fail', 'stop_on_fail', 'success_only', 'fail_only']
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
             printableStageAndAction, actionStructureOk)
     actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
@@ -1068,8 +1066,7 @@ ArrayList checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns,
         nodeItem = actionItem.get('node') as Map
 
         /** Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct. */
-        String incompatibleKeysMessage
-        ArrayList nodeSubKeyNames = ['name', 'label']
+        List nodeSubKeyNames = ['name', 'label']
         Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
         actionStructureOk = errorMsgWrapper(check && !onlyNameOrLabelDefined, actionStructureOk, 2,
                 incompatibleKeysMsgWrapper(nodeSubKeyNames, 'Node sub-keys'))
