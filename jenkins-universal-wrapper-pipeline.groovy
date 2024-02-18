@@ -1407,7 +1407,7 @@ List actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closur
     def (Object additionalObject, Boolean newActionOk) = [null, actionOk]
     def (Boolean dryRunAction, String actionMsg) = getDryRunStateAndActionMsg(envVariables, actionName,
             printableActionLinkItem, actionKeysFilterLists)
-    if (!check && !dryRunAction)
+    if (!check && !dryRunAction) {
         try {
             CF.outMsg(0, String.format('Performing %s', actionMsg))
             (newActionOk, universalPipelineWrapperBuiltIns, additionalObject) = actionClosure.call()
@@ -1415,6 +1415,7 @@ List actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closur
             newActionOk = errorMsgWrapper(true, newActionOk, 3, String.format("Error %s in '%s': %s", actionMsg,
                     actionLink, CF.readableError(err)))
         }
+    }
     [newActionOk, actionMsg, universalPipelineWrapperBuiltIns, additionalObject]
 }
 
@@ -1430,7 +1431,7 @@ static Object updateEnvFromMapKeys(Map mapToUpdateFrom, Object envVariables) {
     mapToUpdateFrom.each { mapToUpdateFromKey, mapToUpdateFromValue ->
         envVariables[mapToUpdateFromKey.toString()] = mapToUpdateFromValue.toString()
     }
-    return envVariables
+    envVariables
 }
 
 /**
