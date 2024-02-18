@@ -1041,7 +1041,6 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
     String actionDescription = '<skipped>'
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
-
     /** Check keys are not empty and convertible to required type and check incompatible keys. */
     List stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
     List booleanKeys = ['ignore_fail', 'stop_on_fail', 'success_only', 'fail_only']
@@ -1051,9 +1050,8 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
             printableStageAndAction, actionStructureOk)
     actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
             .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper(['success_only', 'fail_only']))
-    (actionStructureOk, actionItem) = templatingMapKeysFromVariables(actionItem, stringKeys + ['action', 'node'] as
-            ArrayList, envVariables, actionStructureOk, [:], 'Action key')
-
+    (actionStructureOk, actionItem) = templatingMapKeysFromVariables(actionItem, stringKeys +
+            ['action', 'node'] as ArrayList, envVariables, actionStructureOk, [:], 'Action key')
     /** Check node keys and sub-keys defined properly. */
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
     Boolean nodeIsStringConvertible = detectIsObjectConvertibleToString(actionItem.get('node'))
@@ -1064,7 +1062,6 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
         nodeItem.node.name = nodeIsStringConvertible ? actionItem.node.toString() : actionItem.get('node')?.get('name')
     } else if (actionItem.get('node') instanceof Map) {
         nodeItem = actionItem.get('node') as Map
-
         /** Check only one of 'node' sub-keys 'name' or 'label' defined and it's correct. */
         List nodeSubKeyNames = ['name', 'label']
         Boolean onlyNameOrLabelDefined = actionItem.node.containsKey('name') ^ actionItem.node.containsKey('label')
@@ -1074,7 +1071,6 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
                 actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'name')
         actionStructureOk = detectNodeSubKeyConvertibleToString(check, !onlyNameOrLabelDefined, actionStructureOk,
                 actionItem, printableStageAndAction, keyWarnOrErrMsgTemplate, 'label')
-
         /** Check when 'pattern' node sub-key defined and boolean. */
         if (checkListOfKeysFromMapProbablyStringOrBoolean(check, ['pattern'], actionItem.node as Map, false,
                 printableStageAndAction)) {
@@ -1084,7 +1080,6 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
                     'sub-', 'pattern', printableStageAndAction, 'Sub-key should be boolean.'))
             nodeItem.node.remove('pattern')
         }
-
         /** Templating node sub-keys. */
         (actionStructureOk, nodeItem) = templatingMapKeysFromVariables(nodeItem, nodeSubKeyNames, envVariables,
                 actionStructureOk, [:], 'Node (sub-keys of action key)')
@@ -1092,9 +1087,7 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
         actionStructureOk = errorMsgWrapper(check, actionStructureOk, 3, String.format(keyWarnOrErrMsgTemplate, '',
                 'node', printableStageAndAction, 'Key will be ignored.'))
     }
-    /**
-     * Check or execute current action when 'action' key is correct and possible success_only/fail_only conditions met.
-     */
+    /** Check or execute current action when 'action' key is correct and possible success_/fail_only conditions met. */
     Boolean actionIsCorrect = checkListOfKeysFromMapProbablyStringOrBoolean(check, ['action'], actionItem, true,
             printableStageAndAction)
     actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('action') && !actionIsCorrect,
@@ -1112,7 +1105,6 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
         actionMessageOutputWrapper(check, actionItem, 'before', envVariables)
         currentBuild.displayName = !check && actionItem.get('build_name') ? actionItem.get('build_name') :
                 currentBuild.displayName
-
         /** Directory change wrapper. */
         String actionItemCurrentDirectory = actionItem.get('dir')?.toString() ?: ''
         if (!check && actionItemCurrentDirectory.trim()) {
@@ -1126,7 +1118,6 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
                     checkOrExecutePipelineActionLink(actionItem.action as String, nodeItem?.get('node') as Map,
                             pipelineSettings, envVariables, check, universalPipelineWrapperBuiltIns)
         }
-
         /** Processing post-messages and/or 'ignore_fail' keys. */
         actionMessageOutputWrapper(check, actionItem, 'after', envVariables)
         actionMessageOutputWrapper(check, actionItem, actionLinkOk ? 'success' : 'fail', envVariables)
@@ -1136,7 +1127,6 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
                 String.format("No 'action' key specified, nothing to %s '%s' action.",
                         check ? 'check in' : 'perform at', printableStageAndAction))
     }
-
     /** Processing action link state, updating results of current build and actions report, stop on fail handle. */
     Boolean actionStructureAndLinkOk = actionStructureOk && actionLinkOk
     Map multilineReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportMap') ?
