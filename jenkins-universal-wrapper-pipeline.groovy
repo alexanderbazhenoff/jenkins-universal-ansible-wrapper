@@ -610,7 +610,7 @@ static List extractParamsListFromSettingsMap(Map pipelineSettings, List builtinP
  */
 Boolean regexCheckAllRequiredPipelineParams(List allPipelineParams, Object pipelineParameters, Object envVariables) {
     Boolean allCorrect = true
-    CF.outMsg(0, "Starting regex check and regex replacement of pipeline parameters for current build.")
+    CF.outMsg(0, 'Starting regex check and regex replacement of pipeline parameters for current build.')
     if (allPipelineParams[0]) {
         allPipelineParams.each {
             def (String printableParamName, Boolean paramIsDefined) = getPipelineParamNameAndDefinedState(it as Map,
@@ -809,11 +809,9 @@ static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = '
  *           - map with all pipeline settings loaded from the yaml file in settings repo;
  *           - environment variables for current job build return.
  */
-ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettingsGitBranch,
-                                          String settingsRelativePathPrefix, ArrayList pipelineNameRegexReplace,
-                                          ArrayList builtinPipelineParameters, Object envVariables,
-                                          Object pipelineParams) {
-
+List pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettingsGitBranch,
+                                     String settingsRelativePathPrefix, List pipelineNameRegexReplace,
+                                     List builtinPipelineParameters, Object envVariables, Object pipelineParams) {
     /** Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings. */
     String settingsRelativePath = String.format('%s/%s.yaml', settingsRelativePathPrefix,
             applyReplaceRegexItems(envVariables.JOB_NAME.toString(), pipelineNameRegexReplace))
@@ -829,7 +827,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
     if (noPipelineParamsInTheConfig && pipelineParamsProcessingPass) {
         CF.outMsg(1, 'No pipeline parameters in the config.')
     } else if (!noPipelineParamsInTheConfig) {
-        CF.outMsg(0, "Checking all pipeline parameters format in the settings.")
+        CF.outMsg(0, 'Checking all pipeline parameters format in the settings.')
         checkPipelineParametersPass = checkPipelineParamsFormat(allPipelineParams)
         if (checkPipelineParametersPass || getBooleanPipelineParamState(pipelineParams)) {
             Boolean requiredPipelineParamsSet
@@ -844,7 +842,7 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
                     'Required pipeline parameter(s) was not specified or incorrect. '
         }
     }
-    return [pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env]
+    [pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env]
 }
 
 /**
@@ -866,10 +864,9 @@ ArrayList pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultS
  *           - true when checking and execution pass (or skipped), false on checking or execution errors;
  *           - return of environment variables ('env') that pass to function in 'envVariables'.
  */
-ArrayList checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
-                                                    Boolean execute = true) {
-    Map universalPipelineWrapperBuiltIns = [:]
-    Boolean executeOk = true
+List checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envVariables, Boolean check = false,
+                                               Boolean execute = true) {
+    def (Map universalPipelineWrapperBuiltIns, Boolean executeOk) = [[:], true]
     String currentSubjectMsg = 'in pipeline config'
     String functionCallTypes = String.format('%s%s%s', check ? 'check' : '', check & execute ? ' and ' : '',
             execute ? 'execute' : '')
