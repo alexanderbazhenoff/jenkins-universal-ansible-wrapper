@@ -145,8 +145,7 @@ static String getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'nam
  *           - true when no errors.
  */
 List verifyPipelineParamsArePresents(List requiredParams, Object currentPipelineParams) {
-    Boolean updateParamsRequired = false
-    Boolean verifyPipelineParamsOk = true
+    def (Boolean updateParamsRequired, Boolean verifyPipelineParamsOk) = [false, true]
     String ignoreMsg = 'Skipping parameter from pipeline settings'
     String keyValueIncorrectMsg = 'key for pipeline parameter is undefined or incorrect value specified'
     requiredParams.each {
@@ -159,9 +158,10 @@ List verifyPipelineParamsArePresents(List requiredParams, Object currentPipeline
             verifyPipelineParamsOk = false
         }
         if (!it.get('name') || !paramNameConvertibleToString || !paramNamingCorrect) {
-            verifyPipelineParamsOk = errorMsgWrapper(true, true, 3, String.format("%s: '%s' %s%s", ignoreMsg, 'name',
-                    keyValueIncorrectMsg, paramNameConvertibleToString && !paramNamingCorrect ?
-                    " (parameter name didn't met POSIX standards)." : '.'))
+            String pipelineParamPosixMsg = String.format("%s: '%s' %s%s", ignoreMsg, 'name', keyValueIncorrectMsg,
+                    paramNameConvertibleToString && !paramNamingCorrect ?
+                    " (parameter name didn't met POSIX standards)." : '.')
+            verifyPipelineParamsOk = errorMsgWrapper(true, true, 3, pipelineParamPosixMsg)
         } else if (it.get('name') && !currentPipelineParams.containsKey(it.get('name'))) {
             updateParamsRequired = true
         }
@@ -343,11 +343,13 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
             !item.containsKey('name'), checkOk)
 
     /** When 'assign' sub-key is defined inside 'on_empty' key, checking it's correct. */
-    checkOk = pipelineSettingsItemError(3, printableParameterName, String.format("%s: '%s'",
-            'Unable to assign due to incorrect variable name', item.get('on_empty')?.get('assign')), item
-            .get('on_empty') && item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$') &&
-            // groovylint-disable-next-line GStringExpressionWithinString
-            !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString().replaceAll('[\${}]', '')), checkOk)
+    String pipeParamSettingsAssignErrMsg = String.format("%s: '%s'", 'Unable to assign due to incorrect variable name',
+            item.get('on_empty')?.get('assign'))
+    Boolean pipeParamSettingsAssignEnableCheck = item.get('on_empty') &&
+            item.on_empty.get('assign') instanceof String && item.on_empty.assign.startsWith('$')
+    checkOk = pipelineSettingsItemError(3, printableParameterName, pipeParamSettingsAssignErrMsg,
+            pipeParamSettingsAssignEnableCheck && !checkEnvironmentVariableNameCorrect(item.on_empty.assign.toString()
+                    .replaceAll('[\${}]', '')), checkOk)  // groovylint-disable-line GStringExpressionWithinString
 
     if (item.containsKey('type')) {
         /** Check 'type' value with other keys data type mismatch. */
@@ -562,7 +564,7 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
             if (parameterIsUndefined) {
                 String assignMessage = ''
                 def (Boolean paramNeedsToBeAssigned, Boolean assignmentOk, String parameterAssignment, Boolean fail,
-                Boolean warn) = handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
+                        Boolean warn) = handleAssignmentWhenPipelineParamIsUnset(it as Map, envVariables)
                 if (paramNeedsToBeAssigned && assignmentOk && printableParameterName != '<undefined>' &&
                         parameterAssignment.trim()) {
                     envVariables[it.name.toString()] = parameterAssignment
@@ -645,9 +647,10 @@ Boolean regexCheckAllRequiredPipelineParams(List allPipelineParams, Object pipel
                 /** Handle 'to' sub-key of 'regex_replace' parameter item key. */
                 String regexReplacement = it.regex_replace?.get('to')?.trim() ? it.regex_replace.get('to') : ''
                 Boolean regexToKeyIsConvertibleToString = detectIsObjectConvertibleToString(it.regex_replace.get('to'))
+                String pipelineParamKeysWrongTypeMsg = String.format(msgTemplateWrongType, 'to', printableParamName,
+                        msgRecommendation)
                 Boolean regexReplacementOk = errorMsgWrapper(regexReplacement?.trim() &&
-                        !regexToKeyIsConvertibleToString, false, 3, String.format(msgTemplateWrongType, 'to',
-                        printableParamName, msgRecommendation))
+                        !regexToKeyIsConvertibleToString, false, 3, pipelineParamKeysWrongTypeMsg)
 
                 /** Handle 'regex' sub-key of 'regex_replace' parameter item key. */
                 String regexPattern = it.regex_replace.get('regex')
@@ -656,9 +659,9 @@ Boolean regexCheckAllRequiredPipelineParams(List allPipelineParams, Object pipel
                     errorMsgWrapper(!regexReplacement.trim(), false, 0, String.format(msgTemplateNoValue, 'to',
                             printableParamName, 'Regex match(es) will be removed.'))
                     if (paramIsDefined && printableParamName != '<undefined>') {
-                        regexReplacementOk = errorMsgWrapper(true, true, 0,
-                                String.format("Replacing '%s' regex to '%s' in '%s' pipeline parameter value...",
-                                        regexPattern, regexReplacement, printableParamName))
+                        String pipelineParamReplacementMsg = String.format("Replacing '%s' regex to '%s' in '%s' %s...",
+                                regexPattern, regexReplacement, printableParamName, 'pipeline parameter value')
+                        regexReplacementOk = errorMsgWrapper(true, true, 0, pipelineParamReplacementMsg)
                         envVariables[it.name.toString()] = applyReplaceRegexItems(envVariables[it.name
                                 .toString()] as String, [regexPattern], [regexReplacement])
                     }
@@ -820,7 +823,7 @@ List pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettin
     String pipelineFailReasonText = ''
     List allPipelineParams = extractParamsListFromSettingsMap(pipelineSettings, builtinPipelineParameters)
     def (Boolean noPipelineParamsInTheConfig, Boolean pipelineParamsProcessingPass) =
-    wrapperPipelineParametersProcessing(allPipelineParams, pipelineParams)
+            wrapperPipelineParametersProcessing(allPipelineParams, pipelineParams)
 
     /** Check pipeline parameters in the settings are correct, all of them was defined properly for current build. */
     Boolean checkPipelineParametersPass = true
