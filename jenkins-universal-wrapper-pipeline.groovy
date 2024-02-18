@@ -1450,41 +1450,39 @@ static Object updateEnvFromMapKeys(Map mapToUpdateFrom, Object envVariables) {
  *           - true when success, false when failed;
  *           - action details for logging.
  */
-ArrayList actionInstallAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
-                                          Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
-    String actionMsg
-    String actionName = 'install ansible collection'
+List actionInstallAnsibleCollections(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+                                     Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+    def (String actionName, Boolean newActionOk) = ['install ansible collection', actionOk]
     Boolean collectionsKeyIsCorrect = actionLinkItem?.get('collections') instanceof ArrayList ||
             actionLinkItem?.get('collections') instanceof String
-    actionOk = errorMsgWrapper(!collectionsKeyIsCorrect, actionOk, 3, String.format(
+    newActionOk = errorMsgWrapper(!collectionsKeyIsCorrect, newActionOk, 3, String.format(
             "Unable to %s in '%s' action: 'collections' key should be string or list.", actionName, actionLink))
-    ArrayList ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof String) ?
+    List ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof String) ?
             [actionLinkItem.collections] : []
     ansibleCollections = (collectionsKeyIsCorrect && actionLinkItem.collections instanceof ArrayList) ?
             actionLinkItem.collections as ArrayList : []
     ansibleCollections.eachWithIndex { ansibleEntry, Integer ansibleCollectionsListIndex ->
         Boolean ansibleEntryIsString = ansibleEntry instanceof String
         if (ansibleEntryIsString) {
+            // groovylint-disable-next-line VariableTypeRequired, NoDef
             def (__, Boolean assignOk, String assignment) = getTemplatingFromVariables(ansibleEntry as String,
                     envVariables, universalPipelineWrapperBuiltIns)
             ansibleCollections[ansibleCollectionsListIndex] = assignment
-            actionOk = errorMsgWrapper(!assignOk, assignOk, 3, String.format(
-                    "'%s' %s item in '%s' action wasn't set properly due to undefined variable(s).", ansibleEntry,
-                    actionName, actionLink))
+            newActionOk = errorMsgWrapper(!assignOk, assignOk, 3,
+                    String.format("'%s' %s item in '%s' action wasn't set properly due to undefined variable(s).",
+                            ansibleEntry, actionName, actionLink))
         }
-        actionOk = errorMsgWrapper(!ansibleEntryIsString, actionOk, 3, String.format(
+        newActionOk = errorMsgWrapper(!ansibleEntryIsString, newActionOk, 3, String.format(
                 "'%s' %s item in '%s' should be string.", ansibleEntry.toString(), actionName, actionLink))
     }
     Closure actionClosure = {
         ansibleCollections.each { ansibleCollectionsItem ->
             sh String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem)
         }
-        return [actionOk, universalPipelineWrapperBuiltIns, null]
+        [newActionOk, universalPipelineWrapperBuiltIns, null]
     }
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
-            actionClosure, actionLink, actionName, actionLinkItem, ['collections'], actionOk,
-            universalPipelineWrapperBuiltIns)
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
+    actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink, actionName, actionLinkItem,
+            ['collections'], newActionOk, universalPipelineWrapperBuiltIns)
 }
 
 /**
