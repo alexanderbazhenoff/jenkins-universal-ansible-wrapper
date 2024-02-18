@@ -920,7 +920,7 @@ List checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envV
 List checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, Map stageItem, Map pipelineSettings,
                                      Object envVariables, Boolean allPass = true, Boolean check = true) {
     def (Map actionsRuns, Boolean itsPass) = [[:], allPass]
-
+    Map uniPipeWrapBuiltInsInChkExec = universalPipelineWrapperBuiltIns
     /** Handling 'name' (with possible assignment), 'actions' and 'parallel' stage keys. */
     itsPass = errorMsgWrapper(check && (!stageItem.containsKey('name') ||
             !detectIsObjectConvertibleToString(stageItem.get('name'))), itsPass, 3,
@@ -942,12 +942,12 @@ List checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, Map s
             String actionRunsMsg = String.format("action#%s from '%s' stage", index.toString(), printableStageName)
             CF.outMsg(check ? 0 : 1, String.format('%s %s', checkOrExecuteMsg, actionRunsMsg))
             Boolean checkOrExecuteOk
-            (universalPipelineWrapperBuiltIns, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
-                    universalPipelineWrapperBuiltIns, printableStageName, actionsInStage[index] as Map,
+            (uniPipeWrapBuiltInsInChkExec, checkOrExecuteOk, envVariables) = checkOrExecutePipelineActionItem(
+                    uniPipeWrapBuiltInsInChkExec, printableStageName, actionsInStage[index] as Map,
                     pipelineSettings, index, envVariables, check)
             itsPass = checkOrExecuteOk ? itsPass : false
             CF.outMsg(0, String.format('%s %s finished. Total:\n%s', checkOrExecuteMsg, actionRunsMsg,
-                    CF.readableMap(universalPipelineWrapperBuiltIns)))
+                    CF.readableMap(uniPipeWrapBuiltInsInChkExec)))
         }
     }
     if (stageItem.get('parallel')?.toBoolean()) {
@@ -957,15 +957,15 @@ List checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, Map s
             it.value.call()
         }
     }
-    Map multilineStagesReportMap = universalPipelineWrapperBuiltIns?.get('multilineReportStagesMap') ?
-            universalPipelineWrapperBuiltIns.multilineReportStagesMap as Map : [:]
+    Map multilineStagesReportMap = uniPipeWrapBuiltInsInChkExec?.get('multilineReportStagesMap') ?
+            uniPipeWrapBuiltInsInChkExec.multilineReportStagesMap as Map : [:]
     String stageStatusDetails = stageItem.actions?.size() ? String.format('%s action%s%s.', actionsInStage?.size(),
             actionsInStage?.size() > 1 ? 's' : '', stageItem.get('parallel') ? ' in parallel' : '') : '<no actions>'
-    universalPipelineWrapperBuiltIns.multilineReportStagesMap = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
+    uniPipeWrapBuiltInsInChkExec.multilineReportStagesMap = CF.addPipelineStepsAndUrls(multilineStagesReportMap,
             printableStageName, itsPass, stageStatusDetails, '', false)
-    universalPipelineWrapperBuiltIns = updateWrapperBuiltInsInStringFormat(universalPipelineWrapperBuiltIns,
+    uniPipeWrapBuiltInsInChkExec = updateWrapperBuiltInsInStringFormat(uniPipeWrapBuiltInsInChkExec,
             'multilineReportStages')
-    [universalPipelineWrapperBuiltIns, itsPass, envVariables]
+    [uniPipeWrapBuiltInsInChkExec, itsPass, envVariables]
 }
 
 /**
@@ -979,20 +979,22 @@ List checkOrExecuteStageSettingsItem(Map universalPipelineWrapperBuiltIns, Map s
  * @param currentStatus - current status to change on error in check mode, or not to change on execution.
  * @return - true when all map items is not empty and correct type.
  */
-Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, ArrayList listOfKeys, Map map, Boolean isString,
+Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, List listOfKeys, Map map, Boolean isString,
                                                       String index, Boolean currentStatus = true) {
+    Boolean currentStatusInCheckListOfMapKeys = currentStatus
     listOfKeys.each {
         Boolean typeOk = isString ? detectIsObjectConvertibleToString(map.get(it)) :
                 detectIsObjectConvertibleToBoolean(map.get(it))
         if (map.containsKey(it) && !typeOk) {
-            currentStatus = errorMsgWrapper(check, currentStatus, 3, String.format("'%s' key in '%s' should be a %s.",
-                    it, index, isString ? 'string' : 'boolean'))
+            currentStatusInCheckListOfMapKeys = errorMsgWrapper(check, currentStatusInCheckListOfMapKeys, 3,
+                    String.format("'%s' key in '%s' should be a %s.", it, index, isString ? 'string' : 'boolean'))
         } else if (map.containsKey(it) && !map.get(it)?.toString()?.length()) {
-            currentStatus = errorMsgWrapper(check, currentStatus, 2, String.format(
-                    "'%s' key defined for '%s', but it's empty. Remove a key or define it's value.", it, index))
+            currentStatusInCheckListOfMapKeys = errorMsgWrapper(check, currentStatusInCheckListOfMapKeys, 2,
+                    String.format("'%s' key defined for '%s', but it's empty. Remove a key or define it's value.", it,
+                            index))
         }
     }
-    return currentStatus
+    currentStatusInCheckListOfMapKeys
 }
 
 /**
