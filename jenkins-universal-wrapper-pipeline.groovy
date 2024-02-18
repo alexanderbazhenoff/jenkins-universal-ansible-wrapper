@@ -1257,55 +1257,45 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
     def (Boolean actionLinkIsDefined, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     Boolean actionOk = errorMsgWrapper(!actionLinkIsDefined && check, true, 3,
             String.format("Action '%s' is not defined or incorrect data type in value.", actionLink))
+    /** Every action closure return actionOk, actionMsg and universalPipelineWrapperBuiltIns. */
     Map detectByKeys = [
             repo_url   : {
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionCloneGit(actionLink, actionLinkItem,
-                        envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                actionCloneGit(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
             },
             collections: {
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
-                        actionInstallAnsibleCollections(actionLink, actionLinkItem, envVariables, check, actionOk,
-                                universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                actionInstallAnsibleCollections(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
             },
             playbook   : {
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
-                        actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
+                // TODO: check order of function return
+                actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns, false)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
             },
             pipeline   : {
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionDownstreamJobRun(actionLink,
-                        actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                actionDownstreamJobRun(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
             },
             stash      : {
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionUnStash(actionLink, actionLinkItem,
-                        envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                actionUnStash(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
             },
             unstash    : {
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionUnStash(actionLink, actionLinkItem,
-                        envVariables, check, actionOk, universalPipelineWrapperBuiltIns, false)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                actionUnStash(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns, false)
             },
             artifacts  : {
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionArchiveArtifacts(actionLink,
-                        actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                actionArchiveArtifacts(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
             },
             script     : {
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) =
-                        actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
-                                universalPipelineWrapperBuiltIns, true)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns, true)
             },
             report     : {
                 // TODO: fix change of pipelineSettings here
-                (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = actionSendReport(actionLink,
-                        actionLinkItem, envVariables, check, actionOk, universalPipelineWrapperBuiltIns)
-                return [actionOk, actionDetails, universalPipelineWrapperBuiltIns]
+                actionSendReport(actionLink, actionLinkItem, envVariables, check, actionOk,
+                        universalPipelineWrapperBuiltIns)
             }
     ]
 
@@ -1332,7 +1322,6 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
     }
 
     /** Executing determined action with possible node change or check without node change. */
-    println String.format('%s %s pipelineSettings(-): %s', actionLink, check ? 'check' : 'exec', pipelineSettings)
     if (keysFound) {
         if (!check && currentNodeData.toString() != changeNodeData.toString()) {
             node(changeNodeData) {
@@ -1345,11 +1334,10 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
             (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = keysFound[keysFound.keySet()[0]].call()
         }
     }
-    println String.format('%s %s pipelineSettings: %s', actionLink, check ? 'check' : 'exec', pipelineSettings)
     actionDetails = String.format('%s: %s', actionLink, (keysFound) ? actionDetails : '<undefined or incorrect key(s)>')
     if (!check && !actionOk) currentBuild.result = 'FAILURE'
     universalPipelineWrapperBuiltIns.currentBuild_result = currentBuild.result?.trim() ?: 'SUCCESS'
-    return [actionOk, actionDetails, universalPipelineWrapperBuiltIns, envVariables]
+    [actionOk, actionDetails, universalPipelineWrapperBuiltIns, envVariables]
 }
 
 /**
