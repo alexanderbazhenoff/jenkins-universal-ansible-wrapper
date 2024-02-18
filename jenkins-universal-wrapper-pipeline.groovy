@@ -1015,13 +1015,38 @@ static String incompatibleKeysMsgWrapper(List keysForMessage, String keyDescript
 }
 
 /**
+ * Check keys are not empty and convertible to required type and check incompatible keys.
+ *
+ * @param actionItem - source (non-templated) action item to check or execute.
+ * @param printableStageAndAction - printable stage and action for messaging.
+ * @param envVariables - environment variables for current job build.
+ * @param check - set false to execute action item, true to check.
+ * @return - arrayList of:
+ *           - true when action item structure is ok;
+ *           - templated action item to check or execute.
+ */
+List checkKeysNotEmptyAndConvertibleToReqType(Map actionItem, String printableStageAndAction, Object envVariables,
+                                              Boolean check) {
+    List stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
+    List booleanKeys = ['ignore_fail', 'stop_on_fail', 'success_only', 'fail_only']
+    Boolean actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
+            printableStageAndAction, true)
+    actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
+            printableStageAndAction, actionStructureOk)
+    actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
+            .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper(['success_only', 'fail_only']))
+    templatingMapKeysFromVariables(actionItem, stringKeys + ['action', 'node'] as ArrayList, envVariables,
+            actionStructureOk, [:], 'Action key')
+}
+
+/**
  * Check action item defined properly or execute action item from stage.
  *
  * @param universalPipelineWrapperBuiltIns - pipeline settings built-ins variable with report in various formats (see:
  *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
  * @param stageName - the name of the current stage from which to test or execute the action item (just for logging
  *                    in all action status map - see @return of this function).
- * @param actionItem - action item to check or execute.
+ * @param actionItemSource - source (non-templated) action item to check or execute.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
  * @param actionIndex - number of current action in stages.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
@@ -1034,24 +1059,13 @@ static String incompatibleKeysMsgWrapper(List keysForMessage, String keyDescript
  *           - true when all stage actions execution successfully done;
  *           - environment variables ('env').
  */
-List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, String stageName, Map actionItem,
-                                           Map pipelineSettings, Integer actionIndex, Object envVariables,
-                                           Boolean check) {
-    def (Boolean actionStructureOk, Boolean actionLinkOk, Map nodeItem) = [true, true, [:]]
-    String actionDescription = '<skipped>'
+List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, String stageName, Map actionItemSource,
+                                      Map pipelineSettings, Integer actionIndex, Object envVariables, Boolean check) {
+    def (Boolean actionLinkOk, Map nodeItem, String actionDescription) = [true, [:], '<skipped>']
     String printableStageAndAction = String.format('%s [%s]', stageName, actionIndex)
     String keyWarnOrErrMsgTemplate = "Wrong format of node %skey '%s' for '%s' action. %s"
-    /** Check keys are not empty and convertible to required type and check incompatible keys. */
-    List stringKeys = ['before_message', 'after_message', 'fail_message', 'success_message', 'dir', 'build_name']
-    List booleanKeys = ['ignore_fail', 'stop_on_fail', 'success_only', 'fail_only']
-    actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringKeys, actionItem, true,
-            printableStageAndAction, actionStructureOk)
-    actionStructureOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, booleanKeys, actionItem, false,
-            printableStageAndAction, actionStructureOk)
-    actionStructureOk = errorMsgWrapper(check && actionItem.containsKey('success_only') && actionItem
-            .containsKey('fail_only'), actionStructureOk, 3, incompatibleKeysMsgWrapper(['success_only', 'fail_only']))
-    (actionStructureOk, actionItem) = templatingMapKeysFromVariables(actionItem, stringKeys +
-            ['action', 'node'] as ArrayList, envVariables, actionStructureOk, [:], 'Action key')
+    def (Boolean actionStructureOk, Map actionItem) = checkKeysNotEmptyAndConvertibleToReqType(actionItemSource,
+            printableStageAndAction, envVariables, check)
     /** Check node keys and sub-keys defined properly. */
     Boolean anyJenkinsNode = (actionItem.containsKey('node') && !actionItem.get('node'))
     Boolean nodeIsStringConvertible = detectIsObjectConvertibleToString(actionItem.get('node'))
@@ -1137,7 +1151,7 @@ List checkOrExecutePipelineActionItem(Map universalPipelineWrapperBuiltIns, Stri
     if (actionItem.get('stop_on_fail') && !check && !actionLinkOk)
         error String.format("Terminating current pipeline run due to an error in '%s' %s.", printableStageAndAction,
                 "('stop_on_fail' is enabled for current action)")
-    return [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
+    [universalPipelineWrapperBuiltIns, actionStructureAndLinkOk, envVariables]
 }
 
 /**
