@@ -791,7 +791,7 @@ Boolean regexCheckAllRequiredPipelineParams(List allPipelineParams, Object pipel
                         String pipelineParamReplacementMsg = String.format("Replacing '%s' regex to '%s' in '%s' %s...",
                                 regexPattern, regexReplacement, printableParamName, 'pipeline parameter value')
                         regexReplacementOk = errorMsgWrapper(true, true, 0, pipelineParamReplacementMsg)
-                        envVariables[it.name.toString()] = CM.applyReplaceRegexItems(envVariables[it.name
+                        envVariables[it.name.toString()] = CF.applyReplaceRegexItems(envVariables[it.name
                                 .toString()] as String, [regexPattern], [regexReplacement])
                     }
                     regexReplacementOk = errorMsgWrapper(printableParamName == '<undefined>', regexReplacementOk, 3,
@@ -868,7 +868,7 @@ List pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettin
                                      List builtinPipelineParameters, Object envVariables, Object pipelineParams) {
     /** Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings. */
     String settingsRelativePath = String.format('%s/%s.yaml', settingsRelativePathPrefix,
-            CM.applyReplaceRegexItems(envVariables.JOB_NAME.toString(), pipelineNameRegexReplace))
+            CF.applyReplaceRegexItems(envVariables.JOB_NAME.toString(), pipelineNameRegexReplace))
     Map pipelineSettings = loadPipelineSettings(settingsGitUrl, defaultSettingsGitBranch, settingsRelativePath,
             getBooleanPipelineParamState(pipelineParams, 'DEBUG_MODE'))
     String pipelineFailReasonText = ''
