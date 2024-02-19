@@ -263,21 +263,20 @@ static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamNam
  *
  * @param sourceMap - source map to create text table from.
  * @param replaceKeyName - key name in source map to perform value replacement.
- * @param regexItemsList - list of regex items to apply for value replacement.
- * @param replaceItemsList - list of items for value replacement to replace with. List must be the same length as a
- *                           regexItemsList, otherwise will be replaced with empty line ''
+ * @param regexItems - list of regex items to apply for value replacement.
+ * @param replaceItems - list of items for value replacement to replace with. List must be the same length as a
+ *                       regexItemsList, otherwise will be replaced with empty line ''
  * @param formattedTable - pass a table header here.
  * @return - formatted string table results.
  */
-static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
-                                        List regexItemsList = ['true', 'false'],
-                                        List replaceItemsList = ['[PASS]', '[FAIL]'], String formattedTable = '') {
+String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state', List regexItems = ['true', 'false'],
+                                 List replaceItems = ['[PASS]', '[FAIL]'], String formattedTable = '') {
     def (Boolean createTable, Map tableColumnSizes) = [false, [:]]
     for (Integer i = 0; i < 2; i++) {
         sourceMap.each { sourceMapEntry ->
             sourceMapEntry.value.each { k, v ->
                 String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
-                        CF.applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
+                        CF.applyReplaceRegexItems(v.toString(), regexItems, replaceItems) : v.toString()
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
                 Integer padSize = tableColumnSizes[k] - tableEntry.length()
                 formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' * padSize) : ''
