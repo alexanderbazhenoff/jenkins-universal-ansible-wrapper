@@ -11,7 +11,7 @@
  */
 
 import groovy.text.StreamingTemplateEngine
-
+// groovylint-disable-next-line MethodCount
 @Library('jenkins-shared-library-alx@updates')
 
 /**
@@ -136,7 +136,6 @@ static String arrayListToReadableString(List arrayListItems, Boolean splitLastBy
 static String mapItemsToReadableListString(Map map, Boolean keyNames = true, Boolean splitLastByAnd = true) {
     arrayListToReadableString(keyNames ? map.keySet() as ArrayList : map.values() as ArrayList, splitLastByAnd)
 }
-
 
 /**
  * Check environment variable name match POSIX shell standards.
