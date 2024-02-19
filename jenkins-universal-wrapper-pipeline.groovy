@@ -12,7 +12,7 @@
 
 import groovy.text.StreamingTemplateEngine
 
-@Library('jenkins-shared-library-alx')
+@Library('jenkins-shared-library-alx@updates')
 
 /**
  * Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
@@ -65,24 +65,6 @@ final List BuiltinPipelineParameters = [
          type: 'boolean']
 ]
 
-
-/**
- * Apply ReplaceAll regex items to string.
- *
- * @param text - text to process.
- * @param regexItemsList - list of regex items to apply .replaceAll method.
- * @param replaceItemsList - list of items to replace with. List must be the same length as a regexItemsList, otherwise
- *                           will be replaced with empty line ''.
- * @return - resulting text.
- */
-static String applyReplaceRegexItems(String text, List regexItemsList, List replaceItemsList = []) {
-    String replacedText = text
-    regexItemsList.eachWithIndex { value, Integer index ->
-        replacedText = replacedText.replaceAll(value as CharSequence,
-                replaceItemsList[index] ? replaceItemsList[index] as String : '')
-    }
-    replacedText
-}
 
 /**
  * Get printable key value from map item (e.g. printable 'name' key which convertible to string).
@@ -295,7 +277,7 @@ static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = '
         sourceMap.each { sourceMapEntry ->
             sourceMapEntry.value.each { k, v ->
                 String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
-                        applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
+                        CM.applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
                 Integer padSize = tableColumnSizes[k] - tableEntry.length()
                 formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' * padSize) : ''
@@ -809,7 +791,7 @@ Boolean regexCheckAllRequiredPipelineParams(List allPipelineParams, Object pipel
                         String pipelineParamReplacementMsg = String.format("Replacing '%s' regex to '%s' in '%s' %s...",
                                 regexPattern, regexReplacement, printableParamName, 'pipeline parameter value')
                         regexReplacementOk = errorMsgWrapper(true, true, 0, pipelineParamReplacementMsg)
-                        envVariables[it.name.toString()] = applyReplaceRegexItems(envVariables[it.name
+                        envVariables[it.name.toString()] = CM.applyReplaceRegexItems(envVariables[it.name
                                 .toString()] as String, [regexPattern], [regexReplacement])
                     }
                     regexReplacementOk = errorMsgWrapper(printableParamName == '<undefined>', regexReplacementOk, 3,
@@ -886,7 +868,7 @@ List pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettin
                                      List builtinPipelineParameters, Object envVariables, Object pipelineParams) {
     /** Load all pipeline settings then check all current pipeline params are equal to params in pipeline settings. */
     String settingsRelativePath = String.format('%s/%s.yaml', settingsRelativePathPrefix,
-            applyReplaceRegexItems(envVariables.JOB_NAME.toString(), pipelineNameRegexReplace))
+            CM.applyReplaceRegexItems(envVariables.JOB_NAME.toString(), pipelineNameRegexReplace))
     Map pipelineSettings = loadPipelineSettings(settingsGitUrl, defaultSettingsGitBranch, settingsRelativePath,
             getBooleanPipelineParamState(pipelineParams, 'DEBUG_MODE'))
     String pipelineFailReasonText = ''
@@ -2002,6 +1984,7 @@ List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables
 /** Pipeline entry point. */
 Object jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
+    CM = new org.alx.commonMethods() as Object
     CF = new org.alx.commonFunctions() as Object
     GV = new org.alx.OrgAlxGlobals() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
