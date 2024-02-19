@@ -112,16 +112,6 @@ static Map findMapItemsFromList(Map map, List keysToCollect) {
 }
 
 /**
- * Hide password string.
- *
- * @param passwordString - password string to hide.
- * @return - password with replaced symbols.
- */
-static String hidePasswordString(String passwordString, String replaceSymbol = '*') {
-    passwordString?.length() > 0 ? replaceSymbol * passwordString?.length() : ''
-}
-
-/**
  * Array List to string separated with commas (optional last one by 'and').
  *
  * @param arrayListItems - arrayList to convert items from.
@@ -259,36 +249,6 @@ static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamNam
 }
 
 /**
- * Map to formatted string table with values replacement.
- *
- * @param sourceMap - source map to create text table from.
- * @param replaceKeyName - key name in source map to perform value replacement.
- * @param regexItems - list of regex items to apply for value replacement.
- * @param replaceItems - list of items for value replacement to replace with. List must be the same length as a
- *                       regexItemsList, otherwise will be replaced with empty line ''
- * @param formattedTable - pass a table header here.
- * @return - formatted string table results.
- */
-String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state', List regexItems = ['true', 'false'],
-                                 List replaceItems = ['[PASS]', '[FAIL]'], String formattedTable = '') {
-    def (Boolean createTable, Map tableColumnSizes) = [false, [:]]
-    for (Integer i = 0; i < 2; i++) {
-        sourceMap.each { sourceMapEntry ->
-            sourceMapEntry.value.each { k, v ->
-                String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
-                        CF.applyReplaceRegexItems(v.toString(), regexItems, replaceItems) : v.toString()
-                tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
-                Integer padSize = tableColumnSizes[k] - tableEntry.length()
-                formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' * padSize) : ''
-            }
-            formattedTable += createTable ? '\n' : ''
-        }
-        createTable = !createTable
-    }
-    formattedTable
-}
-
-/**
  * Incompatible keys in map found error message wrapper.
  *
  * @param keys - arrayList of: First keyName, second keyName, etc...
@@ -353,6 +313,36 @@ static List getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String keyNam
     Boolean subKeyDefined = (subKeyNameToGet && mapToGetFrom?.get(keyNameToGetFrom) &&
             mapToGetFrom.get(keyNameToGetFrom)?.containsKey(subKeyNameToGet))
     [subKeyDefined, subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]]
+}
+
+/**
+ * Map to formatted string table with values replacement.
+ *
+ * @param sourceMap - source map to create text table from.
+ * @param replaceKeyName - key name in source map to perform value replacement.
+ * @param regexItems - list of regex items to apply for value replacement.
+ * @param replaceItems - list of items for value replacement to replace with. List must be the same length as a
+ *                       regexItemsList, otherwise will be replaced with empty line ''
+ * @param formattedTable - pass a table header here.
+ * @return - formatted string table results.
+ */
+String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state', List regexItems = ['true', 'false'],
+                                 List replaceItems = ['[PASS]', '[FAIL]'], String formattedTable = '') {
+    def (Boolean createTable, Map tableColumnSizes) = [false, [:]]
+    for (Integer i = 0; i < 2; i++) {
+        sourceMap.each { sourceMapEntry ->
+            sourceMapEntry.value.each { k, v ->
+                String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
+                        CF.applyReplaceRegexItems(v.toString(), regexItems, replaceItems) : v.toString()
+                tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
+                Integer padSize = tableColumnSizes[k] - tableEntry.length()
+                formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' * padSize) : ''
+            }
+            formattedTable += createTable ? '\n' : ''
+        }
+        createTable = !createTable
+    }
+    formattedTable
 }
 
 /**
@@ -1387,7 +1377,7 @@ List actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, 
     newActionOk = errorMsgWrapper(!repoUrlIsDefined, newActionOk, 3,
             String.format("Unable to %s: 'repo_url' is not defined for %s.", actionName, actionLink))
     Map printableActionLinkItem = actionLinkItem + [credentials: actionLinkItem.get('credentials') ?
-            hidePasswordString(actionLinkItem.credentials as String) : null]
+            CF.hidePasswordString(actionLinkItem.credentials as String) : null]
     Closure actionClosure = {
         CF.cloneGitToFolder(actionLinkItem?.get('repo_url'), actionLinkItem.get('repo_branch') ?: 'main',
                 actionLinkItem?.get('directory') ?: '', actionLinkItem?.get('credentials') ?: gitDefaultCredentials)
@@ -1914,7 +1904,7 @@ List listOfMapsToTemplatedJobParams(List listOfMapItems, Object envVariables, St
                         newPipelineParameters)
                 newPrintPipeParameters = (filteredListItem?.get(stringParamKeysList[1]) == paramTypes[3]) ?
                         CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
-                                hidePasswordString(filteredListItem?.get('value') as String), filteredListItem
+                                CF.hidePasswordString(filteredListItem?.get('value') as String), filteredListItem
                                 ?.get(stringParamKeysList[1]), false, newPipelineParameters) : newPipelineParameters
             }
             itsPass = filteredListItem?.size() == 3 && stringKeysOk ? itsPass : false
