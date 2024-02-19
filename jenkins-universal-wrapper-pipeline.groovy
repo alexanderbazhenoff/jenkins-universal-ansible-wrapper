@@ -530,8 +530,8 @@ List templatingMapKeysFromVariables(Map assignMap, List assignmentKeysList, Obje
     assignmentKeysList.each { currentKey ->
         if (assignMap.containsKey(currentKey) && assignMap[currentKey] instanceof String) {
             // groovylint-disable-next-line NoDef, VariableTypeRequired
-            def (__, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey].toString(),
-                    envVariables, additionalVariablesBinding)
+            def (Boolean __, Boolean assignOk, String assigned) = getTemplatingFromVariables(assignMap[currentKey]
+                    .toString(), envVariables, additionalVariablesBinding)
             allAssignmentsPassNew = errorMsgWrapper(!assignOk, allAssignmentsPass, 3,
                     String.format("%s '%s' with value '%s' wasn't set properly due to undefined variable(s).",
                             keysDescription, currentKey, assignMap[currentKey].toString()))
@@ -1464,8 +1464,7 @@ List actionInstallAnsibleCollections(String actionLink, Map actionLinkItem, Obje
     ansibleCollections.eachWithIndex { ansibleEntry, Integer ansibleCollectionsListIndex ->
         Boolean ansibleEntryIsString = ansibleEntry instanceof String
         if (ansibleEntryIsString) {
-            // groovylint-disable-next-line VariableTypeRequired, NoDef
-            def (__, Boolean assignOk, String assignment) = getTemplatingFromVariables(ansibleEntry as String,
+            def (Boolean __, Boolean assignOk, String assignment) = getTemplatingFromVariables(ansibleEntry as String,
                     envVariables, universalPipelineWrapperBuiltIns)
             ansibleCollections[ansibleCollectionsListIndex] = assignment
             newActionOk = errorMsgWrapper(!assignOk, assignOk, 3,
@@ -1595,7 +1594,7 @@ List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, O
     def (List stringSubKeys, List booleanSubKeys, Boolean newActionOk) = [['script', 'jenkins'], ['pipeline'], actionOk]
 
     /** Checking required script or playbook keys. Setting up execution data and printable link names. */
-    def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
+    def (Boolean __, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
     (newActionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, newActionOk, actionLink, actionLinkItem, stringKeys)
     stringKeys.eachWithIndex { stringKeyName, Integer actionLinkKeysIndex ->
