@@ -67,24 +67,6 @@ final List BuiltinPipelineParameters = [
 
 
 /**
- * Clone 'universal-wrapper-pipeline-settings' from git repository, load yaml pipeline settings and return them as map.
- *
- * @param settingsGitUrl - git repo URL to clone from.
- * @param settingsGitBranch - git branch.
- * @param settingsRelativePath - relative path inside the 'universal-wrapper-pipeline-settings' project.
- * @param printYaml - if true output 'universal-wrapper-pipeline-settings' content on a load.
- * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
- * @return - map with pipeline settings.
- */
-Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath,
-                         Boolean printYaml = true, String workspaceSubfolder = 'settings') {
-    CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
-    String pathToLoad = String.format('%s/%s', workspaceSubfolder, settingsRelativePath)
-    if (printYaml) CF.outMsg(0, String.format('Loading pipeline settings:\n%s', readFile(pathToLoad)))
-    readYaml(file: pathToLoad)
-}
-
-/**
  * Apply ReplaceAll regex items to string.
  *
  * @param text - text to process.
@@ -114,60 +96,6 @@ static String getPrintableValueKeyFromMapItem(Map mapItem, String keyName = 'nam
                                               String nameOnUndefined = '<undefined>') {
     mapItem && mapItem.containsKey(keyName) && detectIsObjectConvertibleToString(mapItem.get(keyName)) ?
             mapItem.get(keyName).toString() : nameOnUndefined
-}
-
-/**
- * Verify all required jenkins pipeline parameters are presents.
- *
- * @param pipelineParams - jenkins built-in 'params' UnmodifiableMap variable with current build pipeline parameters.
- * @param currentPipelineParams - an arrayList of map items to check, e.g: [map_item1, map_item2 ... map_itemN].
- *                                While single map item format is:
- *                                [
- *                                 name: 'PARAMETER_NAME',
- *                                 type: 'string|text|choice|boolean|password'
- *                                 default: 'default_value',
- *                                 choices: ['one', 'two', 'three'],
- *                                 description: 'Your jenkins parameter pipeline description.',
- *                                 trim: false|true
- *                                ]
- *
- *                               Please note:
- *                               - 'choices' key is only for 'type: choice'.
- *                               - 'default' key is for all types except 'type: choice'. This key is incompatible with
- *                                 'type: choice'. For other types this key is optional: it's will be false for boolean,
- *                                 and '' (empty line) for string, password and text parameters.
- *                               - 'trim' key is available for 'type: string'. This key is optional, by default it's
- *                                 false.
- *                               - 'description' key is optional, by default it's '' (empty line).
- *
- *                               More info: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings
- * @return - arrayList of:
- *           - true when jenkins pipeline parameters update required;
- *           - true when no errors.
- */
-List verifyPipelineParamsArePresents(List requiredParams, Object currentPipelineParams) {
-    def (Boolean updateParamsRequired, Boolean verifyPipelineParamsOk) = [false, true]
-    String ignoreMsg = 'Skipping parameter from pipeline settings'
-    String keyValueIncorrectMsg = 'key for pipeline parameter is undefined or incorrect value specified'
-    requiredParams.each {
-        Boolean paramNameConvertibleToString = detectIsObjectConvertibleToString(it.get('name'))
-        Boolean paramNamingCorrect = checkEnvironmentVariableNameCorrect(it.get('name'))
-        if (!it.get('type') && !detectPipelineParameterItemIsProbablyChoice(it as Map) &&
-                !detectPipelineParameterItemIsProbablyBoolean(it as Map)) {
-            CF.outMsg(3, String.format("%s: '%s' %s.", 'Parameter from pipeline settings might be ignored', 'type',
-                    keyValueIncorrectMsg))
-            verifyPipelineParamsOk = false
-        }
-        if (!it.get('name') || !paramNameConvertibleToString || !paramNamingCorrect) {
-            String pipelineParamPosixMsg = String.format("%s: '%s' %s%s", ignoreMsg, 'name', keyValueIncorrectMsg,
-                    paramNameConvertibleToString && !paramNamingCorrect ?
-                    " (parameter name didn't met POSIX standards)." : '.')
-            verifyPipelineParamsOk = errorMsgWrapper(true, true, 3, pipelineParamPosixMsg)
-        } else if (it.get('name') && !currentPipelineParams.containsKey(it.get('name'))) {
-            updateParamsRequired = true
-        }
-    }
-    [updateParamsRequired, verifyPipelineParamsOk]
 }
 
 /**
@@ -237,6 +165,288 @@ static String mapItemsToReadableListString(Map map, Boolean keyNames = true, Boo
     arrayListToReadableString(keyNames ? map.keySet() as ArrayList : map.values() as ArrayList, splitLastByAnd)
 }
 
+
+/**
+ * Check environment variable name match POSIX shell standards.
+ *
+ * @param name - variable name to check regex match.
+ * @return - true when match.
+ */
+static Boolean checkEnvironmentVariableNameCorrect(Object name) {
+    detectIsObjectConvertibleToString(name) && name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
+}
+
+/**
+ * Detect if an object will be human readable string after converting to string (exclude lists, maps, etc).
+ *
+ * @param obj - object to detect.
+ * @return - true when object is convertible to human readable string.
+ */
+static Boolean detectIsObjectConvertibleToString(Object obj) {
+    (obj instanceof String || obj instanceof Integer || obj instanceof Float || obj instanceof BigInteger)
+}
+
+/**
+ * Detect if an object will be correct after conversion to boolean.
+ *
+ * @param obj - object to detect.
+ * @return - true when object will be correct.
+ */
+static Boolean detectIsObjectConvertibleToBoolean(Object obj) {
+    (obj?.toBoolean()).toString() == obj?.toString()
+}
+
+/**
+ * Get pipeline parameter name from pipeline parameter config item and check this pipeline parameter emptiness state
+ * (defined or empty).
+ *
+ * @param paramItem - pipeline parameter item map (which is a part of parameter settings) to get parameter name.
+ * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
+ *                             class java.util.Collections$UnmodifiableMap).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param isUndefined - condition to check state: set true to detect pipeline parameter for current job is undefined, or
+ *                      false to detect parameter is defined.
+ * @return - arrayList of:
+ *           - printable parameter name (or '<undefined>' when name wasn't set);
+ *           - return true when condition specified in 'isUndefined' method variable met.
+ */
+static List getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
+                                                Boolean isUndefined = true) {
+    [getPrintableValueKeyFromMapItem(paramItem), (paramItem.get('name') && pipelineParameters
+            .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
+}
+
+/**
+ * Extract parameters arrayList from pipeline settings map (without 'required' and 'optional' map structure).
+ *
+ * @param pipelineSettings - pipeline settings map.
+ * @param builtinPipelineParameters - additional built-in pipeline parameters arrayList.
+ * @return - pipeline parameters arrayList.
+ */
+static List extractParamsListFromSettingsMap(Map pipelineSettings, List builtinPipelineParameters) {
+    (pipelineSettings.get('parameters')) ? (pipelineSettings.parameters.get('required') ?: []) +
+            (pipelineSettings.parameters.get('optional') ?: []) + builtinPipelineParameters : []
+}
+
+/**
+ * Get Boolean variable enabled state from environment variables.
+ *
+ * @param env - environment variables for current job build (actually requires a pass of 'env' which is
+ *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param variableName - Environment variable to get.
+ * @return - true when enabled.
+ */
+static Boolean getBooleanVarStateFromEnv(Object envVariables, String variableName = 'DEBUG_MODE') {
+    envVariables.getEnvironment().get(variableName)?.toBoolean()  // groovylint-disable-line UnnecessaryGetter
+}
+
+/**
+ * Get Boolean Pipeline parameter state from params object.
+ *
+ * @param pipelineParams - pipeline parameters for current job build (actually requires a pass of 'params' which is
+ *                         class java.util.Collections$UnmodifiableMap).
+ * @param parameterName - parameter name.
+ * @return - true when enabled.
+ */
+static Boolean getBooleanPipelineParamState(Object pipelineParams, String parameterName = 'DRY_RUN') {
+    pipelineParams.get(parameterName)?.toBoolean()
+}
+
+/**
+ * Get jenkins node by node name or node tag defined in pipeline parameter(s).
+ *
+ * @param env - environment variables for current job build (actually requires a pass of 'env' which is
+ *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param nodeParamName - Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on. This
+ *                        pipeline parameters will be used to check for jenkins node name on pipeline start. If this
+ *                        parameter undefined or blank nodeTagParamName will be used to check.
+ * @param nodeTagParamName - Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute
+ *                           on. This parameter will be used to check for jenkins node selection by tag on pipeline
+ *                           start. If this parameter defined nodeParamName will be ignored.
+ * @return - null when nodeParamName or nodeTagParamName parameters found. In this case pipeline starts on any jenkins
+ *           node. Otherwise, return 'node_name' or [label: 'node_tag'].
+ */
+static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
+    Object nodeToExecute = null
+    // groovylint-disable-next-line UnnecessaryGetter
+    nodeToExecute = (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) ?
+            [label: env[nodeTagParamName]] : nodeToExecute
+    // groovylint-disable-next-line UnnecessaryGetter
+    (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) ? env[nodeParamName] : nodeToExecute
+}
+
+/**
+ * Map to formatted string table with values replacement.
+ *
+ * @param sourceMap - source map to create text table from.
+ * @param replaceKeyName - key name in source map to perform value replacement.
+ * @param regexItemsList - list of regex items to apply for value replacement.
+ * @param replaceItemsList - list of items for value replacement to replace with. List must be the same length as a
+ *                           regexItemsList, otherwise will be replaced with empty line ''
+ * @param formattedTable - pass a table header here.
+ * @return - formatted string table results.
+ */
+static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
+                                        List regexItemsList = ['true', 'false'],
+                                        List replaceItemsList = ['[PASS]', '[FAIL]'], String formattedTable = '') {
+    def (Boolean createTable, Map tableColumnSizes) = [false, [:]]
+    for (Integer i = 0; i < 2; i++) {
+        sourceMap.each { sourceMapEntry ->
+            sourceMapEntry.value.each { k, v ->
+                String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
+                        applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
+                tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
+                Integer padSize = tableColumnSizes[k] - tableEntry.length()
+                formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' * padSize) : ''
+            }
+            formattedTable += createTable ? '\n' : ''
+        }
+        createTable = !createTable
+    }
+    formattedTable
+}
+
+/**
+ * Incompatible keys in map found error message wrapper.
+ *
+ * @param keys - arrayList of: First keyName, second keyName, etc...
+ * @param keyDescriptionMessagePrefix - just a prefix for an error message what keys are incompatible.
+ * @param onlyOneOfThem - just a postfix message that means only one key required.
+ * @return - formatted error message.
+ */
+static String incompatibleKeysMsgWrapper(List keysForMessage, String keyDescriptionMessagePrefix = 'Keys',
+                                         Boolean onlyOneOfThem = true) {
+    String.format('%s %s are incompatible.%s', keyDescriptionMessagePrefix, arrayListToReadableString(keysForMessage),
+            onlyOneOfThem ? ' Please define only one of them.' : '')
+}
+
+/**
+ * Get dry-run state and pipeline action message.
+ *
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param actionName - action name just to print.
+ * @param printableActionLinkItem - action link item.
+ * @param actionLinkItemKeysFilter - keys to filter from action link item (required keys for the action).
+ * @return - arrayList of:
+ *           - true when dry-run is enabled;
+ *           - action message to print before action run.
+ */
+static List getDryRunStateAndActionMsg(Object envVariables, String actionName, Map printableActionLinkItem,
+                                       List actionLinkItemKeysFilter) {
+    Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
+    Map printableActionLinkItemTemp = findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter)
+    String actionMsgDetails = String.format(' %s', printableActionLinkItemTemp.size() > 0 ?
+            printableActionLinkItemTemp.toString() : '')
+    [dryRunAction, String.format('%s%s%s', dryRunAction ? 'dry-run of ' : '', actionName, actionMsgDetails)]
+}
+
+
+/**
+ * Update environment variables from map keys (e.g. universalPipelineWrapperBuiltIns).
+ *
+ * @param mapToUpdateFrom - map to update from.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
+ *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @return - updated environment variables.
+ */
+static Object updateEnvFromMapKeys(Map mapToUpdateFrom, Object envVariables) {
+    mapToUpdateFrom.each { mapToUpdateFromKey, mapToUpdateFromValue ->
+        envVariables[mapToUpdateFromKey.toString()] = mapToUpdateFromValue.toString()
+    }
+    envVariables
+}
+
+/**
+ * Get map sub-key wrapper.
+ *
+ * @param subKeyNameToGet - sub-key name to get (e.g. action link to get item from 'action' key of pipeline settings).
+ * @param map - map to get sub-key from (e.g. pipeline settings).
+ * @param keyNameToGetFrom - key name to get sub-key from (e.g. 'action').
+ * @return - arrayList of:
+ *           - true getting sub-key successfully done;
+ *           - sub-key item data (e.g. action link item).
+ */
+static List getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String keyNameToGetFrom = 'actions') {
+    Boolean subKeyDefined = (subKeyNameToGet && mapToGetFrom?.get(keyNameToGetFrom) &&
+            mapToGetFrom.get(keyNameToGetFrom)?.containsKey(subKeyNameToGet))
+    [subKeyDefined, subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]]
+}
+
+/**
+ * Clone 'universal-wrapper-pipeline-settings' from git repository, load yaml pipeline settings and return them as map.
+ *
+ * @param settingsGitUrl - git repo URL to clone from.
+ * @param settingsGitBranch - git branch.
+ * @param settingsRelativePath - relative path inside the 'universal-wrapper-pipeline-settings' project.
+ * @param printYaml - if true output 'universal-wrapper-pipeline-settings' content on a load.
+ * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
+ * @return - map with pipeline settings.
+ */
+Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath,
+                         Boolean printYaml = true, String workspaceSubfolder = 'settings') {
+    CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
+    String pathToLoad = String.format('%s/%s', workspaceSubfolder, settingsRelativePath)
+    if (printYaml) CF.outMsg(0, String.format('Loading pipeline settings:\n%s', readFile(pathToLoad)))
+    readYaml(file: pathToLoad)
+}
+
+/**
+ * Verify all required jenkins pipeline parameters are presents.
+ *
+ * @param pipelineParams - jenkins built-in 'params' UnmodifiableMap variable with current build pipeline parameters.
+ * @param currentPipelineParams - an arrayList of map items to check, e.g: [map_item1, map_item2 ... map_itemN].
+ *                                While single map item format is:
+ *                                [
+ *                                 name: 'PARAMETER_NAME',
+ *                                 type: 'string|text|choice|boolean|password'
+ *                                 default: 'default_value',
+ *                                 choices: ['one', 'two', 'three'],
+ *                                 description: 'Your jenkins parameter pipeline description.',
+ *                                 trim: false|true
+ *                                ]
+ *
+ *                               Please note:
+ *                               - 'choices' key is only for 'type: choice'.
+ *                               - 'default' key is for all types except 'type: choice'. This key is incompatible with
+ *                                 'type: choice'. For other types this key is optional: it's will be false for boolean,
+ *                                 and '' (empty line) for string, password and text parameters.
+ *                               - 'trim' key is available for 'type: string'. This key is optional, by default it's
+ *                                 false.
+ *                               - 'description' key is optional, by default it's '' (empty line).
+ *
+ *                               More info in Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
+ *                               SETTINGS' project.
+ * @return - arrayList of:
+ *           - true when jenkins pipeline parameters update required;
+ *           - true when no errors.
+ */
+List verifyPipelineParamsArePresents(List requiredParams, Object currentPipelineParams) {
+    def (Boolean updateParamsRequired, Boolean verifyPipelineParamsOk) = [false, true]
+    String ignoreMsg = 'Skipping parameter from pipeline settings'
+    String keyValueIncorrectMsg = 'key for pipeline parameter is undefined or incorrect value specified'
+    requiredParams.each {
+        Boolean paramNameConvertibleToString = detectIsObjectConvertibleToString(it.get('name'))
+        Boolean paramNamingCorrect = checkEnvironmentVariableNameCorrect(it.get('name'))
+        if (!it.get('type') && !detectPipelineParameterItemIsProbablyChoice(it as Map) &&
+                !detectPipelineParameterItemIsProbablyBoolean(it as Map)) {
+            CF.outMsg(3, String.format("%s: '%s' %s.", 'Parameter from pipeline settings might be ignored', 'type',
+                    keyValueIncorrectMsg))
+            verifyPipelineParamsOk = false
+        }
+        if (!it.get('name') || !paramNameConvertibleToString || !paramNamingCorrect) {
+            String pipelineParamPosixMsg = String.format("%s: '%s' %s%s", ignoreMsg, 'name', keyValueIncorrectMsg,
+                    paramNameConvertibleToString && !paramNamingCorrect ?
+                    " (parameter name didn't met POSIX standards)." : '.')
+            verifyPipelineParamsOk = errorMsgWrapper(true, true, 3, pipelineParamPosixMsg)
+        } else if (it.get('name') && !currentPipelineParams.containsKey(it.get('name'))) {
+            updateParamsRequired = true
+        }
+    }
+    [updateParamsRequired, verifyPipelineParamsOk]
+}
+
 /**
  * Convert pipeline settings map item and add to jenkins pipeline parameters.
  *
@@ -295,36 +505,6 @@ Boolean pipelineSettingsItemError(Integer eventNum, String itemName, String erro
 Boolean errorMsgWrapper(Boolean enableCheck, Boolean state, Integer eventNum, String msg) {
     if (enableCheck) CF.outMsg(eventNum, msg)
     (enableCheck && eventNum == 3) ? false : state
-}
-
-/**
- * Check environment variable name match POSIX shell standards.
- *
- * @param name - variable name to check regex match.
- * @return - true when match.
- */
-static Boolean checkEnvironmentVariableNameCorrect(Object name) {
-    detectIsObjectConvertibleToString(name) && name.toString().matches('[a-zA-Z_]+[a-zA-Z0-9_]*')
-}
-
-/**
- * Detect if an object will be human readable string after converting to string (exclude lists, maps, etc).
- *
- * @param obj - object to detect.
- * @return - true when object is convertible to human readable string.
- */
-static Boolean detectIsObjectConvertibleToString(Object obj) {
-    (obj instanceof String || obj instanceof Integer || obj instanceof Float || obj instanceof BigInteger)
-}
-
-/**
- * Detect if an object will be correct after conversion to boolean.
- *
- * @param obj - object to detect.
- * @return - true when object will be correct.
- */
-static Boolean detectIsObjectConvertibleToBoolean(Object obj) {
-    (obj?.toBoolean()).toString() == obj?.toString()
 }
 
 /**
@@ -429,27 +609,6 @@ Boolean checkPipelineParamsFormat(List parameters) {
         allPass = pipelineParametersSettingsItemCheck(it as Map) ? allPass : false
     }
     allPass
-}
-
-/**
- * Get pipeline parameter name from pipeline parameter config item and check this pipeline parameter emptiness state
- * (defined or empty).
- *
- * @param paramItem - pipeline parameter item map (which is a part of parameter settings) to get parameter name.
- * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
- *                             class java.util.Collections$UnmodifiableMap).
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param isUndefined - condition to check state: set true to detect pipeline parameter for current job is undefined, or
- *                      false to detect parameter is defined.
- * @return - arrayList of:
- *           - printable parameter name (or '<undefined>' when name wasn't set);
- *           - return true when condition specified in 'isUndefined' method variable met.
- */
-static List getPipelineParamNameAndDefinedState(Map paramItem, Object pipelineParameters, Object envVariables,
-                                                Boolean isUndefined = true) {
-    [getPrintableValueKeyFromMapItem(paramItem), (paramItem.get('name') && pipelineParameters
-            .containsKey(paramItem.name) && isUndefined ^ (envVariables[paramItem.name as String]?.trim()).asBoolean())]
 }
 
 /**
@@ -583,18 +742,6 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
 }
 
 /**
- * Extract parameters arrayList from pipeline settings map (without 'required' and 'optional' map structure).
- *
- * @param pipelineSettings - pipeline settings map.
- * @param builtinPipelineParameters - additional built-in pipeline parameters arrayList.
- * @return - pipeline parameters arrayList.
- */
-static List extractParamsListFromSettingsMap(Map pipelineSettings, List builtinPipelineParameters) {
-    (pipelineSettings.get('parameters')) ? (pipelineSettings.parameters.get('required') ?: []) +
-            (pipelineSettings.parameters.get('optional') ?: []) + builtinPipelineParameters : []
-}
-
-/**
  * Perform regex check and regex replacement of pipeline parameters for current job build.
  *
  * (Check match when current build pipeline parameter is not empty and a key 'regex' is defined in pipeline settings.
@@ -686,8 +833,8 @@ Boolean regexCheckAllRequiredPipelineParams(List allPipelineParams, Object pipel
  * parameters to pipeline.
  *
  * @param pipelineParams - pipeline parameters in 'universal-wrapper-pipeline-settings' standard and built-in pipeline
- *                           parameters (e.g. 'DEBUG_MODE', etc) converted to arrayList.
- *                           See https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings for details.
+ *                         parameters (e.g. 'DEBUG_MODE', etc) converted to arrayList. See: Configuration files format
+ *                         description in 'UNIVERSAL WRAPPER PIPELINE SETTINGS' project for details.
  * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
  *                                which is class java.util.Collections$UnmodifiableMap). Set
  *                                currentPipelineParams.DRY_RUN to 'true' for dry-run mode.
@@ -709,84 +856,6 @@ List wrapperPipelineParametersProcessing(List pipelineParams, Object currentPipe
         }
     }
     [noPipelineParams, allPass]
-}
-
-/**
- * Get Boolean variable enabled state from environment variables.
- *
- * @param env - environment variables for current job build (actually requires a pass of 'env' which is
- *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param variableName - Environment variable to get.
- * @return - true when enabled.
- */
-static Boolean getBooleanVarStateFromEnv(Object envVariables, String variableName = 'DEBUG_MODE') {
-    envVariables.getEnvironment().get(variableName)?.toBoolean()  // groovylint-disable-line UnnecessaryGetter
-}
-
-/**
- * Get Boolean Pipeline parameter state from params object.
- *
- * @param pipelineParams - pipeline parameters for current job build (actually requires a pass of 'params' which is
- *                         class java.util.Collections$UnmodifiableMap).
- * @param parameterName - parameter name.
- * @return - true when enabled.
- */
-static Boolean getBooleanPipelineParamState(Object pipelineParams, String parameterName = 'DRY_RUN') {
-    pipelineParams.get(parameterName)?.toBoolean()
-}
-
-/**
- * Get jenkins node by node name or node tag defined in pipeline parameter(s).
- *
- * @param env - environment variables for current job build (actually requires a pass of 'env' which is
- *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param nodeParamName - Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on. This
- *                        pipeline parameters will be used to check for jenkins node name on pipeline start. If this
- *                        parameter undefined or blank nodeTagParamName will be used to check.
- * @param nodeTagParamName - Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute
- *                           on. This parameter will be used to check for jenkins node selection by tag on pipeline
- *                           start. If this parameter defined nodeParamName will be ignored.
- * @return - null when nodeParamName or nodeTagParamName parameters found. In this case pipeline starts on any jenkins
- *           node. Otherwise, return 'node_name' or [label: 'node_tag'].
- */
-static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
-    Object nodeToExecute = null
-    // groovylint-disable-next-line UnnecessaryGetter
-    nodeToExecute = (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) ?
-            [label: env[nodeTagParamName]] : nodeToExecute
-    // groovylint-disable-next-line UnnecessaryGetter
-    (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) ? env[nodeParamName] : nodeToExecute
-}
-
-/**
- * Map to formatted string table with values replacement.
- *
- * @param sourceMap - source map to create text table from.
- * @param replaceKeyName - key name in source map to perform value replacement.
- * @param regexItemsList - list of regex items to apply for value replacement.
- * @param replaceItemsList - list of items for value replacement to replace with. List must be the same length as a
- *                           regexItemsList, otherwise will be replaced with empty line ''
- * @param formattedTable - pass a table header here.
- * @return - formatted string table results.
- */
-static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
-                                        List regexItemsList = ['true', 'false'],
-                                        List replaceItemsList = ['[PASS]', '[FAIL]'], String formattedTable = '') {
-    def (Boolean createTable, Map tableColumnSizes) = [false, [:]]
-    for (Integer i = 0; i < 2; i++) {
-        sourceMap.each { sourceMapEntry ->
-            sourceMapEntry.value.each { k, v ->
-                String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
-                        applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
-                tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
-                Integer padSize = tableColumnSizes[k] - tableEntry.length()
-                formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' * padSize) : ''
-            }
-            formattedTable += createTable ? '\n' : ''
-        }
-        createTable = !createTable
-    }
-    formattedTable
 }
 
 /**
@@ -862,8 +931,8 @@ List pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettin
  *                  2. You can also set envVariables.DEBUG_MODE to verbose output and/or envVariables.DRY_RUN to
  *                  perform dry run.
  * @return - arrayList of:
- *           - pipeline stages status map (format described in settings documentation:
- *             https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings);
+ *           - pipeline stages status map (format described in settings documentation (see:
+ *             Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE SETTINGS' project).;
  *           - true when checking and execution pass (or skipped), false on checking or execution errors;
  *           - return of environment variables ('env') that pass to function in 'envVariables'.
  */
@@ -902,10 +971,11 @@ List checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envV
  * Check or execute all actions in pipeline stage settings item.
  *
  * (Check actions in the stage, all ansible playbooks, ansible inventories, jobs, scripts or another action according to
- * requirements described here: https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ * requirements described in: Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE SETTINGS' project).
  *
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
- *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ *                                           Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
+ *                                           SETTINGS' project).
  * @param stageItem - stage settings item to check/execute actions in it.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
@@ -1001,20 +1071,6 @@ Boolean checkListOfKeysFromMapProbablyStringOrBoolean(Boolean check, List listOf
 }
 
 /**
- * Incompatible keys in map found error message wrapper.
- *
- * @param keys - arrayList of: First keyName, second keyName, etc...
- * @param keyDescriptionMessagePrefix - just a prefix for an error message what keys are incompatible.
- * @param onlyOneOfThem - just a postfix message that means only one key required.
- * @return - formatted error message.
- */
-static String incompatibleKeysMsgWrapper(List keysForMessage, String keyDescriptionMessagePrefix = 'Keys',
-                                         Boolean onlyOneOfThem = true) {
-    String.format('%s %s are incompatible.%s', keyDescriptionMessagePrefix, arrayListToReadableString(keysForMessage),
-            onlyOneOfThem ? ' Please define only one of them.' : '')
-}
-
-/**
  * Check keys are not empty and convertible to required type and check incompatible keys.
  *
  * @param actionItem - source (non-templated) action item to check or execute.
@@ -1043,7 +1099,8 @@ List checkKeysNotEmptyAndConvertibleToReqType(Map actionItem, String printableSt
  * Check action item defined properly or execute action item from stage.
  *
  * @param universalPipelineWrapperBuiltIns - pipeline settings built-ins variable with report in various formats (see:
- *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ *                                           Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
+ *                                           SETTINGS' project).
  * @param stageName - the name of the current stage from which to test or execute the action item (just for logging
  *                    in all action status map - see @return of this function).
  * @param actionItemSource - source (non-templated) action item to check or execute.
@@ -1210,27 +1267,6 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
 }
 
 /**
- * Get dry-run state and pipeline action message.
- *
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param actionName - action name just to print.
- * @param printableActionLinkItem - action link item.
- * @param actionLinkItemKeysFilter - keys to filter from action link item (required keys for the action).
- * @return - arrayList of:
- *           - true when dry-run is enabled;
- *           - action message to print before action run.
- */
-static List getDryRunStateAndActionMsg(Object envVariables, String actionName, Map printableActionLinkItem,
-                                       List actionLinkItemKeysFilter) {
-    Boolean dryRunAction = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
-    Map printableActionLinkItemTemp = findMapItemsFromList(printableActionLinkItem, actionLinkItemKeysFilter)
-    String actionMsgDetails = String.format(' %s', printableActionLinkItemTemp.size() > 0 ?
-            printableActionLinkItemTemp.toString() : '')
-    [dryRunAction, String.format('%s%s%s', dryRunAction ? 'dry-run of ' : '', actionName, actionMsgDetails)]
-}
-
-/**
  * Check or execute action link.
  *
  * @param actionLink - action link.
@@ -1240,7 +1276,8 @@ static List getDryRunStateAndActionMsg(Object envVariables, String actionName, M
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param check - true when check, false when exectue.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
- *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ *                                           Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
+ *                                           SETTINGS' project).
  * @param nodePipelineParameterName - jenkins pipeline parameter name of specified node name.
  * @param nodeTagPipelineParameterName - jenkins pipeline parameter name of specified node tag.
  * @return - arrayList of:
@@ -1352,7 +1389,8 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
- *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ *                                           Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
+ *                                           SETTINGS' project).
  * @param gitDefaultCredentialsId - Git credentials ID for git authorisation to clone project.
  * @return - arrayList of:
  *           - true when success, false when failed;
@@ -1393,8 +1431,8 @@ List actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, 
  *                                  key values.
  * @param actionKeysFilterLists - list of keys that is required for current action.
  * @param actionOk - just to pass previous action execution/checking state.
- * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable (see:
- *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable (see: Configuration files format
+ *                                           description in 'UNIVERSAL WRAPPER PIPELINE SETTINGS' project).
  * @return - arrayList of:
  *           - true when success, false when failed;
  *           - action details for logging;
@@ -1420,21 +1458,6 @@ List actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closur
 }
 
 /**
- * Update environment variables from map keys (e.g. universalPipelineWrapperBuiltIns).
- *
- * @param mapToUpdateFrom - map to update from.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @return - updated environment variables.
- */
-static Object updateEnvFromMapKeys(Map mapToUpdateFrom, Object envVariables) {
-    mapToUpdateFrom.each { mapToUpdateFromKey, mapToUpdateFromValue ->
-        envVariables[mapToUpdateFromKey.toString()] = mapToUpdateFromValue.toString()
-    }
-    envVariables
-}
-
-/**
  * Pipeline action: install ansible collections from ansible galaxy.
  *
  * @param actionLink - message prefix for possible errors.
@@ -1445,7 +1468,8 @@ static Object updateEnvFromMapKeys(Map mapToUpdateFrom, Object envVariables) {
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
- *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ *                                           Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
+ *                                           SETTINGS' project).
  * @return - arrayList of:
  *           - true when success, false when failed;
  *           - action details for logging.
@@ -1490,7 +1514,8 @@ List actionInstallAnsibleCollections(String actionLink, Map actionLinkItem, Obje
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
- *                                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings).
+ *                                           Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
+ *                                           SETTINGS' project).
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param messagePrefix - message prefix for possible errors.
@@ -1517,22 +1542,6 @@ List checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPipelin
                 keyDescription))
     }
     [newActionOk, mapToCheckAndTemplate]
-}
-
-/**
- * Get map sub-key wrapper.
- *
- * @param subKeyNameToGet - sub-key name to get (e.g. action link to get item from 'action' key of pipeline settings).
- * @param map - map to get sub-key from (e.g. pipeline settings).
- * @param keyNameToGetFrom - key name to get sub-key from (e.g. 'action').
- * @return - arrayList of:
- *           - true getting sub-key successfully done;
- *           - sub-key item data (e.g. action link item).
- */
-static List getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String keyNameToGetFrom = 'actions') {
-    Boolean subKeyDefined = (subKeyNameToGet && mapToGetFrom?.get(keyNameToGetFrom) &&
-            mapToGetFrom.get(keyNameToGetFrom)?.containsKey(subKeyNameToGet))
-    [subKeyDefined, subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]]
 }
 
 /**
