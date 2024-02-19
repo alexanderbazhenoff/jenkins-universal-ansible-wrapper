@@ -1634,10 +1634,12 @@ List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, O
         /** Setting up closure depending on script type. */
         def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
                                                             checkOrExecuteData?.get(stringSubKeys[1])]
+        // TODO: is reassignment is on Map universalPipelineWrapperBuiltIns = [:]?
         pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
                 'return universalPipelineWrapperBuiltIns')
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             def universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
+            println 'kuku: ' + universalPipelineWrapperBuiltInsUpdate.getClass()
             [newActionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate, null]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh scriptText
@@ -1820,7 +1822,7 @@ List actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object envVar
         [false, universalPipelineWrapperBuiltIns, null]
     }
     errorMsgWrapper(!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'), true, 0,
-            String.format("%s parameters: %s", actionName.capitalize(), CF.readableMap(actionLinkItem)))
+            String.format('%s parameters: %s', actionName.capitalize(), CF.readableMap(actionLinkItem)))
     (newActionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
             actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList, newActionOk,
             universalPipelineWrapperBuiltIns)
@@ -1891,7 +1893,8 @@ List actionUnStash(String actionLink, Map actionLinkItem, Object envVariables, B
 List listOfMapsToTemplatedJobParams(List listOfMapItems, Object envVariables, String keyDescription,
                                     Map universalPipelineWrapperBuiltIns, Boolean check, Boolean allPass = true,
                                     List pipelineParameters = [], List printablePipelineParameters = []) {
-    def (Boolean itsPass, List newPipelineParameters) = [allPass, pipelineParameters]
+    Boolean itsPass = allPass
+    def (List newPipelineParameters, List newPrintPipeParameters) = [pipelineParameters, printablePipelineParameters]
     listOfMapItems.eachWithIndex { listItem, Integer listItemIndex ->
         def (List stringParamKeysList, List paramTypes) = [['name', 'type'], ['string', 'boolean', 'password', 'text']]
         List allParamKeysList = stringParamKeysList + ['value']
@@ -1920,7 +1923,7 @@ List listOfMapsToTemplatedJobParams(List listOfMapItems, Object envVariables, St
                 newPipelineParameters = CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
                         filteredListItem?.get('value'), filteredListItem?.get(stringParamKeysList[1]), false,
                         newPipelineParameters)
-                printablePipelineParameters = (filteredListItem?.get(stringParamKeysList[1]) == paramTypes[3]) ?
+                newPrintPipeParameters = (filteredListItem?.get(stringParamKeysList[1]) == paramTypes[3]) ?
                         CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
                                 hidePasswordString(filteredListItem?.get('value') as String), filteredListItem
                                 ?.get(stringParamKeysList[1]), false, newPipelineParameters) : newPipelineParameters
@@ -1931,7 +1934,7 @@ List listOfMapsToTemplatedJobParams(List listOfMapItems, Object envVariables, St
                     errMsgSubject))
         }
     }
-    [itsPass, newPipelineParameters, printablePipelineParameters]
+    [itsPass, newPipelineParameters, newPrintPipeParameters]
 }
 
 /**
