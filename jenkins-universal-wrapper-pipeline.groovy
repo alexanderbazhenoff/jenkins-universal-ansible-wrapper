@@ -277,7 +277,7 @@ static String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = '
         sourceMap.each { sourceMapEntry ->
             sourceMapEntry.value.each { k, v ->
                 String tableEntry = (replaceKeyName?.trim() && k == replaceKeyName) ?
-                        CM.applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
+                        CF.applyReplaceRegexItems(v.toString(), regexItemsList, replaceItemsList) : v.toString()
                 tableColumnSizes[k] = [tableColumnSizes?.get(k), tableEntry.length() + 2].max()
                 Integer padSize = tableColumnSizes[k] - tableEntry.length()
                 formattedTable += createTable ? String.format('%s%s', tableEntry, ' ' * padSize) : ''
@@ -1984,7 +1984,6 @@ List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables
 /** Pipeline entry point. */
 Object jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
-    CM = new org.alx.commonMethods() as Object
     CF = new org.alx.commonFunctions() as Object
     GV = new org.alx.OrgAlxGlobals() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
