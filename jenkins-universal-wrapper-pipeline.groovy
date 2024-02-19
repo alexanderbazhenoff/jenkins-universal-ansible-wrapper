@@ -1477,7 +1477,7 @@ List actionInstallAnsibleCollections(String actionLink, Map actionLinkItem, Obje
     }
     Closure actionClosure = {
         ansibleCollections.each { ansibleCollectionsItem ->
-            sh String.format("ansible-galaxy collection install %s -f", ansibleCollectionsItem)
+            sh String.format('ansible-galaxy collection install %s -f', ansibleCollectionsItem)
         }
         [newActionOk, universalPipelineWrapperBuiltIns, null]
     }
@@ -1504,20 +1504,20 @@ List actionInstallAnsibleCollections(String actionLink, Map actionLinkItem, Obje
  *           - true when checking keys type and templating done without errors;
  *           - templated action link item.
  */
-ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPipelineWrapperBuiltIns, Boolean check,
-                                            Boolean actionOk, String messagePrefix, Map mapToCheckAndTemplate,
-                                            ArrayList stringKeys, String keyDescription = 'action key',
-                                            ArrayList booleanKeys = [], Boolean templateKeys = true) {
-    actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && stringKeys.size() > 0, stringKeys,
+List checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPipelineWrapperBuiltIns, Boolean check,
+                                       Boolean actionOk, String messagePrefix, Map mapToCheckAndTemplate,
+                                       List stringKeys, String keyDescription = 'action key', List booleanKeys = [],
+                                       Boolean templateKeys = true) {
+    Boolean newActionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && stringKeys.size() > 0, stringKeys,
             mapToCheckAndTemplate, true, messagePrefix, actionOk)
-    actionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys.size() > 0, booleanKeys,
-            mapToCheckAndTemplate, false, messagePrefix, actionOk)
+    newActionOk = checkListOfKeysFromMapProbablyStringOrBoolean(check && booleanKeys.size() > 0, booleanKeys,
+            mapToCheckAndTemplate, false, messagePrefix, newActionOk)
     if (templateKeys) {
-        (actionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
-                envVariables, actionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
+        (newActionOk, mapToCheckAndTemplate) = templatingMapKeysFromVariables(mapToCheckAndTemplate, stringKeys,
+                envVariables, newActionOk, universalPipelineWrapperBuiltIns, String.format("'%s' %s", messagePrefix,
                 keyDescription))
     }
-    return [actionOk, mapToCheckAndTemplate]
+    [newActionOk, mapToCheckAndTemplate]
 }
 
 /**
@@ -1530,10 +1530,10 @@ ArrayList checkAndTemplateKeysActionWrapper(Object envVariables, Map universalPi
  *           - true getting sub-key successfully done;
  *           - sub-key item data (e.g. action link item).
  */
-static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String keyNameToGetFrom = 'actions') {
+static List getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String keyNameToGetFrom = 'actions') {
     Boolean subKeyDefined = (subKeyNameToGet && mapToGetFrom?.get(keyNameToGetFrom) &&
             mapToGetFrom.get(keyNameToGetFrom)?.containsKey(subKeyNameToGet))
-    return [subKeyDefined, subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]]
+    [subKeyDefined, subKeyDefined ? mapToGetFrom.get(keyNameToGetFrom)?.get(subKeyNameToGet) : [:]]
 }
 
 /**
@@ -1553,19 +1553,20 @@ static ArrayList getMapSubKey(String subKeyNameToGet, Map mapToGetFrom, String k
  *           - map with filtered keys;
  *           - current state return.
  */
-ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList mandatoryKeysToCheck, ArrayList stringKeys,
-                                                        ArrayList booleanKeys, Boolean state, Boolean enableCheck,
-                                                        String keysDescription, Object envVariables,
-                                                        Map universalPipelineWrapperBuiltIns) {
-    ArrayList mandatoryKeyValues = []
-    (state, map) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns, enableCheck, state,
-            keysDescription, map, stringKeys, String.format("'%s' key", keysDescription), booleanKeys)
+List checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, List mandatoryKeysToCheck, List stringKeys,
+                                                   List booleanKeys, Boolean state, Boolean enableCheck,
+                                                   String keysDescription, Object envVariables,
+                                                   Map universalPipelineWrapperBuiltIns) {
+    List mandatoryKeyValues = []
+    def (Boolean newState, Map newMap) = checkAndTemplateKeysActionWrapper(envVariables,
+            universalPipelineWrapperBuiltIns, enableCheck, state, keysDescription, map, stringKeys,
+            String.format("'%s' key", keysDescription), booleanKeys)
     mandatoryKeysToCheck.eachWithIndex { mandatoryItem, Integer mandatoryItemIndex ->
-        mandatoryKeyValues[mandatoryItemIndex] = map?.get(mandatoryItem as String) ?: ''
-        state = errorMsgWrapper(enableCheck && !mandatoryKeyValues[mandatoryItemIndex].trim(), state, 3,
+        mandatoryKeyValues[mandatoryItemIndex] = newMap?.get(mandatoryItem as String) ?: ''
+        newState = errorMsgWrapper(enableCheck && !mandatoryKeyValues[mandatoryItemIndex].trim(), newState, 3,
                 String.format("Mandatory key '%s' in '%s' is undefined or empty.", mandatoryItem, keysDescription))
     }
-    return [mandatoryKeyValues, findMapItemsFromList(map, stringKeys + booleanKeys as ArrayList), state]
+    [mandatoryKeyValues, findMapItemsFromList(newMap, stringKeys + booleanKeys as ArrayList), newState]
 }
 
 /**
@@ -1584,33 +1585,29 @@ ArrayList checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, ArrayList manda
  *           - action details for logging;
  *           - universal pipeline wrapper built-ins.
  */
-ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
-                                           Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun) {
-    String actionMsg
+List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, Object envVariables, Boolean check,
+                                      Boolean actionOk, Map universalPipelineWrapperBuiltIns, Boolean scriptRun) {
     Closure actionClosure
-    Map checkOrExecuteData = [:]
-    Map checkOrExecuteDataHandled = [:]
-    Map executionLinkNames = [:]
-    String actionName = String.format("%s run", scriptRun ? 'script' : 'ansible playbook')
-    ArrayList stringKeys = scriptRun ? ['script'] : ['playbook', 'inventory']
-    ArrayList pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
-    ArrayList stringSubKeys = ['script', 'jenkins']
-    ArrayList booleanSubKeys = ['pipeline']
+    def (Map checkOrExecuteData, Map checkOrExecuteDataHandled, Map executionLinkNames) = [[:], [:], [:]]
+    String actionName = String.format('%s run', scriptRun ? 'script' : 'ansible playbook')
+    List stringKeys = scriptRun ? ['script'] : ['playbook', 'inventory']
+    List pipelineConfigKeys = scriptRun ? ['scripts'] : ['playbooks', 'inventories']
+    def (List stringSubKeys, List booleanSubKeys, Boolean newActionOk) = [['script', 'jenkins'], ['pipeline'], actionOk]
 
     /** Checking required script or playbook keys. Setting up execution data and printable link names. */
     def (__, Map actionLinkItem) = getMapSubKey(actionLink, pipelineSettings)
-    (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
-            check, actionOk, actionLink, actionLinkItem, stringKeys)
+    (newActionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, newActionOk, actionLink, actionLinkItem, stringKeys)
     stringKeys.eachWithIndex { stringKeyName, Integer actionLinkKeysIndex ->
         Boolean actionLinkItemKeyIsDefined = actionLinkItem.containsKey(stringKeyName)
-        actionOk = errorMsgWrapper(check && actionLinkItemKeyIsDefined && !(actionLinkItem?.get(stringKeyName)
-                instanceof String), actionOk, 3, String.format("'%s' %s item in '%s' should be string.",
+        newActionOk = errorMsgWrapper(check && actionLinkItemKeyIsDefined && !(actionLinkItem?.get(stringKeyName)
+                instanceof String), newActionOk, 3, String.format("'%s' %s item in '%s' should be string.",
                 actionLinkItem?.get(stringKeyName), stringKeyName, actionLink))
         String executionLinkName = stringKeyName == 'inventory' && !actionLinkItemKeyIsDefined ? 'default' :
                 actionLinkItem?.get(stringKeyName)?.toString()
         def (Boolean subKeyIsDefined, Object subKeyValue) = getMapSubKey(executionLinkName, pipelineSettings,
                 pipelineConfigKeys[actionLinkKeysIndex] as String)
-        actionOk = errorMsgWrapper(check && !subKeyIsDefined, actionOk, 3,
+        newActionOk = errorMsgWrapper(check && !subKeyIsDefined, newActionOk, 3,
                 String.format("%s '%s' wasn't found in '%s' section of pipeline config file.", stringKeyName,
                         executionLinkName, pipelineConfigKeys[actionLinkKeysIndex] as String))
         checkOrExecuteData[stringKeyName] = subKeyIsDefined ? subKeyValue : [:]
@@ -1621,19 +1618,19 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
         /** Check script keys. */
         checkOrExecuteData = (checkOrExecuteData.containsKey(stringKeys[0]) && checkOrExecuteData?.get(stringKeys[0])
                 instanceof Map) ? checkOrExecuteData.script as Map : [:]
-        (actionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
-                universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames?.get(stringKeys[0]) as String,
+        (newActionOk, checkOrExecuteData) = checkAndTemplateKeysActionWrapper(envVariables,
+                universalPipelineWrapperBuiltIns, check, newActionOk, executionLinkNames?.get(stringKeys[0]) as String,
                 checkOrExecuteData, stringSubKeys, String.format('%s key', executionLinkNames?.get(stringKeys[0])),
                 booleanSubKeys, false)
         Boolean asPartOfPipelineContentDefined = checkOrExecuteData.containsKey(stringSubKeys[1])
         Boolean wrongScriptKeysSequence = checkOrExecuteData?.get(booleanSubKeys[0]) && !asPartOfPipelineContentDefined
-        actionOk = errorMsgWrapper(wrongScriptKeysSequence, actionOk, 3,
+        newActionOk = errorMsgWrapper(wrongScriptKeysSequence, newActionOk, 3,
                 String.format("Key '%s' is undefined in '%s', but this script was set to run as 'a part of pipeline'.",
                         executionLinkNames?.get(stringKeys[0]), stringSubKeys[1]))
         Boolean scriptContentDefined = checkOrExecuteData.containsKey(stringSubKeys[0])
         wrongScriptKeysSequence = !checkOrExecuteData?.get(booleanSubKeys[0]) && !scriptContentDefined
-        actionOk = errorMsgWrapper(wrongScriptKeysSequence, actionOk, 3, String.format("Key '%s' is undefined in '%s'.",
-                stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
+        newActionOk = errorMsgWrapper(wrongScriptKeysSequence, newActionOk, 3, String.format(
+                "Key '%s' is undefined in '%s'.", stringSubKeys[0], executionLinkNames?.get(stringKeys[0])))
 
         /** Setting up closure depending on script type. */
         def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
@@ -1642,18 +1639,18 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                 'return universalPipelineWrapperBuiltIns')
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
             def universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
-            return [actionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate, null]
+            [newActionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate, null]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh scriptText
-            return [actionOk, universalPipelineWrapperBuiltIns, null]
+            [newActionOk, universalPipelineWrapperBuiltIns, null]
         } : {}
     } else {
         /** Templating playbook keys. Setting up playbook, inventory and playbook execution closure. */
         String ansibleInstallationName = universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName
         stringKeys.each { stringKeyName ->
             Map checkOrExecuteDataTemplatedPart
-            (actionOk, checkOrExecuteDataTemplatedPart) = checkAndTemplateKeysActionWrapper(envVariables,
-                    universalPipelineWrapperBuiltIns, check, actionOk, executionLinkNames[stringKeyName] as String,
+            (newActionOk, checkOrExecuteDataTemplatedPart) = checkAndTemplateKeysActionWrapper(envVariables,
+                    universalPipelineWrapperBuiltIns, check, newActionOk, executionLinkNames[stringKeyName] as String,
                     checkOrExecuteData, [stringKeyName], String.format('%s key', stringKeyName))
             checkOrExecuteDataHandled = checkOrExecuteDataHandled + checkOrExecuteDataTemplatedPart
         }
@@ -1662,18 +1659,19 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
                                                                          checkOrExecuteDataHandled?.get(stringKeys[1])]
         actionClosure = {
             Map universalPipelineWrapperBuiltInsSaved = universalPipelineWrapperBuiltIns
-            actionOk = CF.runAnsible(ansiblePlaybookText, ansibleInventoryText, '', '', '', [],
+            newActionOk = CF.runAnsible(ansiblePlaybookText, ansibleInventoryText, '', '', '', [],
                     ansibleInstallationName?.trim() ? ansibleInstallationName : GV.ANSIBLE_INSTALLATION_NAME)
-            return [actionOk, universalPipelineWrapperBuiltInsSaved, null]
+            [newActionOk, universalPipelineWrapperBuiltInsSaved, null]
         }
     }
 
     /** Run action closure and finally update env from changed universalPipelineWrapperBuiltIns keys. */
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
-            actionClosure, actionLink, actionName, executionLinkNames, stringKeys, actionOk,
+    String actionMsg
+    (newActionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, executionLinkNames, stringKeys, newActionOk,
             universalPipelineWrapperBuiltIns)
     env = check ? env : updateEnvFromMapKeys(universalPipelineWrapperBuiltIns, envVariables)
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
+    [newActionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
 /**
@@ -1690,21 +1688,21 @@ ArrayList actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettin
  *           - true when success, false when failed;
  *           - action details for logging.
  */
-ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
+List actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
                                  Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
     String actionMsg
-    ArrayList stringKeys = ['pipeline']
-    ArrayList booleanKeys = ['propagate', 'wait']
-    ArrayList pipelineParameters
-    ArrayList printablePipelineParameters
+    List pipelineParameters
+    List printablePipelineParameters
     Object runWrapper
-    (actionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
-            check, actionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink), booleanKeys)
+    def (List stringKeys, List booleanKeys, Boolean newActionOk) = [['pipeline'], ['propagate', 'wait'], actionOk]
+    (newActionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, newActionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink),
+            booleanKeys)
     Boolean downstreamJobNameDefined = actionLinkItem?.get(stringKeys[0]) instanceof String &&
             actionLinkItem?.get(stringKeys[0])?.trim()
     String downstreamJobName = downstreamJobNameDefined ? actionLinkItem?.get(stringKeys[0]) : '<undefined>'
     String actionName = String.format("downstream job '%s' run", downstreamJobName)
-    actionOk = errorMsgWrapper(check && !downstreamJobNameDefined, actionOk, 3,
+    newActionOk = errorMsgWrapper(check && !downstreamJobNameDefined, newActionOk, 3,
             String.format("Nothing to execute. '%s' key in '%s' action is mandatory.", stringKeys[0], actionLink))
     Boolean dryRunMode = getBooleanVarStateFromEnv(envVariables, 'DRY_RUN')
     def (Boolean propagatePipelineErrors, Boolean waitForPipelineComplete) = booleanKeys.collect { String booleanKey ->
@@ -1713,27 +1711,28 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
 
     /** Processing downstream job parameters. */
     String kName = 'parameters'
-    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) &&
-            !(actionLinkItem?.get(kName) instanceof ArrayList), actionOk, 3, String.format("%s key in '%s' %s.", kName,
-            actionLink, 'action should be a list or just absent'))
-    ArrayList pipelineParametersList = actionLinkItem?.get(kName) instanceof ArrayList ?
-            actionLinkItem?.get(kName) as ArrayList : []
-    (actionOk, pipelineParameters, printablePipelineParameters) = listOfMapsToTemplatedJobParams(pipelineParametersList,
-            envVariables, String.format("'%s' action", actionLink), universalPipelineWrapperBuiltIns, check, actionOk)
+    newActionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) &&
+            !(actionLinkItem?.get(kName) instanceof ArrayList), newActionOk, 3, String.format("%s key in '%s' %s.",
+            kName, actionLink, 'action should be a list or just absent'))
+    List pipelineParametersList = actionLinkItem?.get(kName) instanceof ArrayList ?
+            actionLinkItem?.get(kName) as ArrayList : [] as ArrayList
+    (newActionOk, pipelineParameters, printablePipelineParameters) = listOfMapsToTemplatedJobParams(
+            pipelineParametersList, envVariables, String.format("'%s' action", actionLink),
+            universalPipelineWrapperBuiltIns, check, newActionOk)
 
     /** Processing copy_artifacts parameters. */
     kName = 'copy_artifacts'
-    actionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) &&
-            !(actionLinkItem?.get(kName) instanceof Map), actionOk, 3, String.format("%s key in '%s' %s.", kName,
+    newActionOk = errorMsgWrapper(check && actionLinkItem.containsKey(kName) &&
+            !(actionLinkItem?.get(kName) instanceof Map), newActionOk, 3, String.format("%s key in '%s' %s.", kName,
             actionLink, 'action should be a map or just absent'))
     Map copyArtifactsKeys = actionLinkItem?.get(kName) instanceof Map ? actionLinkItem?.get(kName) as Map : [:]
-    ArrayList copyArtifactsStringKeys = ['filter', 'excludes', 'target_directory']
-    ArrayList copyArtifactsBooleanKeys = ['optional', 'flatten', 'fingerprint']
-    (actionOk, copyArtifactsKeys) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
-            check, actionOk, actionLink, copyArtifactsKeys, copyArtifactsStringKeys, String.format("%s key in '%s'",
+    List copyArtifactsStringKeys = ['filter', 'excludes', 'target_directory']
+    List copyArtifactsBooleanKeys = ['optional', 'flatten', 'fingerprint']
+    (newActionOk, copyArtifactsKeys) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
+            check, newActionOk, actionLink, copyArtifactsKeys, copyArtifactsStringKeys, String.format("%s key in '%s'",
             kName, actionLink), copyArtifactsBooleanKeys)
     String copyArtifactsFilter = copyArtifactsKeys?.get(copyArtifactsStringKeys[0] as String) ?: ''
-    actionOk = errorMsgWrapper(actionLinkItem.containsKey(kName) && !copyArtifactsFilter.trim(), actionOk, 3,
+    newActionOk = errorMsgWrapper(actionLinkItem.containsKey(kName) && !copyArtifactsFilter.trim(), newActionOk, 3,
             String.format("Mandatory key '%s' of '%s' in '%s' action is undefined.", copyArtifactsStringKeys[0], kName,
                     actionLink))
 
@@ -1741,23 +1740,22 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
     Closure actionClosure = downstreamJobNameDefined ? {
         Object jobRunWrapper = CF.dryRunJenkinsJob(downstreamJobName, pipelineParameters, dryRunMode, false,
                 propagatePipelineErrors, waitForPipelineComplete, envVariables, 'DRY_RUN', printablePipelineParameters)
-        return [actionOk, universalPipelineWrapperBuiltIns, jobRunWrapper]
+        [newActionOk, universalPipelineWrapperBuiltIns, jobRunWrapper]
     } : {
-        return [false, universalPipelineWrapperBuiltIns, null]
+        [false, universalPipelineWrapperBuiltIns, null]
     }
-    errorMsgWrapper(!check && !dryRunMode, true, 0, String.format("%s parameters: %s", actionName,
+    errorMsgWrapper(!check && !dryRunMode, true, 0, String.format('%s parameters: %s', actionName,
             CF.readableJobParams(printablePipelineParameters)))
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, runWrapper) = actionClosureWrapperWithTryCatch(check,
+    (newActionOk, actionMsg, universalPipelineWrapperBuiltIns, runWrapper) = actionClosureWrapperWithTryCatch(check,
             envVariables, actionClosure, actionLink, actionName, actionLinkItem.findAll { k, v -> k != stringKeys[0] },
-            stringKeys + booleanKeys + [kName] as ArrayList, actionOk, universalPipelineWrapperBuiltIns)
-    String downstreamJobRunResults = runWrapper?.getResult()?.trim() ? runWrapper.getResult() : ''
-    String copyArtifactsBuildSelector = runWrapper?.getNumber()?.toString() ?: ''
-    String downstreamJobConsoleUrl = runWrapper?.getAbsoluteUrl() ? String.format(' %sconsole',
-            runWrapper.getAbsoluteUrl()) : ''
+            stringKeys + booleanKeys + [kName] as ArrayList, newActionOk, universalPipelineWrapperBuiltIns)
+    String downstreamJobRunResults = runWrapper.result?.trim() ? runWrapper.result : ''
+    String copyArtifactsBuildSelector = runWrapper.number?.toString() ?: ''
+    String downstreamJobConsoleUrl = runWrapper.absoluteUrl ? String.format(' %sconsole', runWrapper.absoluteUrl) : ''
     actionMsg += downstreamJobConsoleUrl
     Boolean getStatusFromDownstreamJobRunIsPossible = downstreamJobNameDefined && waitForPipelineComplete &&
             downstreamJobRunResults.trim()
-    errorMsgWrapper(!check && !dryRunMode && getStatusFromDownstreamJobRunIsPossible, actionOk, 0,
+    errorMsgWrapper(!check && !dryRunMode && getStatusFromDownstreamJobRunIsPossible, newActionOk, 0,
             String.format("%s%s finished with '%s'.", actionName, downstreamJobConsoleUrl, downstreamJobRunResults))
 
     /** Copy artifacts from downstream job. */
@@ -1785,9 +1783,9 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
             copyArtifactsErrReason += String.format(' %s', CF.readableError(err))
         }
     }
-    actionOk = errorMsgWrapper(copyArtifactsErrReason.trim() as Boolean, actionOk, 3, String.format('%s:%s',
+    newActionOk = errorMsgWrapper(copyArtifactsErrReason.trim() as Boolean, newActionOk, 3, String.format('%s:%s',
             copyArtifactsErrMsg, copyArtifactsErrReason))
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
+    [newActionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
 /**
@@ -1803,15 +1801,13 @@ ArrayList actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object e
  *           - true when success, false when failed;
  *           - action details for logging.
  */
-ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
-                                 Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+List actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                            Map universalPipelineWrapperBuiltIns) {
     String actionMsg
-    String actionName = 'archive artifacts'
-    ArrayList stringKeys = ['artifacts', 'excludes']
-    ArrayList booleanKeys = ['allow_empty', 'fingerprint']
-    ArrayList mandatoryKeyValues
-    (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
-            [stringKeys[0] as String], stringKeys, booleanKeys, actionOk, check, actionLink, envVariables,
+    def (String actionName, List mandatoryKeyValues, Boolean newActionOk) = ['archive artifacts', [], actionOk]
+    def (List stringKeys, List booleanKeys) = [['artifacts', 'excludes'], ['allow_empty', 'fingerprint']]
+    (mandatoryKeyValues, actionLinkItem, newActionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
+            [stringKeys[0] as String], stringKeys, booleanKeys, newActionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
     Closure actionClosure = mandatoryKeyValues[0].trim() ? {
         archiveArtifacts(
@@ -1820,17 +1816,17 @@ ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object e
                 allowEmptyArchive: actionLinkItem?.get(booleanKeys[0]) ?: false,
                 fingerprint: actionLinkItem?.get(booleanKeys[1]) ?: false
         )
-        return [actionOk, universalPipelineWrapperBuiltIns, null]
+        [newActionOk, universalPipelineWrapperBuiltIns, null]
     } : {
-        return [false, universalPipelineWrapperBuiltIns, null]
+        [false, universalPipelineWrapperBuiltIns, null]
     }
     errorMsgWrapper(!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'), true, 0,
             String.format("%s parameters: %s", actionName.capitalize(), CF.readableMap(actionLinkItem)))
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
-            actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList, actionOk,
+    (newActionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList, newActionOk,
             universalPipelineWrapperBuiltIns)
     actionMsg += String.format(' %sartifact/', envVariables.BUILD_URL)
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
+    return [newActionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
 /**
@@ -1847,15 +1843,14 @@ ArrayList actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object e
  *           - true when success, false when failed;
  *           - action details for logging.
  */
-ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
-                        Map universalPipelineWrapperBuiltIns, Boolean stashFiles = true) {
-    String actionMsg
+List actionUnStash(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                   Map universalPipelineWrapperBuiltIns, Boolean stashFiles = true) {
     String actionName = String.format('%sstash files', stashFiles ? '' : 'un')
-    ArrayList stringKeys = stashFiles ? ['stash', 'includes', 'excludes'] : ['unstash']
-    ArrayList booleanKeys = stashFiles ? ['default_excludes', 'allow_empty'] : []
-    ArrayList mandatoryKeyValues
-    (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
-            [stringKeys[0] as String], stringKeys, booleanKeys, actionOk, check, actionLink, envVariables,
+    List stringKeys = stashFiles ? ['stash', 'includes', 'excludes'] : ['unstash']
+    List booleanKeys = stashFiles ? ['default_excludes', 'allow_empty'] : []
+    def (List mandatoryKeyValues, Boolean newActionOk) = [[], actionOk]
+    (mandatoryKeyValues, actionLinkItem, newActionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
+            [stringKeys[0] as String], stringKeys, booleanKeys, newActionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
     Closure actionClosure = stashFiles ? {
         stash(
@@ -1865,17 +1860,15 @@ ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariabl
                 useDefaultExcludes: actionLinkItem?.get(booleanKeys[0]) ?: true,
                 allowEmpty: actionLinkItem?.get(booleanKeys[1]) ?: false
         )
-        return [actionOk, universalPipelineWrapperBuiltIns, null]
+        [newActionOk, universalPipelineWrapperBuiltIns, null]
     } : {
         unstash(name: mandatoryKeyValues[0])
-        return [actionOk, universalPipelineWrapperBuiltIns, null]
+        [newActionOk, universalPipelineWrapperBuiltIns, null]
     }
     errorMsgWrapper(!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'), true, 0,
             String.format("%s parameters: %s", actionName.capitalize(), CF.readableMap(actionLinkItem)))
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
-            actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList, actionOk,
-            universalPipelineWrapperBuiltIns)
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
+    actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink, actionName, actionLinkItem,
+            stringKeys + booleanKeys as ArrayList, newActionOk, universalPipelineWrapperBuiltIns)
 }
 
 /**
@@ -1896,14 +1889,13 @@ ArrayList actionUnStash(String actionLink, Map actionLinkItem, Object envVariabl
  *         - pipeline parameters return;
  *         - printable pipeline parameters return.
  */
-ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVariables, String keyDescription,
-                                         Map universalPipelineWrapperBuiltIns, Boolean check, Boolean allPass = true,
-                                         ArrayList pipelineParameters = [],
-                                         ArrayList printablePipelineParameters = []) {
+List listOfMapsToTemplatedJobParams(List listOfMapItems, Object envVariables, String keyDescription,
+                                    Map universalPipelineWrapperBuiltIns, Boolean check, Boolean allPass = true,
+                                    List pipelineParameters = [], List printablePipelineParameters = []) {
     listOfMapItems.eachWithIndex { listItem, Integer listItemIndex ->
-        ArrayList stringParamKeysList = ['name', 'type']
-        ArrayList allParamKeysList = stringParamKeysList + ['value']
-        ArrayList paramTypes = ['string', 'boolean', 'password', 'text']
+        List stringParamKeysList = ['name', 'type']
+        List allParamKeysList = stringParamKeysList + ['value']
+        List paramTypes = ['string', 'boolean', 'password', 'text']
         String errMsgSubject = String.format('pipeline parameter no. %s of %s', listItemIndex.toString(),
                 keyDescription)
         if (listItem instanceof Map) {
@@ -1921,9 +1913,8 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
             }
             allPass = errorMsgWrapper(!typeKeyOk, allPass, 3, String.format("Wrong in %s. Should be: %s.",
                     errMsgSubject, arrayListToReadableString(paramTypes)))
-            /**
-             * Assigning variables to pipeline parameter item, hiding passwords, converting them to pipeline parameter.
-             */
+
+            /** Assign variables to pipeline parameter item, hide passwords, convert them to pipeline parameter. */
             (allPass, filteredListItem) = templatingMapKeysFromVariables(filteredListItem, allParamKeysList,
                     envVariables, allPass, universalPipelineWrapperBuiltIns, errMsgSubject)
             if (filteredListItem?.size() == 3 && stringKeysOk) {
@@ -1941,7 +1932,7 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
                     errMsgSubject))
         }
     }
-    return [allPass, pipelineParameters, printablePipelineParameters]
+    [allPass, pipelineParameters, printablePipelineParameters]
 }
 
 /**
@@ -1958,22 +1949,20 @@ ArrayList listOfMapsToTemplatedJobParams(ArrayList listOfMapItems, Object envVar
  *           - true when success, false when failed;
  *           - action details for logging.
  */
-ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
-                           Map universalPipelineWrapperBuiltIns) {
-    String actionMsg
-    ArrayList mandatoryKeys = ['report']
+List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                      Map universalPipelineWrapperBuiltIns) {
+    def (List mandatoryKeys, List mandatoryKeyValues, Boolean newActionOk) = [['report'], [], actionOk]
     String reportTarget = actionLinkItem?.get(mandatoryKeys[0]) instanceof String ?
             actionLinkItem.get(mandatoryKeys[0]) : ''
-    actionOk = errorMsgWrapper(!check && !reportTarget.trim(), actionOk, 3,
+    newActionOk = errorMsgWrapper(!check && !reportTarget.trim(), newActionOk, 3,
             String.format("Unable to detect report target: '%s' action key in '%s' is undefined or incorrect.",
                     mandatoryKeys[0], actionLink))
     mandatoryKeys += reportTarget == 'email' ? ['to'] : []
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
-    ArrayList stringKeys = reportTarget == 'email' ? ['reply_to', 'subject', 'body'] : []
-    ArrayList mandatoryKeyValues
+    List stringKeys = reportTarget == 'email' ? ['reply_to', 'subject', 'body'] : []
     // TODO: pipeline setting change?
-    (mandatoryKeyValues, actionLinkItem, actionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
-            mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], actionOk, check, actionLink, envVariables,
+    (mandatoryKeyValues, actionLinkItem, newActionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
+            mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], newActionOk, check, actionLink, envVariables,
             universalPipelineWrapperBuiltIns)
     String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
     Closure actionClosure = mandatoryKeyValues[0] == 'email' ? {
@@ -1983,24 +1972,25 @@ ArrayList actionSendReport(String actionLink, Map actionLinkItem, Object envVari
                 subject: actionLinkItem?.get(stringKeys[1]) ?: '',
                 body: actionLinkItem?.get(stringKeys[2]) ?: ''
         )
-        return [actionOk, universalPipelineWrapperBuiltIns, null]
+        [newActionOk, universalPipelineWrapperBuiltIns, null]
     } : mandatoryKeyValues[0] == 'mattermost' ? {
         Boolean sendReportStatus = CF.sendMattermostChannelSingleMessage(mandatoryKeyValues[1], mandatoryKeyValues[2],
                 getBooleanVarStateFromEnv(envVariables) ? 2 : 0)
-        return [sendReportStatus && actionOk, universalPipelineWrapperBuiltIns, null]
+        [sendReportStatus && newActionOk, universalPipelineWrapperBuiltIns, null]
     } : {
-        return [actionOk, universalPipelineWrapperBuiltIns, null]
+        [newActionOk, universalPipelineWrapperBuiltIns, null]
     }
-    ArrayList msgKeys = reportTarget == 'email' ? [mandatoryKeys[1]] : []
-    (actionOk, actionMsg, universalPipelineWrapperBuiltIns, __) = actionClosureWrapperWithTryCatch(check, envVariables,
-            actionClosure, actionLink, actionName, actionLinkItem, msgKeys, actionOk, universalPipelineWrapperBuiltIns)
-    actionMsg = actionMsg.replaceAll('\\s\\[]', '')
-    return [actionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
+    List msgKeys = reportTarget == 'email' ? [mandatoryKeys[1]] : []
+    String actionMsg
+    (newActionOk, actionMsg, universalPipelineWrapperBuiltIns) = actionClosureWrapperWithTryCatch(check, envVariables,
+            actionClosure, actionLink, actionName, actionLinkItem, msgKeys, newActionOk,
+            universalPipelineWrapperBuiltIns)
+    [newActionOk, actionMsg.replaceAll('\\s\\[]', ''), universalPipelineWrapperBuiltIns as Map]
 }
 
 
 /** Pipeline entry point. */
-def jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
+Object jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     GV = new org.alx.OrgAlxGlobals() as Object
