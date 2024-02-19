@@ -2,7 +2,8 @@
 
 
 /**
- * Jenkins Universal Wrapper Pipeline v1.0.0 (c) Aleksandr Bazhenov, 2023-2024
+ * Jenkins Universal Wrapper Pipeline v1.0.0
+ * (c) Aleksandr Bazhenov, 2023-2024
  *
  * This Source Code Form is subject to the terms of the Apache License v2.0.
  * If a copy of this source file was not distributed with this file, You can obtain one at:
@@ -95,7 +96,7 @@ Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String
 static String applyReplaceRegexItems(String text, List regexItemsList, List replaceItemsList = []) {
     String replacedText = text
     regexItemsList.eachWithIndex { value, Integer index ->
-        replacedText = text.replaceAll(value as CharSequence,
+        replacedText = replacedText.replaceAll(value as CharSequence,
                 replaceItemsList[index] ? replaceItemsList[index] as String : '')
     }
     replacedText
@@ -400,8 +401,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
  */
 // groovylint-disable-next-line MethodReturnTypeRequired, NoDef
 def updatePipelineParams(List requiredParams, Boolean finishWithSuccess, Object currentPipelineParams) {
-    List newPipelineParams = []
-    Boolean dryRun = getBooleanPipelineParamState(currentPipelineParams)
+    def (Boolean dryRun, List newPipelineParams) = [getBooleanPipelineParamState(currentPipelineParams), []]
     currentBuild.displayName = String.format('pipeline_parameters_update--#%s%s', env.BUILD_NUMBER, dryRun ?
             '-dry_run' : '')
     requiredParams.each { newPipelineParams += pipelineSettingsItemToPipelineParam(it as Map) }
@@ -1642,7 +1642,7 @@ List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, O
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh scriptText
             [newActionOk, universalPipelineWrapperBuiltIns, null]
-        } : {}
+        } : { }
     } else {
         /** Templating playbook keys. Setting up playbook, inventory and playbook execution closure. */
         String ansibleInstallationName = universalPipelineWrapperBuiltIns.ansibleCurrentInstallationName
@@ -1687,12 +1687,12 @@ List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, O
  *           - true when success, false when failed;
  *           - action details for logging.
  */
-List actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check,
-                                 Boolean actionOk, Map universalPipelineWrapperBuiltIns) {
+List actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object envVariables, Boolean check, Boolean actionOk,
+                            Map universalPipelineWrapperBuiltIns) {
     String actionMsg
-    List pipelineParameters
-    List printablePipelineParameters
     Object runWrapper
+    def (List pipelineParameters, List printablePipelineParameters) = [[], []]
+    // groovylint-disable-next-line DuplicateListLiteral
     def (List stringKeys, List booleanKeys, Boolean newActionOk) = [['pipeline'], ['propagate', 'wait'], actionOk]
     (newActionOk, actionLinkItem) = checkAndTemplateKeysActionWrapper(envVariables, universalPipelineWrapperBuiltIns,
             check, newActionOk, actionLink, actionLinkItem, stringKeys, String.format("'%s' key", actionLink),
@@ -1825,7 +1825,7 @@ List actionArchiveArtifacts(String actionLink, Map actionLinkItem, Object envVar
             actionClosure, actionLink, actionName, actionLinkItem, stringKeys + booleanKeys as ArrayList, newActionOk,
             universalPipelineWrapperBuiltIns)
     actionMsg += String.format(' %sartifact/', envVariables.BUILD_URL)
-    return [newActionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
+    [newActionOk, actionMsg, universalPipelineWrapperBuiltIns as Map]
 }
 
 /**
@@ -1865,7 +1865,7 @@ List actionUnStash(String actionLink, Map actionLinkItem, Object envVariables, B
         [newActionOk, universalPipelineWrapperBuiltIns, null]
     }
     errorMsgWrapper(!check && !getBooleanVarStateFromEnv(envVariables, 'DRY_RUN'), true, 0,
-            String.format("%s parameters: %s", actionName.capitalize(), CF.readableMap(actionLinkItem)))
+            String.format('%s parameters: %s', actionName.capitalize(), CF.readableMap(actionLinkItem)))
     actionClosureWrapperWithTryCatch(check, envVariables, actionClosure, actionLink, actionName, actionLinkItem,
             stringKeys + booleanKeys as ArrayList, newActionOk, universalPipelineWrapperBuiltIns)
 }
@@ -1891,47 +1891,47 @@ List actionUnStash(String actionLink, Map actionLinkItem, Object envVariables, B
 List listOfMapsToTemplatedJobParams(List listOfMapItems, Object envVariables, String keyDescription,
                                     Map universalPipelineWrapperBuiltIns, Boolean check, Boolean allPass = true,
                                     List pipelineParameters = [], List printablePipelineParameters = []) {
+    def (Boolean itsPass, List newPipelineParameters) = [allPass, pipelineParameters]
     listOfMapItems.eachWithIndex { listItem, Integer listItemIndex ->
-        List stringParamKeysList = ['name', 'type']
+        def (List stringParamKeysList, List paramTypes) = [['name', 'type'], ['string', 'boolean', 'password', 'text']]
         List allParamKeysList = stringParamKeysList + ['value']
-        List paramTypes = ['string', 'boolean', 'password', 'text']
         String errMsgSubject = String.format('pipeline parameter no. %s of %s', listItemIndex.toString(),
                 keyDescription)
         if (listItem instanceof Map) {
             /** Checking pipeline parameter item keys types and defined states. */
             Map filteredListItem = findMapItemsFromList(listItem as Map, allParamKeysList)
-            allPass = errorMsgWrapper(filteredListItem?.size() != 3, allPass, 3, String.format("%s %s: %s required.",
+            itsPass = errorMsgWrapper(filteredListItem?.size() != 3, itsPass, 3, String.format('%s %s: %s required.',
                     'Wrong set of keys in', errMsgSubject, arrayListToReadableString(allParamKeysList)))
             Boolean stringKeysOk = checkListOfKeysFromMapProbablyStringOrBoolean(check, stringParamKeysList,
-                    filteredListItem, true, keyDescription, allPass)
+                    filteredListItem, true, keyDescription, itsPass)
             Boolean valueKeyWrong = filteredListItem?.get('value') instanceof Map
-            allPass = errorMsgWrapper(valueKeyWrong, allPass, 3, String.format("'value' key in %s %s. %s.",
+            itsPass = errorMsgWrapper(valueKeyWrong, itsPass, 3, String.format("'value' key in %s %s. %s.",
                     errMsgSubject, "shouldn't be map", 'In most cases, strings or a boolean are sufficient'))
             Boolean typeKeyOk = filteredListItem?.size() == 3 && paramTypes.any { String entry ->
                 entry.contains(filteredListItem?.get(stringParamKeysList[1]) as String)
             }
-            allPass = errorMsgWrapper(!typeKeyOk, allPass, 3, String.format("Wrong in %s. Should be: %s.",
+            itsPass = errorMsgWrapper(!typeKeyOk, itsPass, 3, String.format('Wrong in %s. Should be: %s.',
                     errMsgSubject, arrayListToReadableString(paramTypes)))
 
             /** Assign variables to pipeline parameter item, hide passwords, convert them to pipeline parameter. */
-            (allPass, filteredListItem) = templatingMapKeysFromVariables(filteredListItem, allParamKeysList,
-                    envVariables, allPass, universalPipelineWrapperBuiltIns, errMsgSubject)
+            (itsPass, filteredListItem) = templatingMapKeysFromVariables(filteredListItem, allParamKeysList,
+                    envVariables, itsPass, universalPipelineWrapperBuiltIns, errMsgSubject)
             if (filteredListItem?.size() == 3 && stringKeysOk) {
-                pipelineParameters = CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
+                newPipelineParameters = CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
                         filteredListItem?.get('value'), filteredListItem?.get(stringParamKeysList[1]), false,
-                        pipelineParameters)
+                        newPipelineParameters)
                 printablePipelineParameters = (filteredListItem?.get(stringParamKeysList[1]) == paramTypes[3]) ?
                         CF.itemKeyToJobParam(filteredListItem?.get(stringParamKeysList[0]),
                                 hidePasswordString(filteredListItem?.get('value') as String), filteredListItem
-                                ?.get(stringParamKeysList[1]), false, pipelineParameters) : pipelineParameters
+                                ?.get(stringParamKeysList[1]), false, newPipelineParameters) : newPipelineParameters
             }
-            allPass = filteredListItem?.size() == 3 && stringKeysOk ? allPass : false
+            itsPass = filteredListItem?.size() == 3 && stringKeysOk ? itsPass : false
         } else {
-            allPass = errorMsgWrapper(true, allPass, 3, String.format("Wrong structure in %s: should be map.",
+            itsPass = errorMsgWrapper(true, itsPass, 3, String.format('Wrong structure in %s: should be map.',
                     errMsgSubject))
         }
     }
-    [allPass, pipelineParameters, printablePipelineParameters]
+    [itsPass, newPipelineParameters, printablePipelineParameters]
 }
 
 /**
@@ -2026,8 +2026,8 @@ node(jenkinsNodeToExecute) {
                     pipelineSettings, env)
             pipelineFailReasonText += allDone ? '' : 'Stages execution finished with fail.'
             String overallResults = universalPipelineWrapperBuiltIns.get('multilineReport') ?
-                    universalPipelineWrapperBuiltIns.multilineReport.replaceAll('\\[PASS\\]', "\033[0;32m[PASS]\033[0m")
-                            .replaceAll('\\[FAIL\\]', "\033[0;31m[FAIL]\033[0m") : 'n/a'
+                    universalPipelineWrapperBuiltIns.multilineReport.replaceAll('\\[PASS\\]', '\033[0;32m[PASS]\033[0m')
+                            .replaceAll('\\[FAIL\\]', '\033[0;31m[FAIL]\033[0m') : 'n/a'
             CF.outMsg(allDone ? 1 : 3, String.format('%s\nOVERALL:\n\n%s\n%s', '-' * 80, overallResults, '-' * 80))
         }
         if (pipelineFailReasonText.trim())
