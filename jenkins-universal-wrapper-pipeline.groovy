@@ -226,29 +226,6 @@ static Boolean getBooleanPipelineParamState(Object pipelineParams, String parame
 }
 
 /**
- * Get jenkins node by node name or node tag defined in pipeline parameter(s).
- *
- * @param env - environment variables for current job build (actually requires a pass of 'env' which is
- *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param nodeParamName - Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on. This
- *                        pipeline parameters will be used to check for jenkins node name on pipeline start. If this
- *                        parameter undefined or blank nodeTagParamName will be used to check.
- * @param nodeTagParamName - Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute
- *                           on. This parameter will be used to check for jenkins node selection by tag on pipeline
- *                           start. If this parameter defined nodeParamName will be ignored.
- * @return - null when nodeParamName or nodeTagParamName parameters found. In this case pipeline starts on any jenkins
- *           node. Otherwise, return 'node_name' or [label: 'node_tag'].
- */
-static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
-    Object nodeToExecute = null
-    // groovylint-disable-next-line UnnecessaryGetter
-    nodeToExecute = (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) ?
-            [label: env[nodeTagParamName]] : nodeToExecute
-    // groovylint-disable-next-line UnnecessaryGetter
-    (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) ? env[nodeParamName] : nodeToExecute
-}
-
-/**
  * Incompatible keys in map found error message wrapper.
  *
  * @param keys - arrayList of: First keyName, second keyName, etc...
@@ -1317,7 +1294,7 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
             'Possible keys are', mapItemsToReadableListString(detectByKeys)))
 
     /** Handling node selection keys: if name key exists use value from them, otherwise use label key. */
-    Object currentNodeData = getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
+    Object currentNodeData = CF.getJenkinsNodeToExecuteByNameOrTag(envVariables, nodePipelineParameterName,
             nodeTagPipelineParameterName)
     Object changeNodeData = currentNodeData
     if (nodeItem?.containsKey('name')) {
@@ -1971,7 +1948,7 @@ List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables
 
 
 /** Pipeline entry point. */
-Object jenkinsNodeToExecute = getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
+Object jenkinsNodeToExecute = CF.getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
     CF = new org.alx.commonFunctions() as Object
     GV = new org.alx.OrgAlxGlobals() as Object

@@ -48,7 +48,7 @@ To run ansible inside a wrapper plugin you may need to install
 
 ## Pipeline constants
 
-- `SettingsGitUrl`: repository URL of 
+- `SettingsGitUrl`: repository URL of
   ['universal-wrapper-pipeline-settings'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   to load current pipeline settings.
 - `DefaultSettingsGitBranch`: repository branch of
