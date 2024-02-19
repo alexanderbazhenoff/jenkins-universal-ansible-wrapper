@@ -1750,11 +1750,9 @@ List actionDownstreamJobRun(String actionLink, Map actionLinkItem, Object envVar
     (newActionOk, actionMsg, universalPipelineWrapperBuiltIns, runWrapper) = actionClosureWrapperWithTryCatch(check,
             envVariables, actionClosure, actionLink, actionName, actionLinkItem.findAll { k, v -> k != stringKeys[0] },
             stringKeys + booleanKeys + [kName] as ArrayList, newActionOk, universalPipelineWrapperBuiltIns)
-    println 'kuku'
     String downstreamJobRunResults = runWrapper?.result?.trim() ? runWrapper.result : ''
-    println 'kuku2'
-    String copyArtifactsBuildSelector = runWrapper.number?.toString() ?: ''
-    String downstreamJobConsoleUrl = runWrapper.absoluteUrl ? String.format(' %sconsole', runWrapper.absoluteUrl) : ''
+    String copyArtifactsBuildSelector = runWrapper?.number?.toString() ?: ''
+    String downstreamJobConsoleUrl = runWrapper?.absoluteUrl ? String.format(' %sconsole', runWrapper.absoluteUrl) : ''
     actionMsg += downstreamJobConsoleUrl
     Boolean getStatusFromDownstreamJobRunIsPossible = downstreamJobNameDefined && waitForPipelineComplete &&
             downstreamJobRunResults.trim()
