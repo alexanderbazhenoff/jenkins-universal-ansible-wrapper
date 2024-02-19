@@ -11,6 +11,7 @@
  */
 
 import groovy.text.StreamingTemplateEngine
+
 // groovylint-disable-next-line MethodCount
 @Library('jenkins-shared-library-alx@updates')
 
@@ -1947,10 +1948,10 @@ List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables
 
 
 /** Pipeline entry point. */
+CF = new org.alx.commonFunctions() as Object
+GV = new org.alx.OrgAlxGlobals() as Object
 Object jenkinsNodeToExecute = CF.getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
-    CF = new org.alx.commonFunctions() as Object
-    GV = new org.alx.OrgAlxGlobals() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
         String pipelineFailReasonText
         Boolean pipelineParamsProcessingPass
