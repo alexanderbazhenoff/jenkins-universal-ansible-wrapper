@@ -18,6 +18,7 @@ actions then action description what each of them should do.
 - Node selection and move files between.
 - Working with file-artifacts.
 - Possible to run actions in a stages in parallel or sequentially.
+- Inject pipeline parameters on the first pipeline run by specifying them inside yaml config files.
 - You can also extend a pipeline code by running native language as part of pipeline (e.g. Groovy for Jenkins).
 
 ## Requirements
