@@ -1638,8 +1638,7 @@ List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, O
         pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
                 'return universalPipelineWrapperBuiltIns')
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
-            def universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
-            println 'kuku: ' + universalPipelineWrapperBuiltInsUpdate.getClass()
+            Map universalPipelineWrapperBuiltInsUpdate = evaluate(pipelineCodeText) as Map
             [newActionOk, universalPipelineWrapperBuiltIns + universalPipelineWrapperBuiltInsUpdate, null]
         } : (!checkOrExecuteData?.get(booleanSubKeys[0]) && scriptContentDefined) ? {
             sh scriptText
