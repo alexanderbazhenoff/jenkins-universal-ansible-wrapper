@@ -1949,17 +1949,22 @@ List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables
 
 /** Pipeline entry point. */
 CF = new org.alx.commonFunctions() as Object
-GV = new org.alx.OrgAlxGlobals() as Object
 Object jenkinsNodeToExecute = CF.getJenkinsNodeToExecuteByNameOrTag(env, 'NODE_NAME', 'NODE_TAG')
 node(jenkinsNodeToExecute) {
+    GV = new org.alx.OrgAlxGlobals() as Object
     wrap([$class: 'TimestamperBuildWrapper']) {
         String pipelineFailReasonText
         Boolean pipelineParamsProcessingPass
         Boolean checkPipelineParametersPass
         Map pipelineSettings
+        String settingsGitUrl = env.JUWP_SETTINGS_GIT_URL?.trim() ?: SettingsGitUrl
+        String defaultSettingsGitBranch = env.JUWP_DEFAULT_SETTINGS_GIT_BRANCH?.trim() ?: DefaultSettingsGitBranch
+        String settingsRelativePathPrefix = env.JUWP_RELATIVE_PATH_PREFIX?.trim() ?: SettingsRelativePathPrefix
+        List pipelineNameRegexReplace = env.JUWP_PIPELINE_NAME_REGEX_REPLACE?.trim() ? env.
+                JUWP_PIPELINE_NAME_REGEX_REPLACE?.tokenize(', ') : PipelineNameRegexReplace
         (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
-                pipelineParamsProcessingWrapper(SettingsGitUrl, DefaultSettingsGitBranch, SettingsRelativePathPrefix,
-                        PipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
+                pipelineParamsProcessingWrapper(settingsGitUrl, defaultSettingsGitBranch, settingsRelativePathPrefix,
+                        pipelineNameRegexReplace, BuiltinPipelineParameters, env, params)
 
         /** When params are set check other pipeline settings (stages, playbooks, scripts, inventories) are correct. */
         Boolean pipelineSettingsCheckOk = true
