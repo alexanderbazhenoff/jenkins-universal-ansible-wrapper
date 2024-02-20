@@ -13,7 +13,7 @@
 import groovy.text.StreamingTemplateEngine
 
 // groovylint-disable-next-line MethodCount
-@Library('jenkins-shared-library-alx@updates')
+@Library('jenkins-shared-library-alx')
 
 /**
  * Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
