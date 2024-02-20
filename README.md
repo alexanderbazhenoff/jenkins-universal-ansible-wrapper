@@ -61,10 +61,10 @@ Environment variables will override existing constant values.
 - `SettingsRelativePathPrefix` constant or `JUWP_RELATIVE_PATH_PREFIX` environment variable: prefix for pipeline 
   settings relative path inside the
   ['universal-wrapper-pipeline-settings'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
-   project, that will be added automatically on yaml load (e.g. `settings` folder).
+  project, that will be added automatically on yaml load (e.g. `settings` folder).
 - `PipelineNameRegexReplace` list constant or `JUWP_PIPELINE_NAME_REGEX_REPLACE` environment variable (comma separated 
-   list of regular expressions, e.g: `'value1, value2, value3'`): regular expression for jenkins pipeline name, a 
-   string that will be cut from pipeline name to become a filename of yaml pipeline settings to be loaded.
+  list of regular expressions, e.g: `'value1, value2, value3'`): regular expression for jenkins pipeline name, a 
+  string that will be cut from pipeline name to become a filename of yaml pipeline settings to be loaded.
 - `AnsibleInstallationName`: ansible installation name from jenkins Global Configuration Tool or empty for defaults from
   jenkins shared library (see ['Ansible Jenkins plugin'](https://plugins.jenkins.io/ansible/) documentation).
 - `BuiltinPipelineParameters`: built-in pipeline parameters, which are mandatory and not present in
