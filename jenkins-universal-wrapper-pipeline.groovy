@@ -1959,10 +1959,12 @@ node(jenkinsNodeToExecute) {
         Map pipelineSettings
         String settingsGitUrl = env.JUWP_SETTINGS_GIT_URL?.trim() ?: SettingsGitUrl
         String defaultSettingsGitBranch = env.JUWP_DEFAULT_SETTINGS_GIT_BRANCH?.trim() ?: DefaultSettingsGitBranch
-        println 'defaultSettingsGitBranch ' + defaultSettingsGitBranch
         String settingsRelativePathPrefix = env.JUWP_RELATIVE_PATH_PREFIX?.trim() ?: SettingsRelativePathPrefix
         List pipelineNameRegexReplace = env.JUWP_PIPELINE_NAME_REGEX_REPLACE?.trim() ? env.
                 JUWP_PIPELINE_NAME_REGEX_REPLACE?.tokenize(', ') : PipelineNameRegexReplace
+        CF.outMsg(0, String.format("%s: '%s', branch: '%s, relative path prefix: '%s', name regex replace: %s.",
+                'Pipeline project settings repository URL', settingsGitUrl, defaultSettingsGitBranch,
+                settingsRelativePathPrefix, pipelineNameRegexReplace.join(', ')))
         (pipelineFailReasonText, pipelineParamsProcessingPass, checkPipelineParametersPass, pipelineSettings, env) =
                 pipelineParamsProcessingWrapper(settingsGitUrl, defaultSettingsGitBranch, settingsRelativePathPrefix,
                         pipelineNameRegexReplace, BuiltinPipelineParameters, env, params)

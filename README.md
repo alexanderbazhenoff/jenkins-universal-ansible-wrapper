@@ -79,9 +79,9 @@ settings. As official Jenkins manual of [Environment Injector](https://plugins.j
 described, set 'Prepare an environment for the run' to active and add your environment variables to the field
 'Properties Content', e.g.:
 
-```bash
-JUWP_SETTINGS_GIT_URL="http://github.com/my_usrrname/my_universal-wrapper-pipeline-settings-repository"
-JUWP_DEFAULT_SETTINGS_GIT_BRANCH="my_branch"
+```properties
+JUWP_SETTINGS_GIT_URL=http://github.com/my_usrrname/my_universal-wrapper-pipeline-settings-repository
+JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 ```
 
 ## URLs
