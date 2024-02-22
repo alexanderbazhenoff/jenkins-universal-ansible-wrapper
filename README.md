@@ -48,22 +48,22 @@ To run ansible inside a wrapper plugin you may need to install
 
 ## Pipeline constants
 
-You can specify some pipeline settings via constants or without modifying code inject them via environment variables: 
-for example, if you wish to redirect settings files repository, or change branch or relative path of them. 
+You can specify some pipeline settings via constants or without modifying code inject them via environment variables:
+for example, if you wish to redirect settings files repository, or change branch or relative path of them.
 Environment variables will override existing constant values.
 
 - `SettingsGitUrl` pipeline constant or `JUWP_SETTINGS_GIT_URL` environment variable: repository URL of
   ['universal-wrapper-pipeline-settings'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   to load current pipeline settings.
-- `DefaultSettingsGitBranch` pipeline constant or `JUWP_DEFAULT_SETTINGS_GIT_BRANCH` environment variable: repository 
+- `DefaultSettingsGitBranch` pipeline constant or `JUWP_DEFAULT_SETTINGS_GIT_BRANCH` environment variable: repository
   branch of
   ['universal-wrapper-pipeline-settings'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main).
-- `SettingsRelativePathPrefix` constant or `JUWP_RELATIVE_PATH_PREFIX` environment variable: prefix for pipeline 
+- `SettingsRelativePathPrefix` constant or `JUWP_RELATIVE_PATH_PREFIX` environment variable: prefix for pipeline
   settings relative path inside the
   ['universal-wrapper-pipeline-settings'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   project, that will be added automatically on yaml load (e.g. `settings` folder).
-- `PipelineNameRegexReplace` list constant or `JUWP_PIPELINE_NAME_REGEX_REPLACE` environment variable (comma separated 
-  list of regular expressions, e.g: `'value1, value2, value3'`): regular expression for jenkins pipeline name, a 
+- `PipelineNameRegexReplace` list constant or `JUWP_PIPELINE_NAME_REGEX_REPLACE` environment variable (comma separated
+  list of regular expressions, e.g: `'value1, value2, value3'`): regular expression for jenkins pipeline name, a
   string that will be cut from pipeline name to become a filename of yaml pipeline settings to be loaded.
 - `AnsibleInstallationName`: ansible installation name from jenkins Global Configuration Tool or empty for defaults from
   jenkins shared library (see ['Ansible Jenkins plugin'](https://plugins.jenkins.io/ansible/) documentation).
@@ -73,7 +73,7 @@ Environment variables will override existing constant values.
 
 ## Constants override
 
-You can also override [pipeline constants](#pipeline-constants) without code changes using predefined environment 
+You can also override [pipeline constants](#pipeline-constants) without code changes using predefined environment
 variable(s). Set them in node settings, or better in an option 'Prepare an environment for the run' in your pipeline
 settings. As official Jenkins manual of [Environment Injector](https://plugins.jenkins.io/envinject/)
 described, set 'Prepare an environment for the run' to active and add your environment variables to the field
