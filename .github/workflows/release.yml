@@ -27,11 +27,18 @@ jobs:
         id: changelog
         uses: ocavue/changelog-parser-action@v1.2.0
 
-      - name: Remove an old v${{ steps.changelog.outputs.latestVersion }} release and tag then push a new one
+      - name: Delete an old v${{ steps.changelog.outputs.latestVersion }} release
+        uses: ClementTsang/delete-tag-and-release@v0.3.1
+        with:
+          delete_release: true
+          tag_name: v${{ steps.changelog.outputs.latestVersion }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove an old v${{ steps.changelog.outputs.latestVersion }} tag and push a new one
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          gh release delete "v${{ steps.changelog.outputs.latestVersion }}" --cleanup-tag
           git push --delete origin "v${{ steps.changelog.outputs.latestVersion }}" || true
           git tag -a "v${{ steps.changelog.outputs.latestVersion }}" -m "${TAG_MESSAGE}"
           git push origin "${{ steps.changelog.outputs.latestVersion }}"
