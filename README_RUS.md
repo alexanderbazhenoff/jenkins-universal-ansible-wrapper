@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 MD041 -->
 <div align='center'>
 
 # Jenkins Universal Wrapper Pipeline

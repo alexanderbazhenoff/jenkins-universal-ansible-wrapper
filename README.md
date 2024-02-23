@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 MD041 -->
 <div align='center'>
 
 # Jenkins Universal Wrapper Pipeline
@@ -96,7 +96,7 @@ constant values.
 You can also override [pipeline constants](#pipeline-constants) without code pipeline changes using predefined
 environment variable(s). Set them in node settings (via selecting node in "Manage Jenkins Nodes" menu), or better in an
 option 'Prepare an environment for the run' in your pipeline settings. As official Jenkins manual of
-[Environment Injector](https://plugins.jenkins.io/envinject/) described, enable 'Prepare an environment for the run' 
+[Environment Injector](https://plugins.jenkins.io/envinject/) described, enable 'Prepare an environment for the run'
 and add your environment variables to the field 'Properties Content' in dropped-down menu filed, e.g.:
 
 ```properties
