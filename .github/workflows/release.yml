@@ -27,14 +27,20 @@ jobs:
         id: changelog
         uses: ocavue/changelog-parser-action@v1.2.0
 
+      - name: Changelog body output
+        run: echo "${{ steps.changelog.outputs.latestBody }}"
+
+      - name: Changelog description output
+        run: echo "${{ steps.changelog.outputs.description }}"
+
       - name: Create a release
         id: release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.14.0
         with:
           name: v${{ steps.changelog.outputs.latestVersion }}
           body: ${{ steps.changelog.outputs.latestBody }}
           tag: v${{ steps.changelog.outputs.latestVersion }}
-          generateReleaseNotes: true
+          generateReleaseNotes: false
           allowUpdates: true
           artifactErrorsFailBuild: true
           artifacts: ${{ env.BINARY_NAME }}
