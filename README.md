@@ -3,9 +3,10 @@
 
 # Jenkins Universal Wrapper Pipeline
 
-The way to create Jenkins pipelines much easier and faster by configuring yaml files.
+Fast and easy way to create Jenkins pipelines through yaml configuration files.
 
 [![Super-Linter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/super-linter.yml/badge.svg?branch=main)](https://github.com/marketplace/actions/super-linter)
+[![Release CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/release-ci.yml/badge.svg?branch=main)](CHANGELOG.md)
 [![GitHub Release](https://img.shields.io/github/v/release/alexanderbazhenoff/jenkins-universal-wrapper-pipeline)](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Create+your+pipelines+easier+and+faster%21%20&url=https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline&hashtags=devops,cicd,jenkins,ansible,yaml)
@@ -40,7 +41,7 @@ each of them should do.
 2. [Linux jenkins node(s)](https://www.jenkins.io/doc/book/installing/linux/) to run pipeline. Most of built-in actions
    except scripts and ansible playbook run (such as getting sources, stash/unstash files, node selection, working with
    artifacts files, inject pipeline parameters and running code 'as a prt of pipeline') probably also works on
-   Windows nodes, but it wasn't tested.
+   Windows nodes, but it wasn't tested. Running bat and Powershell on Windows nodes currently not supported.
 3. This pipeline requires [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library)
    connection.
 4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) for colour console output.

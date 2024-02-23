@@ -30,14 +30,14 @@ final String SettingsRelativePathPrefix = 'settings'
 
 /** Jenkins pipeline name regex, a string that will be cut from pipeline name to become a filename of yaml pipeline
  * settings to be loaded. Example: Your jenkins pipeline name is 'prefix_pipeline-name_postfix'. To load pipeline
- * settings 'pipeline-name.yml' you can use regex list: ['^prefix_','_postfix$']. FYI: All pipeline name prefixes are
+ * settings 'pipeline-name.yml' you can use regex list: ['^prefix_','_postfix$']. All pipeline name prefixes should be
  * useful to split your jenkins between your company departments (e.g: 'admin', 'devops, 'qa', 'develop', etc...), while
  * postfixes are useful to mark pipeline as a changed version of original.
  */
 final List PipelineNameRegexReplace = ['^(admin|devops|qa)_']
 
 /** Ansible installation name from jenkins Global Configuration Tool, otherwise leave them empty for defaults from
- * jenkins shared library.
+ * Jenkins Shared Library.
  */
 final String AnsibleInstallationName = 'home_local_bin_ansible'
 
@@ -204,8 +204,7 @@ static List extractParamsListFromSettingsMap(Map pipelineSettings, List builtinP
 /**
  * Get Boolean variable enabled state from environment variables.
  *
- * @param env - environment variables for current job build (actually requires a pass of 'env' which is
- *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param env - environment variables for current job build (actually requires a pass of 'env').
  * @param variableName - Environment variable to get.
  * @return - true when enabled.
  */
@@ -216,8 +215,7 @@ static Boolean getBooleanVarStateFromEnv(Object envVariables, String variableNam
 /**
  * Get Boolean Pipeline parameter state from params object.
  *
- * @param pipelineParams - pipeline parameters for current job build (actually requires a pass of 'params' which is
- *                         class java.util.Collections$UnmodifiableMap).
+ * @param pipelineParams - pipeline parameters for current job build (actually requires a pass of 'params').
  * @param parameterName - parameter name.
  * @return - true when enabled.
  */
@@ -242,8 +240,7 @@ static String incompatibleKeysMsgWrapper(List keysForMessage, String keyDescript
 /**
  * Get dry-run state and pipeline action message.
  *
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param actionName - action name just to print.
  * @param printableActionLinkItem - action link item.
  * @param actionLinkItemKeysFilter - keys to filter from action link item (required keys for the action).
@@ -265,8 +262,7 @@ static List getDryRunStateAndActionMsg(Object envVariables, String actionName, M
  * Update environment variables from map keys (e.g. universalPipelineWrapperBuiltIns).
  *
  * @param mapToUpdateFrom - map to update from.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @return - updated environment variables.
  */
 static Object updateEnvFromMapKeys(Map mapToUpdateFrom, Object envVariables) {
@@ -329,13 +325,13 @@ String mapToFormattedStringTable(Map sourceMap, String replaceKeyName = 'state',
  * @param settingsGitBranch - git branch.
  * @param settingsRelativePath - relative path inside the 'universal-wrapper-pipeline-settings' project.
  * @param printYaml - if true output 'universal-wrapper-pipeline-settings' content on a load.
- * @param workspaceSubfolder - subfolder in jenkins workspace where the git project will be cloned.
+ * @param workspaceSubFolder - sub-folder in jenkins workspace where the git project will be cloned.
  * @return - map with pipeline settings.
  */
 Map loadPipelineSettings(String settingsGitUrl, String settingsGitBranch, String settingsRelativePath,
-                         Boolean printYaml = true, String workspaceSubfolder = 'settings') {
-    CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubfolder)
-    String pathToLoad = String.format('%s/%s', workspaceSubfolder, settingsRelativePath)
+                         Boolean printYaml = true, String workspaceSubFolder = 'settings') {
+    CF.cloneGitToFolder(settingsGitUrl, settingsGitBranch, workspaceSubFolder)
+    String pathToLoad = String.format('%s/%s', workspaceSubFolder, settingsRelativePath)
     if (printYaml) CF.outMsg(0, String.format('Loading pipeline settings:\n%s', readFile(pathToLoad)))
     readYaml(file: pathToLoad)
 }
@@ -523,8 +519,7 @@ Boolean pipelineParametersSettingsItemCheck(Map item) {
  *                         ]
  *                         etc... Check pipelineSettingsItemToPipelineParam() function for details.
  * @param finishWithFail - when true finish with success parameters injection. Otherwise, with fail.
- * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
- *                                which is class java.util.Collections$UnmodifiableMap). When
+ * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'). When
  *                                currentPipelineParams.DRY_RUN is 'true' pipeline parameters update won't be performed.
  */
 // groovylint-disable-next-line MethodReturnTypeRequired, NoDef
@@ -563,8 +558,7 @@ Boolean checkPipelineParamsFormat(List parameters) {
  * Handle pipeline parameter assignment when 'on_empty' key defined in pipeline settings item.
  *
  * @param settingsItem - settings item from pipeline settings to handle.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @return - arrayList of:
  *           - true when pipeline parameter needs an assignment;
  *           - true when pipeline parameter assignment successfully done or skipped, otherwise false;
@@ -588,8 +582,7 @@ List handleAssignmentWhenPipelineParamIsUnset(Map settingsItem, Object envVariab
  * Template of assign variables inside string.
  *
  * @param assignment - string that probably contains environment variable(s) (e.g. '$FOO' or '$FOO somewhat $BAR text').
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param additionalVariablesBinding - additional (or non-environment) variables for templating.
  * @return - arrayList of:
  *           - true when assignment is possible;
@@ -621,8 +614,7 @@ List getTemplatingFromVariables(String assignment, Object envVariables, Map addi
  *
  * @param assignMap - map to assign keys in.
  * @param assignmentKeysList - list of keys in assignMap needs to be assigned.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param allAssignmentsPass - set if you wish to pass previous structure check state.
  * @param additionalVariablesBinding - additional (or non-environment) variables for templating.
  * @param keysDescription - Keys description for error output.
@@ -653,8 +645,7 @@ List templatingMapKeysFromVariables(Map assignMap, List assignmentKeysList, Obje
  *
  * @param pipelineSettings - 'universal-wrapper-pipeline-settings' converted to map. See
  *                           https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings for details.
- * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
- *                             class java.util.Collections$UnmodifiableMap).
+ * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params').
  * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
  *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @return - arrayList of:
@@ -696,10 +687,8 @@ Boolean checkAllRequiredPipelineParamsAreSet(Map pipelineSettings, Object pipeli
  * Also perform regex replacement of parameter value when 'regex_replace' key is defined).
  *
  * @param allPipelineParams - arrayList of pipeline parameters from settings.
- * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params' which is
- *                             class java.util.Collections$UnmodifiableMap).
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param pipelineParameters - pipeline parameters for current job build (actually requires a pass of 'params').
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param builtinPipelineParameters - additional built-in pipeline parameters arrayList.
  * @return - arrayList of:
  *           - true when all pass;
@@ -783,8 +772,7 @@ Boolean regexCheckAllRequiredPipelineParams(List allPipelineParams, Object pipel
  * @param pipelineParams - pipeline parameters in 'universal-wrapper-pipeline-settings' standard and built-in pipeline
  *                         parameters (e.g. 'DEBUG_MODE', etc) converted to arrayList. See: Configuration files format
  *                         description in 'UNIVERSAL WRAPPER PIPELINE SETTINGS' project for details.
- * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'
- *                                which is class java.util.Collections$UnmodifiableMap). Set
+ * @param currentPipelineParams - pipeline parameters for current job build (actually requires a pass of 'params'). Set
  *                                currentPipelineParams.DRY_RUN to 'true' for dry-run mode.
  * @return - arrayList of:
  *           - true when there is no pipeline parameters in the pipelineSettings;
@@ -819,8 +807,7 @@ List wrapperPipelineParametersProcessing(List pipelineParams, Object currentPipe
  *                                   filename of yaml pipeline settings to be loaded.
  * @param builtinPipelineParameters - Built-in pipeline parameters, which are mandatory and not present in pipeline
  *                                    settings.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param pipelineParams - jenkins built-in 'params' UnmodifiableMap variable with current build pipeline parameters.
  * @return - arrayList of:
  *           - pipeline failed reason text;
@@ -869,8 +856,7 @@ List pipelineParamsProcessingWrapper(String settingsGitUrl, String defaultSettin
  * Check or execute wrapper pipeline from pipeline settings.
  *
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param check - true to check pipeline settings structure and parameters.
  * @param execute - true to execute pipeline wrapper stages defined in the config, false for dry run. Please note:
  *                  1. When 'check' is true pipeline settings will be checked, then if 'execute' is true pipeline
@@ -926,10 +912,9 @@ List checkOrExecutePipelineWrapperFromSettings(Map pipelineSettings, Object envV
  *                                           SETTINGS' project).
  * @param stageItem - stage settings item to check/execute actions in it.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
- *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on
- *                       stage execute. Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env'). Set 'DRY_RUN'
+ *                       environment variable (or pipeline parameter) as an element of envVariables to true for dry run
+ *                       mode on executing a stage. Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
  * @param allPass - current overall state of the structure check/execute pass. Will be changed on error(s) or return
  *                  unchanged.
  * @param check - set false to execute action item, true to check.
@@ -1054,10 +1039,9 @@ List checkKeysNotEmptyAndConvertibleToReqType(Map actionItem, String printableSt
  * @param actionItemSource - source (non-templated) action item to check or execute.
  * @param pipelineSettings - the whole pipeline settings map (pre-converted from yaml) to check and/or execute.
  * @param actionIndex - number of current action in stages.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
- *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on execution.
- *                       Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env'). Set 'DRY_RUN'
+ *                       environment variable (or pipeline parameter) as an element of envVariables to true for dry run
+ *                       mode on execution. Set 'DEBUG_MODE' to enable debug mode both for 'check' or 'execute'.
  * @param check - set false to execute action item, true to check.
  * @return - arrayList of:
  *           - pipeline settings built-ins variable;
@@ -1181,8 +1165,7 @@ Map updateWrapperBuiltInsInStringFormat(Map pipelineWrapperBuiltIns, String keyN
  * @param check - true on checking action item to skip message output.
  * @param actionItem action item to check or execute where the massage
  * @param messageType - message type (or action item key prefix): before, after, success, fail.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  */
 // groovylint-disable-next-line MethodReturnTypeRequired, NoDef
 def actionMessageOutputWrapper(Boolean check, Map actionItem, String messageType, Object envVariables) {
@@ -1220,8 +1203,7 @@ Boolean detectNodeSubKeyConvertibleToString(Boolean check, Boolean nodeNameOrLab
  * @param actionLink - action link.
  * @param nodeItem - map with node-related keys.
  * @param pipelineSettings - all universal pipeline settings to take action from by action link.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param check - true when check, false when exectue.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
  *                                           Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
@@ -1331,9 +1313,9 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
  *
  * @param actionLink - message prefix for possible errors.
  * @param actionLinkItem - action link item to check or execute.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
- *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on execution.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env'). Set 'DRY_RUN'
+ *                       environment variable (or pipeline parameter) as an element of envVariables to true for dry run
+ *                       mode on execution.
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
@@ -1369,9 +1351,9 @@ List actionCloneGit(String actionLink, Map actionLinkItem, Object envVariables, 
  * Pipeline action closure wrapper.
  *
  * @param check - set false to execute action item, true to check.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
- *                       (or pipeline parameter) as an element of envVariables to true for execution skip.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env'). Set 'DRY_RUN'
+ *                       environment variable (or pipeline parameter) as an element of envVariables to true for
+ *                       execution skip.
  * @param actionClosure - pipeline action closure to execute.
  * @param actionLink - message prefix for possible errors.
  * @param actionName - type of the current action to output messages and logging.
@@ -1410,9 +1392,9 @@ List actionClosureWrapperWithTryCatch(Boolean check, Object envVariables, Closur
  *
  * @param actionLink - message prefix for possible errors.
  * @param actionLinkItem - action link item to check or execute.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl). Set 'DRY_RUN' environment variable
- *                       (or pipeline parameter) as an element of envVariables to true for dry run mode on execution.
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env'). Set 'DRY_RUN'
+ *                       environment variable (or pipeline parameter) as an element of envVariables to true for dry run
+ *                       mode on execution.
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
@@ -1459,8 +1441,7 @@ List actionInstallAnsibleCollections(String actionLink, Map actionLinkItem, Obje
 /**
  * Check type for list of keys from map and template map keys pipeline action wrapper.
  *
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats (see:
  *                                           Configuration files format description in 'UNIVERSAL WRAPPER PIPELINE
  *                                           SETTINGS' project).
@@ -1530,8 +1511,7 @@ List checkMandatoryKeysTemplateAndFilterMapWrapper(Map map, List mandatoryKeysTo
  *
  * @param actionLink - message prefix for possible errors.
  * @param pipelineSettings - all universal pipeline settings to get script or playbook from.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
@@ -1636,8 +1616,7 @@ List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, O
  *
  * @param actionLink - message prefix for possible errors.
  * @param actionLinkItem - action link item to check or execute.
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param check - set false to execute action item, true to check.
  * @param actionOk - just to pass previous action execution/checking state.
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
@@ -1833,8 +1812,7 @@ List actionUnStash(String actionLink, Map actionLinkItem, Object envVariables, B
  *
  * @param listOfMapItems - list of maps with job parameters with structure: [name: 'name of downstream job',
  *                         type: 'parameter type (string, text, password or boolean), parameter: 'parameter value']
- * @param envVariables - environment variables for current job build (actually requires a pass of 'env' which is
- *                       class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param envVariables - environment variables for current job build (actually requires a pass of 'env').
  * @param keyDescription - parameters description (where parameters was taken).
  * @param universalPipelineWrapperBuiltIns - pipeline wrapper built-ins variable with report in various formats.
  * @param check - set false to execute action item, true to check.

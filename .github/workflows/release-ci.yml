@@ -1,6 +1,6 @@
 ---
 
-name: Release
+name: Release CI
 on:  # yamllint disable-line rule:truthy
   push: null
   pull_request: null
@@ -27,8 +27,18 @@ jobs:
         id: changelog
         uses: coditory/changelog-parser@v1
 
-      - name: Changelog description output
-        run: echo "${{ steps.changelog.outputs.description }}"
+      - name: Paste version to source file
+        run: sed -i "s/^\s\*\s${LINE_PATTERN}.*$/ * ${LINE_PATTERN} ${VERSION}/" "$FILENAME"
+        env:
+          LINE_PATTERN: Jenkins Universal Wrapper Pipeline
+          VERSION: v${{ steps.changelog.outputs.version }}
+          FILENAME: jenkins-universal-wrapper-pipeline.groovy
+
+      - name: Push changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Automated version increment v${{ steps.changelog.outputs.version }}
+          file_pattern: jenkins-universal-wrapper-pipeline.groovy
 
       - name: Create a release
         id: release

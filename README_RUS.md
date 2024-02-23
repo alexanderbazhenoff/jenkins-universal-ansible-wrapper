@@ -3,7 +3,7 @@
 
 # Jenkins Universal Wrapper Pipeline
 
-Способ создавать Jenkins pipeline'ы легче и быстрее, конфигурируя yaml файлы.
+Быстрый и простой способ создавать Jenkins pipeline'ы через конфигурационные yaml файлы.
 
 [![Super-Linter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/super-linter.yml/badge.svg?branch=main)](https://github.com/marketplace/actions/super-linter)
 [![GitHub Release](https://img.shields.io/github/v/release/alexanderbazhenoff/jenkins-universal-wrapper-pipeline)](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/releases)
@@ -39,6 +39,7 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
    "встроенных" в pipeline действий за исключением запуска скриптов и ansible-playbook'ов (таких, как получение
    исходников, перемещение файлов между нодами, выбор ноды, работа с файлами-артефактами, добавление параметров
    pipeline, запуск кода "как часть pipeline"), скорей всего, так же работаю на Windows node'ах, но не тестировалось.
+   Запуск на Windows node'ах bat и Powershell в настоящий момент не поддерживается.
 3. Этот pipeline требует подключения
    [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library).
 4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) для цветного вывода в консоль.
