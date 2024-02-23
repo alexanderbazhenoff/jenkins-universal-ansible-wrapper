@@ -2,6 +2,9 @@
 
 The way to create Jenkins pipelines much easier and faster in yaml config formats.
 
+[![Super-Linter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/super-linter.yml/badge.svg?branch=main)](https://github.com/marketplace/actions/super-linter)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+
 ## About
 
 Jenkins Universal Wrapper Pipeline allows you to create multistage pipelines by describing actions in a stages in yaml
