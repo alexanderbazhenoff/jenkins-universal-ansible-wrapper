@@ -33,6 +33,15 @@ jobs:
           message: >-
             ${{ steps.changelog.outputs.latestVersion }}: PR #${{ github.event.pull_request.number }}
             ${{ github.event.pull_request.title }}
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "${{ steps.changelog.outputs.latestVersion }}" -m "${TAG_MESSAGE}"
+          git push origin "${{ steps.changelog.outputs.latestVersion }}"
+        env:
+          TAG_MESSAGE: >-
+            ${{ steps.changelog.outputs.latestVersion }}: PR #${{ github.event.pull_request.number }}
+            ${{ github.event.pull_request.title }}
 
       - name: Create a release
         id: release
