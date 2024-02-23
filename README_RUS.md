@@ -1,4 +1,5 @@
-<div style='text-align: center;'>
+<!-- markdownlint-disable MD041 -->
+<div align='center'>
 
 # Jenkins Universal Wrapper Pipeline
 
@@ -34,9 +35,9 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
 ## Требования
 
 1. Jenkins версии 2.x, или выше (возможно, версии ниже так же подойдут, но тестировалось на версиях 2.190.x).
-2. [Linux ноды Jenkins](https://www.jenkins.io/doc/book/installing/linux/) для запуска pipeline. Большинство 
-   "встроенных" в pipeline действий за исключением запуска скриптов и ansible-playbook'ов (таких, как получение 
-   исходников, перемещение файлов между нодами, выбор ноды, работа с файлами-артефактами, добавление параметров 
+2. [Linux ноды Jenkins](https://www.jenkins.io/doc/book/installing/linux/) для запуска pipeline. Большинство
+   "встроенных" в pipeline действий за исключением запуска скриптов и ansible-playbook'ов (таких, как получение
+   исходников, перемещение файлов между нодами, выбор ноды, работа с файлами-артефактами, добавление параметров
    pipeline, запуск кода "как часть pipeline"), скорей всего, так же работаю на Windows node'ах, но не тестировалось.
 3. Этот pipeline требует подключения
    [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library).
@@ -53,10 +54,10 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
    ['Требования'](#требования)).
 3. Установите значения всех констант pipeline'а (особенно репозитории) (см.
    ["константы pipeline"](#константы-pipeline)).
-4. Прочтите [подробную инструкцию](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings) с 
+4. Прочтите [подробную инструкцию](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings) с
    описанием формата конфигурационных файлов, чтобы создать свой, или используйте уже готовые примеры (например,
    ['example-pipeline'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/blob/main/settings/example-pipeline.yaml).
-   Для этого вам нужно создать "pipeline из SCM" (pipeline from SCM) с тем же именем, что и конфигурационный файл 
+   Для этого вам нужно создать "pipeline из SCM" (pipeline from SCM) с тем же именем, что и конфигурационный файл
    (за исключением префикса имени и расширения - см. 'PipelineNameRegexReplace' в
    ["Константы pipeline"](#константы-pipeline)), который указывает на этот репозиторий и код в файле
    [jenkins-universal-wrapper-pipeline.groovy](jenkins-universal-wrapper-pipeline.groovy).
@@ -76,26 +77,26 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
   для загрузки настроек текущего pipeline.
 - Константа `DefaultSettingsGitBranch`, или переменная окружения `JUWP_DEFAULT_SETTINGS_GIT_BRANCH`: ветка в репозитории
   ['universal-wrapper-pipeline-settings'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main).
-- Константа `SettingsRelativePathPrefix`, или переменная окружения `JUWP_RELATIVE_PATH_PREFIX`: префикс, или 
+- Константа `SettingsRelativePathPrefix`, или переменная окружения `JUWP_RELATIVE_PATH_PREFIX`: префикс, или
   относительный путь (relative path) к yaml файлам внутри репозитория
   ['universal-wrapper-pipeline-settings'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main),
   который будет автоматически подставлен при загрузке yaml (например: папка `settings`).
 - Константа `PipelineNameRegexReplace` (с типом "список"), или переменная окружения`JUWP_PIPELINE_NAME_REGEX_REPLACE`
-  (с разделенным запятыми списком регулярных выражений, например: `'value1, value2, value3'`): регулярные выражения 
-  для имени Jenkins pipeline'а, строка, которая будет отрезана из имени pipeline'а, прежде, чем станет именем 
+  (с разделенным запятыми списком регулярных выражений, например: `'value1, value2, value3'`): регулярные выражения
+  для имени Jenkins pipeline'а, строка, которая будет отрезана из имени pipeline'а, прежде, чем станет именем
   загружаемых настроек pipeline'а.
-- Константа `BuiltinPipelineParameters`: встроенные параметры pipeline, которые обязательны, но не присутствуют в 
+- Константа `BuiltinPipelineParameters`: встроенные параметры pipeline, которые обязательны, но не присутствуют в
   настройках pipeline ('universal-wrapper-pipeline-settings'): заданные здесь параметры pipeline `UPDATE_PARAMETERS`,
-  `SETTINGS_GIT_BRANCH`, `NODE_NAME`, `NODE_TAG`, `DRY_RUN` и `DEBUG_MODE` являются системными. Их изменение не 
+  `SETTINGS_GIT_BRANCH`, `NODE_NAME`, `NODE_TAG`, `DRY_RUN` и `DEBUG_MODE` являются системными. Их изменение не
   рекомендуется.
 
 ## Переопределение констант
 
-Вы можете переопределить [константы pipeline](#константы-pipeline) без изменения кода pipeline, используя 
-предустановленные переменные окружения. Установите их в настройках ноды (через выбор ноды в меню "Manage Jenkins 
-Nodes"), или лучше всего - в опции "Prepare an environment for the run" в настройках pipeline. Как описывает 
-официальная документация [Environment Injector'а](https://plugins.jenkins.io/envinject/), включите опцию "Prepare an 
-environment for the run" и в поле "Properties Content" выпадающего меню впишите ваши значения переменных окружения, 
+Вы можете переопределить [константы pipeline](#константы-pipeline) без изменения кода pipeline, используя
+предустановленные переменные окружения. Установите их в настройках ноды (через выбор ноды в меню "Manage Jenkins
+Nodes"), или лучше всего - в опции "Prepare an environment for the run" в настройках pipeline. Как описывает
+официальная документация [Environment Injector'а](https://plugins.jenkins.io/envinject/), включите опцию "Prepare an
+environment for the run" и в поле "Properties Content" выпадающего меню впишите ваши значения переменных окружения,
 например:
 
 ```properties
@@ -103,7 +104,7 @@ JUWP_SETTINGS_GIT_URL=http://github.com/my_usrrname/my_universal-wrapper-pipelin
 JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 ```
 
-## Ссылки:
+## Ссылки
 
 - [Universal wrapper pipeline settings](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   репозиторий с описанием формата конфигурационных файлов и примерами настроек.

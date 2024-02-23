@@ -1,4 +1,5 @@
-<div style='text-align: center;'>
+<!-- markdownlint-disable MD041 -->
+<div align='center'>
 
 # Jenkins Universal Wrapper Pipeline
 
@@ -15,7 +16,7 @@ The way to create Jenkins pipelines much easier and faster by configuring yaml f
 ## About
 
 Jenkins Universal Wrapper Pipeline allows you to create multistage pipelines by describing actions in a stages in yaml
-files. You don't need Groovy programming language knowledge, even declarative Jenkins pipeline style. Just create 
+files. You don't need Groovy programming language knowledge, even declarative Jenkins pipeline style. Just create
 configuration file and describe all stages and actions should be done.The syntax and structure of the configs is in many
 ways reminds of the GitLab, GitHub or Travis CI. It's very similar writing stages, actions then action description what
 each of them should do.
@@ -30,14 +31,14 @@ each of them should do.
 - Working with file-artifacts.
 - Able to run actions in a stages in parallel or sequentially.
 - Inject pipeline parameters on the first pipeline run by specifying them inside yaml config file.
-- You can also extend a pipeline features code and run native language 'as part of pipeline' (e.g. Groovy for 
+- You can also extend a pipeline features code and run native language 'as part of pipeline' (e.g. Groovy for
   Jenkins) by adding code in pipeline actions inside yaml config.
 
 ## Requirements
 
 1. Jenkins version 2.x or higher (perhaps lower versions are also fine, but tested on versions 2.190.x).
 2. [Linux jenkins node(s)](https://www.jenkins.io/doc/book/installing/linux/) to run pipeline. Most of built-in actions
-   except scripts and ansible playbook run (such as getting sources, stash/unstash files, node selection, working with 
+   except scripts and ansible playbook run (such as getting sources, stash/unstash files, node selection, working with
    artifacts files, inject pipeline parameters and running code 'as a prt of pipeline') probably also works on
    Windows nodes, but it wasn't tested.
 3. This pipeline requires [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library)
@@ -57,12 +58,11 @@ each of them should do.
 4. Read [detailed manual](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings) with pipeline
    config format description to create your own, or use example configs (e.g.
    ['example-pipeline'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/blob/main/settings/example-pipeline.yaml).
-   You should create pipeline from SCM with the same name as your config file (except name prefix and extension - see 
+   You should create pipeline from SCM with the same name as your config file (except name prefix and extension - see
    'PipelineNameRegexReplace' in ['Pipeline constants'](#pipeline-constants)) pointed to this repository and code in
    [jenkins-universal-wrapper-pipeline.groovy](jenkins-universal-wrapper-pipeline.groovy) file.
 5. Some used methods in pipeline code may require administrators to approve a usage of them (see
-   ["In-process Script Approval"](https://www.jenkins.io/doc/book/managing/script-approval/) in official 
-   documentation). 
+   ["In-process Script Approval"](https://www.jenkins.io/doc/book/managing/script-approval/) in official documentation).
 
 ## Pipeline constants
 
@@ -84,7 +84,7 @@ constant values.
 - `PipelineNameRegexReplace` list constant or `JUWP_PIPELINE_NAME_REGEX_REPLACE` environment variable (comma separated
   list of regular expressions, e.g: `'value1, value2, value3'`): regular expression for jenkins pipeline name, a
   string that will be cut from pipeline name to become a filename of yaml pipeline settings to be loaded.
-- `AnsibleInstallationName` constant: ansible installation name from jenkins Global Configuration Tool or empty for 
+- `AnsibleInstallationName` constant: ansible installation name from jenkins Global Configuration Tool or empty for
   defaults from jenkins shared library (see ['Ansible Jenkins plugin'](https://plugins.jenkins.io/ansible/)
   documentation).
 - `BuiltinPipelineParameters` constant contains a built-in pipeline parameters, which are mandatory and not present in
@@ -93,7 +93,7 @@ constant values.
 
 ## Constants override
 
-You can also override [pipeline constants](#pipeline-constants) without code pipeline changes using predefined 
+You can also override [pipeline constants](#pipeline-constants) without code pipeline changes using predefined
 environment variable(s). Set them in node settings (via selecting node in "Manage Jenkins Nodes" menu), or better in an
 option 'Prepare an environment for the run' in your pipeline settings. As official Jenkins manual of
 [Environment Injector](https://plugins.jenkins.io/envinject/) described, enable 'Prepare an environment for the run' 
