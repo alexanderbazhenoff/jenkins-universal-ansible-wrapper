@@ -3,7 +3,7 @@
 
 /**
  * Jenkins Universal Wrapper Pipeline v1.0.0
- * (c) Aleksandr Bazhenov, 2023-2024
+ * (c) Alexander Bazhenov, 2023-2024
  *
  * This Source Code Form is subject to the terms of the Apache License v2.0.
  * If a copy of this source file was not distributed with this file, You can obtain one at:
