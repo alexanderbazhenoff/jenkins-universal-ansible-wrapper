@@ -1,0 +1,47 @@
+---
+
+name: Release
+on:  # yamllint disable-line rule:truthy
+  push: null
+  pull_request: null
+permissions:
+  contents: write
+
+jobs:
+
+  release:
+    name: Release from push
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Pause until all workflows are completed
+        uses: willgarcia/workflow-wait-action@main
+        with:
+          interval: 2
+          initial_delay: 40
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse Changelog
+        id: changelog
+        uses: ocavue/changelog-parser-action@v1
+
+      - uses: actions-ecosystem/action-push-tag@v1
+        with:
+          tag: ${{ steps.changelog.outputs.latestVersion }}
+          message: >-
+            ${{ steps.changelog.outputs.latestVersion }}: PR #${{ github.event.pull_request.number }}
+            ${{ github.event.pull_request.title }}
+
+      - name: Create a release
+        id: release
+        uses: ncipollo/release-action@v1
+        with:
+          name: v${{ steps.changelog.outputs.latestVersion }}
+          body: ${{ steps.changelog.outputs.latestBody }}
+          tag: v${{ steps.changelog.outputs.latestVersion }}
+          generateReleaseNotes: false
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: ${{ env.BINARY_NAME }}

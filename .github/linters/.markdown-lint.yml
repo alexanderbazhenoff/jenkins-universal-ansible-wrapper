@@ -28,9 +28,6 @@ MD013:
   # Include headings
   headings: false
 
-# MD011/no-reversed-links : Reversed link syntax : https://github.com/DavidAnson/markdownlint/blob/v0.32.1/doc/md011.md
-MD011: true
-
 # MD012/no-multiple-blanks : Multiple consecutive blank lines
 MD012:
   # Consecutive blank lines
