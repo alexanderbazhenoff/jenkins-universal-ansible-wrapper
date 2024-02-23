@@ -25,10 +25,7 @@ jobs:
 
       - name: Parse Changelog
         id: changelog
-        uses: ocavue/changelog-parser-action@v1.2.0
-
-      - name: Changelog body output
-        run: echo "${{ steps.changelog.outputs.latestBody }}"
+        uses: coditory/changelog-parser@v1
 
       - name: Changelog description output
         run: echo "${{ steps.changelog.outputs.description }}"
@@ -37,9 +34,9 @@ jobs:
         id: release
         uses: ncipollo/release-action@v1.14.0
         with:
-          name: v${{ steps.changelog.outputs.latestVersion }}
-          body: ${{ steps.changelog.outputs.latestBody }}
-          tag: v${{ steps.changelog.outputs.latestVersion }}
+          name: v${{ steps.changelog.outputs.version }}
+          body: ${{ steps.changelog.outputs.description }}
+          tag: v${{ steps.changelog.outputs.version }}
           generateReleaseNotes: false
           allowUpdates: true
           artifactErrorsFailBuild: true
