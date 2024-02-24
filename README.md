@@ -28,7 +28,8 @@ each of them should do.
 - Built-in getting git sources of another repository.
 - Built-in ansible collection(s) installation.
 - Built-in reports send (email or mattermost).
-- Run ansible playbooks or scripts just by inserting their code in action description inside yaml config.
+- Run ansible playbooks or scripts just by inserting their code in action description inside yaml config. You can also
+  run whatever you want wrapped in a scripts run: puppet, terraform, etc.
 - Node selection and move required files between.
 - Working with file-artifacts.
 - Able to run actions in a stages in parallel or sequentially.
@@ -42,7 +43,9 @@ each of them should do.
 2. [Linux jenkins node(s)](https://www.jenkins.io/doc/book/installing/linux/) to run pipeline. Most of built-in actions
    except scripts and ansible playbook run (such as getting sources, stash/unstash files, node selection, working with
    artifacts files, inject pipeline parameters and running code 'as a prt of pipeline') probably also works on
-   Windows nodes, but it wasn't tested. Running bat and Powershell on Windows nodes currently not supported.
+   Windows nodes, but it wasn't tested. Running bat and Powershell on Windows nodes currently not supported. Running
+   terraform and puppet can be done by saving necessary files and running them inside a script, similar to how you run
+   them through the command line.
 3. This pipeline requires [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library)
    connection.
 4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) for colour console output.
