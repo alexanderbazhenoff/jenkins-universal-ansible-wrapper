@@ -1295,7 +1295,6 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
                 String nodeSelectionPrintable = changeNodeData instanceof Map ? String.format("node with label '%s'",
                         changeNodeData.label) : String.format('%s node', (changeNodeData) ?: 'any')
                 CF.outMsg(0, String.format("Executing '%s' action on %s...", actionLink, nodeSelectionPrintable))
-                // TODO: assigning from .call() is ok, but why it's marked as can't assign Object to Map?
                 (actionOk, actionDetails, universalPipelineWrapperBuiltIns) = keysFound[keysFound.keySet()[0]].call()
             }
         } else {
