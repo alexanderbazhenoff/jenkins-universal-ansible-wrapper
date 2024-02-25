@@ -26,7 +26,7 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
 - Встроенное получение исходников другого проекта (git).
 - Встроенная установка ansible-коллекций.
 - Встроенная отправка отчетов (email, или mattermost).
-- Запуск ansible playbook'ов, разместив код в описание действия внутри конфигурационного файла. Вы можете так же 
+- Запуск ansible playbook'ов, разместив код в описание действия внутри конфигурационного файла. Вы можете так же
   запускать все, что нужно как скрипт: puppet, terraform и т.д.
 - Выбор ноды и перемещение необходимых файлов между ними.
 - Работа с файлами-артефактами.
@@ -65,8 +65,8 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
    ['example-pipeline'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/blob/main/settings/example-pipeline.yaml).
    Для этого вам нужно создать "pipeline из SCM" (pipeline from SCM) с тем же именем, что и конфигурационный файл
    (за исключением префикса имени и расширения - см. 'PipelineNameRegexReplace' в
-   ["Константы pipeline"](#константы-pipeline)), который указывает на этот репозиторий и код в файле
-   [jenkins-universal-wrapper-pipeline.groovy](jenkins-universal-wrapper-pipeline.groovy).
+   ["Константы pipeline"](#константы-pipeline)), который настроен на получение исходников на этого репозиторий и код в
+   файле [jenkins-universal-wrapper-pipeline.groovy](jenkins-universal-wrapper-pipeline.groovy).
 5. Некоторые используемые в коде pipeline методы могут потребовать администраторов подтвердить их использование (см.
    ["In-process Script Approval"](https://www.jenkins.io/doc/book/managing/script-approval/) в официально документации).
 
