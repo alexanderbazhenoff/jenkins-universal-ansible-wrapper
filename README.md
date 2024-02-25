@@ -45,7 +45,7 @@ each of them should do.
    artifacts files, inject pipeline parameters and running code 'as a prt of pipeline') probably also works on
    Windows nodes, but it wasn't tested. Running bat and Powershell on Windows nodes currently not supported. Running
    terraform and puppet can be done by saving necessary files and running them inside a script, similar to how you run
-   them through the command line.
+   them through the command-line.
 3. This pipeline requires [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library)
    connection.
 4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) for colour console output.
