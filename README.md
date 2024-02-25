@@ -64,8 +64,8 @@ each of them should do.
    config format description to create your own, or use example configs (e.g.
    ['example-pipeline'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/blob/main/settings/example-pipeline.yaml).
    You should create pipeline from SCM with the same name as your config file (except name prefix and extension - see
-   'PipelineNameRegexReplace' in ['Pipeline constants'](#pipeline-constants)) configured to fetch this repository and code in
-   [jenkins-universal-wrapper-pipeline.groovy](jenkins-universal-wrapper-pipeline.groovy) file.
+   'PipelineNameRegexReplace' in ['Pipeline constants'](#pipeline-constants)) configured to fetch this repository and
+   code in [jenkins-universal-wrapper-pipeline.groovy](jenkins-universal-wrapper-pipeline.groovy) file.
 5. Some used methods in pipeline code may require administrators to approve a usage of them (see
    ["In-process Script Approval"](https://www.jenkins.io/doc/book/managing/script-approval/) in official documentation).
 
