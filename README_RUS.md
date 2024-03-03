@@ -91,6 +91,13 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
   (с разделенным запятыми списком регулярных выражений, например: `'value1, value2, value3'`): регулярные выражения
   для имени Jenkins pipeline'а, строка, которая будет отрезана из имени pipeline'а, прежде, чем станет именем
   загружаемых настроек pipeline'а.
+- Константа `AnsibleInstallationName`: имя ansible установки в Jenkins Global Configuration Tool, или пустая строка для
+  использования дефолтных значений из
+  [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library) (см. документацию к
+  ['Ansible Jenkins plugin'](https://plugins.jenkins.io/ansible/)). *Не используется и, вероятно, в скором времени
+  будет удалена, так как последние изменения
+  [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library)* запускают по умолчанию ansible
+  playbook'и через вызов shell.*
 - Константа `BuiltinPipelineParameters`: встроенные параметры pipeline, которые обязательны, но не присутствуют в
   настройках pipeline ('universal-wrapper-pipeline-settings'): заданные здесь параметры pipeline `UPDATE_PARAMETERS`,
   `SETTINGS_GIT_BRANCH`, `NODE_NAME`, `NODE_TAG`, `DRY_RUN` и `DEBUG_MODE` являются системными. Их изменение не
@@ -112,5 +119,6 @@ JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 
 ## Ссылки
 
+- [Wiki](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/wiki).
 - [Universal wrapper pipeline settings](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   репозиторий с описанием формата конфигурационных файлов и примерами настроек.
