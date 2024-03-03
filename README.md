@@ -19,9 +19,9 @@ Fast and easy way to create Jenkins pipelines through yaml configuration files.
 
 Jenkins Universal Wrapper Pipeline allows you to create multistage pipelines by describing actions in a stages in yaml
 files. You don't need Groovy programming language knowledge, even declarative Jenkins pipeline style. Just create
-configuration file and describe all stages and actions should be done.The syntax and structure of the configs is in many
-ways reminds of the GitLab, GitHub or Travis CI. It's very similar writing stages, actions then action description what
-each of them should do.
+a configuration file and describe all stages and actions should be done.The syntax and structure of the configs is in
+many ways reminds of the GitLab, GitHub or Travis CI. It's very similar writing stages, actions then action description
+what each of them should do.
 
 ## Main features
 
@@ -40,12 +40,12 @@ each of them should do.
 ## Requirements
 
 1. Jenkins version 2.x or higher (perhaps lower versions are also fine, but tested on versions 2.190.x).
-2. [Linux jenkins node(s)](https://www.jenkins.io/doc/book/installing/linux/) to run pipeline. Most of built-in actions
-   except scripts and ansible playbook run (such as getting sources, stash/unstash files, node selection, working with
-   artifacts files, inject pipeline parameters and running code 'as a prt of pipeline') probably also works on
-   Windows nodes, but it wasn't tested. Running bat and Powershell on Windows nodes currently not supported. Running
-   terraform and puppet can be done by saving necessary files and running them inside a script, similar to how you run
-   them through the command-line.
+2. [Linux jenkins node(s)](https://www.jenkins.io/doc/book/installing/linux/) to run a pipeline. Most of the built-in
+   actions except scripts and ansible playbook run (such as getting sources, stash/unstash files, node selection,
+   working with artifact files, inject pipeline parameters and running code 'as a prt of pipeline') probably also works
+   on Windows nodes, but it wasn't tested. Running bat and Powershell on Windows nodes currently not supported. Running
+   terraform and puppet can be done by saving the necessary files and running them inside a script, similar to how you
+   run them through the command-line.
 3. This pipeline requires [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library)
    connection.
 4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) for colour console output.
@@ -73,7 +73,7 @@ each of them should do.
 
 You can specify some pipeline settings via constants, or override them via environment variables without modifying
 pipeline code (see ['Constants override'](#constants-override)): for example, if you wish to redirect settings files
-repository, change branch or relative path to yaml files inside of them. Environment variables will override existing
+repository, change branch or relative path to yaml files inside them. Environment variables will override existing
 constant values.
 
 - `SettingsGitUrl` pipeline constant or `JUWP_SETTINGS_GIT_URL` environment variable: repository URL of
@@ -85,13 +85,15 @@ constant values.
 - `SettingsRelativePathPrefix` constant or `JUWP_RELATIVE_PATH_PREFIX` environment variable: prefix for pipeline
   settings relative path to yaml files inside the
   ['universal-wrapper-pipeline-settings'](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
-  repository that will be added automatically on yaml load (e.g. `settings` folder).
+  repository that will be added automatically on a yaml load (e.g. `settings` folder).
 - `PipelineNameRegexReplace` list constant or `JUWP_PIPELINE_NAME_REGEX_REPLACE` environment variable (comma separated
   list of regular expressions, e.g: `'value1, value2, value3'`): regular expression for jenkins pipeline name, a
   string that will be cut from pipeline name to become a filename of yaml pipeline settings to be loaded.
-- `AnsibleInstallationName` constant: ansible installation name from jenkins Global Configuration Tool or empty for
-  defaults from jenkins shared library (see ['Ansible Jenkins plugin'](https://plugins.jenkins.io/ansible/)
-  documentation).
+- `AnsibleInstallationName` constant: ansible installation name from Jenkins Global Configuration Tool or empty for
+  defaults from [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library) (see
+  ['Ansible Jenkins plugin'](https://plugins.jenkins.io/ansible/) documentation). *Not used and will probably be removed
+  soon as recent changes in [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library) runs
+  ansible playbooks through a shell call by default.*
 - `BuiltinPipelineParameters` constant contains a built-in pipeline parameters, which are mandatory and not present in
   'universal-wrapper-pipeline-settings': pipeline parameters `UPDATE_PARAMETERS`, `SETTINGS_GIT_BRANCH`, `NODE_NAME`,
   `NODE_TAG`, `DRY_RUN` and `DEBUG_MODE` specified here are system. Modifying them is not recommended.
@@ -102,7 +104,7 @@ You can also override [pipeline constants](#pipeline-constants) without code pip
 environment variable(s). Set them in node settings (via selecting node in "Manage Jenkins Nodes" menu), or better in an
 option 'Prepare an environment for the run' in your pipeline settings. As official Jenkins manual of
 [Environment Injector](https://plugins.jenkins.io/envinject/) described, enable 'Prepare an environment for the run'
-and add your environment variables to the field 'Properties Content' in dropped-down menu filed, e.g.:
+and add your environment variables to the field 'Properties Content' in a dropped-down menu filed, e.g.:
 
 ```properties
 JUWP_SETTINGS_GIT_URL=http://github.com/my_usrrname/my_universal-wrapper-pipeline-settings-repository
@@ -111,5 +113,6 @@ JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 
 ## URLs
 
+- [Wiki](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/wiki).
 - [Universal wrapper pipeline settings](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   repository with config format description and example pipeline configs.
