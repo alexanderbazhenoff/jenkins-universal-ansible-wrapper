@@ -19,7 +19,7 @@ Fast and easy way to create Jenkins pipelines through yaml configuration files.
 
 Jenkins Universal Wrapper Pipeline allows you to create multistage pipelines by describing actions in a stages in yaml
 files. You don't need Groovy programming language knowledge, even declarative Jenkins pipeline style. Just create
-a configuration file and describe all stages and actions should be done.The syntax and structure of the configs is in 
+a configuration file and describe all stages and actions should be done.The syntax and structure of the configs is in
 many ways reminds of the GitLab, GitHub or Travis CI. It's very similar writing stages, actions then action description
 what each of them should do.
 
