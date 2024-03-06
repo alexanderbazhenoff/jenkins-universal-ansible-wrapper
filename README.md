@@ -1,4 +1,5 @@
 <!-- markdownlint-disable MD033 MD041 -->
+<!-- docs-ci-begin-cut -->
 <div align='center'>
 
 # Jenkins Universal Wrapper Pipeline
@@ -14,12 +15,13 @@ Fast and easy way to create Jenkins pipelines through yaml configuration files.
 
 <span style="font-size:0.8em;">[**English**](README.md) • [Russian](README_RUS.md)</span>
 </div>
+<!-- docs-ci-end-cut -->
 
 ## About
 
 Jenkins Universal Wrapper Pipeline allows you to create multistage pipelines by describing actions in a stages in yaml
 files. You don't need Groovy programming language knowledge, even declarative Jenkins pipeline style. Just create
-a configuration file and describe all stages and actions should be done.The syntax and structure of the configs is in
+a configuration file and describe all stages and actions should be done. The syntax and structure of the configs is in
 many ways reminds of the GitLab, GitHub or Travis CI. It's very similar writing stages, actions then action description
 what each of them should do.
 
@@ -111,8 +113,11 @@ JUWP_SETTINGS_GIT_URL=http://github.com/my_usrrname/my_universal-wrapper-pipelin
 JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 ```
 
+<!-- docs-ci-begin-cut -->
 ## URLs
 
 - [Wiki](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/wiki).
 - [Universal wrapper pipeline settings](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   repository with config format description and example pipeline configs.
+
+<!-- docs-ci-end-cut -->
