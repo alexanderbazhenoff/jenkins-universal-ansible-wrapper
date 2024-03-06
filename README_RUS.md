@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 <div align='center'>
-<!-- docs-ci-begin-cut -->
+<!-- docs-ci-cut-begin -->
 
 # Jenkins Universal Wrapper Pipeline
 
@@ -15,7 +15,7 @@
 
 <span style="font-size:0.8em;">[English](README.md) • [**Russian**](README_RUS.md)</span>
 </div>
-<!-- docs-ci-end-cut -->
+<!-- docs-ci-cut-end -->
 
 ## Описание
 
@@ -119,11 +119,11 @@ JUWP_SETTINGS_GIT_URL=http://github.com/my_usrrname/my_universal-wrapper-pipelin
 JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 ```
 
-<!-- docs-ci-begin-cut -->
+<!-- docs-ci-cut-begin -->
 ## Ссылки
 
 - [Wiki](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/wiki).
 - [Universal wrapper pipeline settings](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   репозиторий с описанием формата конфигурационных файлов и примерами настроек.
 
-<!-- docs-ci-end-cut -->
+<!-- docs-ci-cut-end -->
