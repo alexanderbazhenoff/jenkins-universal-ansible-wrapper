@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
-<div align='center'>
 <!-- docs-ci-cut-begin -->
+<div align='center'>
 
 # Jenkins Universal Wrapper Pipeline
 
