@@ -31,7 +31,7 @@ actions then action description what each of them should do.
 
 - Built-in getting git sources of another repository.
 - Built-in ansible collection(s) installation.
-- Built-in reports send (email or mattermost).
+- Built-in reports send (email, mattermost and Telegram).
 - Run ansible playbooks or scripts just by inserting their code in action description inside yaml config. You can also
   run whatever you want wrapped in a scripts run: puppet, terraform, etc.
 - Node selection and move required files between.

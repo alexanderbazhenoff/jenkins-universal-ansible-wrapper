@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/pull/1) (2024-03-12)
+
+### Features
+
+- Send report via [Telegram messenger](https://telegram.org/) using
+  [Telegram Bot](https://core.telegram.org/bots/tutorial) has been added.
+- CI improvements: Automated Wiki Build.
+
 ## [1.0.0](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/pull/1) (2024-02-24)
 
 First version as it was written mostly in 2023.
