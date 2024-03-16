@@ -60,7 +60,7 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
 1. Подключите [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library) с именем
    `jenkins-shared-library` (cм.
    [официальную документацию](https://www.jenkins.io/doc/book/pipeline/shared-libraries/#global-shared-libraries)).
-2. Установите все [необходимые плагины](https://www.jenkins.io/doc/book/managing/plugins/)) на сервер Jenkins (см.
+2. Установите все [необходимые плагины](https://www.jenkins.io/doc/book/managing/plugins/) на сервер Jenkins (см.
    ['Требования'](#требования)).
 3. Установите значения всех констант pipeline'а (особенно репозитории) (см.
    ["константы pipeline"](#константы-pipeline)).
