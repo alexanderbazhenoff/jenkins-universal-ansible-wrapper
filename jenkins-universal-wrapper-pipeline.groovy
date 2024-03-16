@@ -1921,7 +1921,7 @@ List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables
         if (telegramData?.get(stringKeys[0]))
             telegramData[stringKeys[0]] = telegramData?.get(stringKeys[0])?.toInteger()
         String telegramBotApiUrl = actionLinkItem?.get(stringKeys[3] as String) ?: GV.TELEGRAM_BOT_API_URL
-        Boolean sendReportStatus = CF.sendTelegramMessageViaBot(telegramData, mandatoryKeyValues[0], telegramBotApiUrl,
+        Boolean sendReportStatus = CF.sendTelegramMessageViaBot(telegramData, mandatoryKeyValues[1], telegramBotApiUrl,
                 getBooleanVarStateFromEnv(envVariables))
         [sendReportStatus && newActionOk, universalPipelineWrapperBuiltIns, null]
     } : {
