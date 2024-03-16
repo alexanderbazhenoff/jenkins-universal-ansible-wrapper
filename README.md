@@ -59,7 +59,7 @@ actions then action description what each of them should do.
 ## Setting up
 
 1. Connect [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library) with the
-   name `jenkins-shared-library-alx` (see
+   name `jenkins-shared-library` (see
    [official documentation](https://www.jenkins.io/doc/book/pipeline/shared-libraries/#global-shared-libraries)).
 2. Install all required [Jenkins plugins](https://www.jenkins.io/doc/book/managing/plugins/) on Jenkins server (see
    ['Requirements'](#requirements)).
