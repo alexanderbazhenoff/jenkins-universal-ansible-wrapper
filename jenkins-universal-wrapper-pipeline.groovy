@@ -1235,7 +1235,6 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
                         universalPipelineWrapperBuiltIns)
             },
             playbook   : {
-                // TODO: check order of function return
                 actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns, false)
             },
@@ -1260,7 +1259,6 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
                         universalPipelineWrapperBuiltIns, true)
             },
             report     : {
-                // TODO: fix change of pipelineSettings here
                 actionSendReport(actionLink, actionLinkItem, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns)
             }
@@ -1570,7 +1568,6 @@ List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, O
         /** Setting up closure depending on script type. */
         def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
                                                             checkOrExecuteData?.get(stringSubKeys[1])]
-        // TODO: is reassignment is on Map universalPipelineWrapperBuiltIns = [:]?
         pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
                 'return universalPipelineWrapperBuiltIns')
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
