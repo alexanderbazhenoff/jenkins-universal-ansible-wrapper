@@ -7,7 +7,7 @@
 
 Быстрый и простой способ создавать Jenkins pipeline'ы через конфигурационные yaml файлы.
 <!-- markdown-link-check-disable -->
-[![Super-Linter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/super-linter.yml/badge.svg?branch=main)](https://github.com/marketplace/actions/super-linter)
+[![MegaLinter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://megalinter.io/)
 [![Wiki CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/wiki-ci.yml/badge.svg?branch=main)](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/wiki)
 [![Release CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/release-ci.yml/badge.svg?branch=main)](CHANGELOG.md)
 [![GitHub Release](https://img.shields.io/github/v/release/alexanderbazhenoff/jenkins-universal-wrapper-pipeline)](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/releases)

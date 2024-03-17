@@ -7,7 +7,10 @@
 
 - Send report via [Telegram messenger](https://telegram.org/) using
   [Telegram Bot](https://core.telegram.org/bots/tutorial) has been added.
-- CI improvements: automated Wiki Build has been added.
+- CI improvements:
+    - Automated Wiki Build has been added.
+    - Switched from [Super-Linter](https://github.com/super-linter/super-linter) 
+      to [MegaLinter](https://megalinter.io/).
 
 ## [1.0.0](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/pull/1) (2024-02-24)
 

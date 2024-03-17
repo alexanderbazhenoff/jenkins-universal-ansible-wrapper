@@ -7,7 +7,7 @@
 
 Fast and easy way to create Jenkins pipelines through yaml configuration files.
 <!-- markdown-link-check-disable -->
-[![Super-Linter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/super-linter.yml/badge.svg?branch=main)](https://github.com/marketplace/actions/super-linter)
+[![MegaLinter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://megalinter.io/)
 [![Wiki CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/wiki-ci.yml/badge.svg?branch=main)](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/wiki)
 [![Release CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/release-ci.yml/badge.svg?branch=main)](CHANGELOG.md)
 [![GitHub Release](https://img.shields.io/github/v/release/alexanderbazhenoff/jenkins-universal-wrapper-pipeline)](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/releases)
@@ -52,7 +52,7 @@ actions then action description what each of them should do.
    run them through the command-line.
 3. This pipeline requires [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library)
    connection.
-4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) for colour console output.
+4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) for color console output.
 5. To run ansible inside a wrapper plugin you may need to install
    [Ansible Jenkins plugin](https://plugins.jenkins.io/ansible/) (optional, not required by default).
 
