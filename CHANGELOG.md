@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD024 MD041 -->
 # Changelog
 
-## [1.0.1](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/pull/1) (2024-03-12)
+## [1.0.1](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/pull/1) (2024-03-18)
 
 ### Features
 
