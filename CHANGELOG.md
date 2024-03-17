@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD024 MD041 -->
+<!-- markdownlint-disable MD007 MD024 MD041 -->
 # Changelog
 
 ## [1.0.1](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/pull/1) (2024-03-18)
@@ -9,7 +9,7 @@
   [Telegram Bot](https://core.telegram.org/bots/tutorial) has been added.
 - CI improvements:
     - Automated Wiki Build has been added.
-    - Switched from [Super-Linter](https://github.com/super-linter/super-linter) 
+    - Switched from [Super-Linter](https://github.com/super-linter/super-linter)
       to [MegaLinter](https://megalinter.io/).
 
 ## [1.0.0](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/pull/1) (2024-02-24)

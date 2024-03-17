@@ -1,7 +1,6 @@
 ---
-
 name: MegaLinter
-on:    # yamllint disable-line rule:truthy
+on: # yamllint disable-line rule:truthy
   push:
   pull_request:
     branches:
@@ -24,7 +23,6 @@ jobs:
       statuses: write
 
     steps:
-
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
