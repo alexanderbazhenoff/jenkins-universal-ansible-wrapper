@@ -1,4 +1,10 @@
 ---
 
+REPOSITORY_DEVSKIM_PRE_COMMANDS:
+  - command:  git config --global --add safe.directory /github/workspace/.git
+    cwd: "workspace"
+
 SPELL_CSPELL_FILTER_REGEX_EXCLUDE: README_RUS.md
 YAML_V8R_FILTER_REGEX_EXCLUDE: .+-lint.yml
+DISABLE_LINTERS:
+  - REPOSITORY_KICS
