@@ -9,7 +9,7 @@ on:
     branches:
       - main
       - master
-
+permissions: read-all
 # Comment env block if you do not want to apply fixes
 env:
   # Apply linter fixes configuration

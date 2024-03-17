@@ -1,7 +1,3 @@
 ---
 
-REPOSITORY_DEVSKIM_PRE_COMMANDS:
-  - command:  git config --global --add safe.directory /github/workspace/.git
-    cwd: "root"
-
-MARKDOWN_MARKDOWN_LINK_CHECK_FILTER_REGEX_EXCLUDE: https://twitter.com/intent.+
+MARKDOWN_MARKDOWN_LINK_CHECK_FILTER_REGEX_EXCLUDE: https:\/\/twitter\.com\/intent.+
