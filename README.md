@@ -111,7 +111,7 @@ option 'Prepare an environment for the run' in your pipeline settings. As offici
 and add your environment variables to the field 'Properties Content' in a dropped-down menu filed, e.g.:
 
 ```properties
-JUWP_SETTINGS_GIT_URL=http://github.com/my_usrrname/my_universal-wrapper-pipeline-settings-repository
+JUWP_SETTINGS_GIT_URL=http://github.com/my_username/my_universal-settings-repository
 JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 ```
 
