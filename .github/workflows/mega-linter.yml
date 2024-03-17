@@ -1,7 +1,7 @@
 ---
 name: MegaLinter
 on: # yamllint disable-line rule:truthy
-  push:
+  push: null
   pull_request:
     branches:
       - main
