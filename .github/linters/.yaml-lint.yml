@@ -1,9 +1,5 @@
 ---
-
 extends: default
-ignore: |
-  README.md
-  LICENSE
 
 rules:
   braces:
@@ -36,5 +32,5 @@ rules:
     type: unix
   trailing-spaces: enable
   truthy:
-    allowed-values: ['true', 'false']  # yamllint disable-line rule:truthy
+    allowed-values: ["true", "false"] # yamllint disable-line rule:truthy
     check-keys: true

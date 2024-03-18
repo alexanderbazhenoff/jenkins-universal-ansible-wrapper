@@ -1,7 +1,6 @@
 ---
-
 name: Release CI
-on:    # yamllint disable-line rule:truthy
+on: # yamllint disable-line rule:truthy
   push:
     branches:
       - main
@@ -9,12 +8,10 @@ permissions:
   contents: write
 
 jobs:
-
   release:
     name: Release from push
     runs-on: ubuntu-latest
     steps:
-
       - name: Pause until all workflows are completed
         uses: willgarcia/workflow-wait-action@main
         with:

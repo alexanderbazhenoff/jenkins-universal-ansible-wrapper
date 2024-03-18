@@ -13,7 +13,7 @@
 import groovy.text.StreamingTemplateEngine
 
 // groovylint-disable-next-line MethodCount
-@Library('jenkins-shared-library-alx')
+@Library('jenkins-shared-library')
 
 /**
  * Repo URL and a branch of 'universal-wrapper-pipeline-settings' to load current pipeline settings, e.g:
@@ -1235,7 +1235,6 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
                         universalPipelineWrapperBuiltIns)
             },
             playbook   : {
-                // TODO: check order of function return
                 actionAnsiblePlaybookOrScriptRun(actionLink, pipelineSettings, envVariables, check, actionOk,
                                 universalPipelineWrapperBuiltIns, false)
             },
@@ -1260,7 +1259,6 @@ List checkOrExecutePipelineActionLink(String actionLink, Map nodeItem, Map pipel
                         universalPipelineWrapperBuiltIns, true)
             },
             report     : {
-                // TODO: fix change of pipelineSettings here
                 actionSendReport(actionLink, actionLinkItem, envVariables, check, actionOk,
                         universalPipelineWrapperBuiltIns)
             }
@@ -1570,7 +1568,6 @@ List actionAnsiblePlaybookOrScriptRun(String actionLink, Map pipelineSettings, O
         /** Setting up closure depending on script type. */
         def (String scriptText, String pipelineCodeText) = [checkOrExecuteData?.get(stringSubKeys[0]),
                                                             checkOrExecuteData?.get(stringSubKeys[1])]
-        // TODO: is reassignment is on Map universalPipelineWrapperBuiltIns = [:]?
         pipelineCodeText = String.format('%s\n%s\n%s', 'Map universalPipelineWrapperBuiltIns = [:]', pipelineCodeText,
                 'return universalPipelineWrapperBuiltIns')
         actionClosure = (checkOrExecuteData?.get(booleanSubKeys[0]) && asPartOfPipelineContentDefined) ? {
@@ -1894,11 +1891,13 @@ List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables
                     mandatoryKeys[0], actionLink))
     mandatoryKeys += reportTarget == 'email' ? ['to'] : []
     mandatoryKeys += reportTarget == 'mattermost' ? ['url', 'text'] : []
-    List stringKeys = reportTarget == 'email' ? ['reply_to', 'subject', 'body'] : []
-    // TODO: pipeline setting change?
+    mandatoryKeys += reportTarget == 'telegram' ? ['bot_token', 'chat_id', 'text'] : []
+    List stringKeys = reportTarget == 'email' ? ['reply_to', 'subject', 'body'] : reportTarget == 'telegram' ?
+            ['message_thread_id', 'parse_mode', 'link_preview_options', 'api_url'] : []
+    List booleanKeys = reportTarget == 'telegram' ? ['disable_notification', 'protect_content'] : []
     (mandatoryKeyValues, actionLinkItem, newActionOk) = checkMandatoryKeysTemplateAndFilterMapWrapper(actionLinkItem,
-            mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, [], newActionOk, check, actionLink, envVariables,
-            universalPipelineWrapperBuiltIns)
+            mandatoryKeys, mandatoryKeys + stringKeys as ArrayList, booleanKeys, newActionOk, check, actionLink,
+            envVariables, universalPipelineWrapperBuiltIns)
     String actionName = String.format('send report to %s', reportTarget.trim() ? reportTarget : '<undefined>')
     Closure actionClosure = mandatoryKeyValues[0] == 'email' ? {
         emailext(
@@ -1911,6 +1910,16 @@ List actionSendReport(String actionLink, Map actionLinkItem, Object envVariables
     } : mandatoryKeyValues[0] == 'mattermost' ? {
         Boolean sendReportStatus = CF.sendMattermostChannelSingleMessage(mandatoryKeyValues[1], mandatoryKeyValues[2],
                 getBooleanVarStateFromEnv(envVariables) ? 2 : 0)
+        [sendReportStatus && newActionOk, universalPipelineWrapperBuiltIns, null]
+    } : mandatoryKeyValues[0] == 'telegram' ? {
+        Map telegramData = actionLinkItem.findAll {
+            it.key != mandatoryKeys[0] && it.key != mandatoryKeys[1] && it.key != stringKeys[3]
+        }
+        if (telegramData?.get(stringKeys[0]))
+            telegramData[stringKeys[0]] = telegramData?.get(stringKeys[0])?.toInteger()
+        String telegramBotApiUrl = actionLinkItem?.get(stringKeys[3] as String) ?: GV.TELEGRAM_BOT_API_URL
+        Boolean sendReportStatus = CF.sendTelegramMessageViaBot(telegramData, mandatoryKeyValues[1], telegramBotApiUrl,
+                getBooleanVarStateFromEnv(envVariables))
         [sendReportStatus && newActionOk, universalPipelineWrapperBuiltIns, null]
     } : {
         [newActionOk, universalPipelineWrapperBuiltIns, null]

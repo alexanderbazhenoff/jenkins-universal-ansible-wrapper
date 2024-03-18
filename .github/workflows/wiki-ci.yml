@@ -1,0 +1,60 @@
+---
+name: Wiki CI
+on: # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - master
+permissions: read-all
+
+env:
+  UWP_SETTINGS_BRANCH: main
+  UWP_JENKINS_BRANCH: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  build_english_wiki:
+    name: Build English Wiki
+    runs-on: ubuntu-latest
+    env:
+      CI_WIKI_LANG: eng
+      CI_WIKI_REPO: alexanderbazhenoff/jenkins-universal-wrapper-pipeline.wiki
+    permissions:
+      contents: write
+      packages: read
+      statuses: write
+
+    steps:
+      - name: Checkout composite action to build Wiki (${{ env.CI_WIKI_LANG }})
+        uses: actions/checkout@v4
+        with:
+          repository: alexanderbazhenoff/universal-wrapper-pipeline-settings
+          ref: ${{ env.UWP_SETTINGS_BRANCH }}
+      - name: Create Wiki (${{ env.CI_WIKI_LANG }})
+        uses: ./.github/workflows/composite-action
+        with:
+          token: ${{ secrets.GH_PERSONAL_TOKEN }}
+
+  build_eussian_wiki:
+    name: Build Russian Wiki
+    runs-on: ubuntu-latest
+    env:
+      CI_WIKI_LANG: rus
+      CI_WIKI_REPO: alexanderbazhenoff/universal-wrapper-pipeline-settings.wiki
+    permissions:
+      contents: write
+      packages: read
+      statuses: write
+
+    steps:
+      - name: Checkout composite action to build Wiki (${{ env.CI_WIKI_LANG }})
+        uses: actions/checkout@v4
+        with:
+          repository: alexanderbazhenoff/universal-wrapper-pipeline-settings
+          ref: ${{ env.UWP_SETTINGS_BRANCH }}
+      - name: Create Wiki (${{ env.CI_WIKI_LANG }})
+        uses: ./.github/workflows/composite-action
+        with:
+          token: ${{ secrets.GH_PERSONAL_TOKEN }}

@@ -1,5 +1,4 @@
 ---
-
 # Default state for all rules
 default: true
 
@@ -22,7 +21,7 @@ MD013:
   # Number of characters for headings
   heading_line_length: 120
   # Number of characters for code blocks
-  code_block_line_length: 120
+  code_block_line_length: 100
   # Include tables
   tables: false
   # Include headings

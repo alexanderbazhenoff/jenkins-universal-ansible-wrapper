@@ -1,33 +1,37 @@
 <!-- markdownlint-disable MD033 MD041 -->
+
+<!-- docs-ci-cut-begin -->
 <div align='center'>
 
 # Jenkins Universal Wrapper Pipeline
 
 Fast and easy way to create Jenkins pipelines through yaml configuration files.
-
-[![Super-Linter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/super-linter.yml/badge.svg?branch=main)](https://github.com/marketplace/actions/super-linter)
+<!-- markdown-link-check-disable -->
+[![MegaLinter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://megalinter.io/)
+[![Wiki CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/wiki-ci.yml/badge.svg?branch=main)](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/wiki)
 [![Release CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/release-ci.yml/badge.svg?branch=main)](CHANGELOG.md)
 [![GitHub Release](https://img.shields.io/github/v/release/alexanderbazhenoff/jenkins-universal-wrapper-pipeline)](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/releases)
 [![GitHub License](https://img.shields.io/github/license/alexanderbazhenoff/jenkins-universal-wrapper-pipeline)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Create+your+pipelines+easier+and+faster%21%20&url=https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline&hashtags=devops,cicd,jenkins,ansible,yaml)
-
+<!-- markdown-link-check-enable -->
 <span style="font-size:0.8em;">[**English**](README.md) • [Russian](README_RUS.md)</span>
 </div>
+<!-- docs-ci-cut-end -->
 
 ## About
 
-Jenkins Universal Wrapper Pipeline allows you to create multistage pipelines by describing actions in a stages in yaml
-files. You don't need Groovy programming language knowledge, even declarative Jenkins pipeline style. Just create
-a configuration file and describe all stages and actions should be done.The syntax and structure of the configs is in
-many ways reminds of the GitLab, GitHub or Travis CI. It's very similar writing stages, actions then action description
-what each of them should do.
+Jenkins Universal Wrapper Pipeline allows you to create multistage pipelines by describing actions in a stages,
+specifying them inside yaml file. You don't need Groovy programming language knowledge, even declarative Jenkins
+pipeline style. Just create a configuration file and describe all stages and actions should be done. The syntax and
+structure of the configs is in many ways reminds of the GitLab, GitHub or Travis CI. It's very similar writing stages,
+actions then action description what each of them should do.
 
 ## Main features
 
 - Built-in getting git sources of another repository.
 - Built-in ansible collection(s) installation.
-- Built-in reports send (email or mattermost).
+- Built-in reports send (email, mattermost and Telegram).
 - Run ansible playbooks or scripts just by inserting their code in action description inside yaml config. You can also
   run whatever you want wrapped in a scripts run: puppet, terraform, etc.
 - Node selection and move required files between.
@@ -48,14 +52,14 @@ what each of them should do.
    run them through the command-line.
 3. This pipeline requires [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library)
    connection.
-4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) for colour console output.
+4. [AnsiColor Jenkins plugin](https://plugins.jenkins.io/ansicolor/) for color console output.
 5. To run ansible inside a wrapper plugin you may need to install
    [Ansible Jenkins plugin](https://plugins.jenkins.io/ansible/) (optional, not required by default).
 
 ## Setting up
 
 1. Connect [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library) with the
-   name `jenkins-shared-library-alx` (see
+   name `jenkins-shared-library` (see
    [official documentation](https://www.jenkins.io/doc/book/pipeline/shared-libraries/#global-shared-libraries)).
 2. Install all required [Jenkins plugins](https://www.jenkins.io/doc/book/managing/plugins/) on Jenkins server (see
    ['Requirements'](#requirements)).
@@ -107,12 +111,15 @@ option 'Prepare an environment for the run' in your pipeline settings. As offici
 and add your environment variables to the field 'Properties Content' in a dropped-down menu filed, e.g.:
 
 ```properties
-JUWP_SETTINGS_GIT_URL=http://github.com/my_usrrname/my_universal-wrapper-pipeline-settings-repository
+JUWP_SETTINGS_GIT_URL=http://github.com/my_username/my_universal-settings-repository
 JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 ```
 
+<!-- docs-ci-cut-begin -->
 ## URLs
 
 - [Wiki](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/wiki).
 - [Universal wrapper pipeline settings](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   repository with config format description and example pipeline configs.
+
+<!-- docs-ci-cut-end -->

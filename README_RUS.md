@@ -1,19 +1,23 @@
 <!-- markdownlint-disable MD033 MD041 -->
+
+<!-- docs-ci-cut-begin -->
 <div align='center'>
 
 # Jenkins Universal Wrapper Pipeline
 
 Быстрый и простой способ создавать Jenkins pipeline'ы через конфигурационные yaml файлы.
-
-[![Super-Linter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/super-linter.yml/badge.svg?branch=main)](https://github.com/marketplace/actions/super-linter)
+<!-- markdown-link-check-disable -->
+[![MegaLinter](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://megalinter.io/)
+[![Wiki CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/wiki-ci.yml/badge.svg?branch=main)](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/wiki)
 [![Release CI](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/actions/workflows/release-ci.yml/badge.svg?branch=main)](CHANGELOG.md)
 [![GitHub Release](https://img.shields.io/github/v/release/alexanderbazhenoff/jenkins-universal-wrapper-pipeline)](https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline/releases)
 [![GitHub License](https://img.shields.io/github/license/alexanderbazhenoff/jenkins-universal-wrapper-pipeline)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Create+your+pipelines+easier+and+faster%21%20&url=https://github.com/alexanderbazhenoff/jenkins-universal-wrapper-pipeline&hashtags=devops,cicd,jenkins,ansible,yaml)
-
+<!-- markdown-link-check-enable -->
 <span style="font-size:0.8em;">[English](README.md) • [**Russian**](README_RUS.md)</span>
 </div>
+<!-- docs-ci-cut-end -->
 
 ## Описание
 
@@ -25,7 +29,7 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
 
 - Встроенное получение исходников другого проекта (git).
 - Встроенная установка ansible-коллекций.
-- Встроенная отправка отчетов (email, или mattermost).
+- Встроенная отправка отчетов (email, Mattermost и Telegram).
 - Запуск ansible playbook'ов, разместив код в описание действия внутри конфигурационного файла. Вы можете так же
   запускать все, что нужно как скрипт: puppet, terraform и т.д.
 - Выбор ноды и перемещение необходимых файлов между ними.
@@ -54,9 +58,9 @@ Jenkins Universal Wrapper Pipeline позволяет создавать multist
 ## Настройка
 
 1. Подключите [jenkins shared library](https://github.com/alexanderbazhenoff/jenkins-shared-library) с именем
-   `jenkins-shared-library-alx` (cм.
+   `jenkins-shared-library` (cм.
    [официальную документацию](https://www.jenkins.io/doc/book/pipeline/shared-libraries/#global-shared-libraries)).
-2. Установите все [необходимые плагины](https://www.jenkins.io/doc/book/managing/plugins/)) на сервер Jenkins (см.
+2. Установите все [необходимые плагины](https://www.jenkins.io/doc/book/managing/plugins/) на сервер Jenkins (см.
    ['Требования'](#требования)).
 3. Установите значения всех констант pipeline'а (особенно репозитории) (см.
    ["константы pipeline"](#константы-pipeline)).
@@ -113,12 +117,15 @@ environment for the run" и в поле "Properties Content" выпадающе�
 например:
 
 ```properties
-JUWP_SETTINGS_GIT_URL=http://github.com/my_usrrname/my_universal-wrapper-pipeline-settings-repository
+JUWP_SETTINGS_GIT_URL=http://github.com/my_username/my_universal-settings-repository
 JUWP_DEFAULT_SETTINGS_GIT_BRANCH=my_branch
 ```
 
+<!-- docs-ci-cut-begin -->
 ## Ссылки
 
 - [Wiki](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/wiki).
 - [Universal wrapper pipeline settings](https://github.com/alexanderbazhenoff/universal-wrapper-pipeline-settings/tree/main)
   репозиторий с описанием формата конфигурационных файлов и примерами настроек.
+
+<!-- docs-ci-cut-end -->
